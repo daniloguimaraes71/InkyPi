@@ -10,7 +10,6 @@ from PIL import Image, ImageDraw, ImageColor
 
 logger = logging.getLogger(__name__)
 
-# Morning-related Wikipedia images
 MORNING_IMAGES = {
     "spring": "Cherry_blossom",
     "summer": "Sunrise",
@@ -34,7 +33,6 @@ class MorningBriefing(BasePlugin):
         weather_data = self._get_weather_summary(device_config, tz)
         calendar_events = self._get_calendar_events(settings, device_config, tz, now)
 
-        # Get seasonal morning image
         month = now.month
         if month in [3, 4, 5]:
             season = "spring"
@@ -48,7 +46,6 @@ class MorningBriefing(BasePlugin):
         image_keyword = MORNING_IMAGES.get(season, "Sunrise")
         morning_image = get_wikipedia_image(image_keyword, (280, 350))
         
-        # Save image to static directory for HTML rendering
         image_url = None
         if morning_image:
             import os
@@ -58,7 +55,6 @@ class MorningBriefing(BasePlugin):
             morning_image.save(image_path, 'PNG')
             image_url = f'/static/images/cache/morning_image.png'
 
-        # Try HTML render
         try:
             dimensions_for_render = device_config.get_resolution()
             if orientation == "vertical":
@@ -81,59 +77,99 @@ class MorningBriefing(BasePlugin):
         except Exception as e:
             logger.warning(f"HTML render failed, falling back to PIL: {e}")
 
-        # Fallback to PIL
         return self._draw_card_pil(dimensions, orientation, now, season_info, palette, 
                                    weather_data, calendar_events, time_format, morning_image)
 
     def _draw_card_pil(self, dimensions, orientation, now, season_info, palette, 
                        weather, events, time_format, morning_image):
-        """Fallback PIL rendering."""
+        """Elegant planner-style morning briefing."""
         w, h = dimensions
         if orientation == 'vertical':
             w, h = h, w
 
-        bg_color = palette.get('bg', '#FAF8F5')
-        img = Image.new('RGB', (w, h), bg_color)
+        img = Image.new('RGB', (w, h), '#FAF8F5')
         draw = ImageDraw.Draw(img)
 
-        font_greeting = get_font("Noto Serif JP", int(w * 0.08))
-        font_date = get_font("Noto Sans JP", int(w * 0.035))
-        font_weather = get_font("Noto Serif JP", int(w * 0.06))
-        font_event = get_font("Noto Sans JP", int(w * 0.03))
-        font_small = get_font("Noto Sans JP", int(w * 0.025))
+        px = int(w * 0.05)
+        py = int(h * 0.07)
+        right_col_x = int(w * 0.58)
+        col_gap = int(w * 0.04)
+        left_max = right_col_x - col_gap
 
-        left_x = int(w * 0.06)
+        f_greeting = get_font("Noto Serif JP", int(w * 0.055))
+        f_date = get_font("Noto Sans JP", int(w * 0.02))
+        f_temp = get_font("Noto Serif JP", int(w * 0.06))
+        f_msg = get_font("Noto Sans JP", int(w * 0.02))
+        f_sched_h = get_font("Noto Serif JP", int(w * 0.025))
+        f_sched_t = get_font("Noto Sans JP", int(w * 0.017))
+        f_sched_e = get_font("Noto Serif JP", int(w * 0.02))
+        f_ms = get_font("Noto Serif JP", int(w * 0.016))
+        f_ms_en = get_font("Noto Sans JP", int(w * 0.012))
 
-        # Morning image
+        # Right column image
         if morning_image:
-            img_x, img_y = int(w * 0.55), int(h * 0.1)
-            img_w, img_h = int(w * 0.38), int(h * 0.75)
-            photo_resized = morning_image.resize((img_w, img_h), Image.Resampling.LANCZOS)
-            img.paste(photo_resized, (img_x, img_y))
+            ix, iy = right_col_x, py
+            iw = w - right_col_x - px
+            ih = h - py * 2
+            img.paste(morning_image.resize((iw, ih), Image.Resampling.LANCZOS), (ix, iy))
             draw = ImageDraw.Draw(img)
-            draw.rectangle([img_x-1, img_y-1, img_x+img_w+1, img_y+img_h+1], outline='#E0D8C8', width=1)
+            draw.rectangle([ix-2, iy-2, ix+iw+2, iy+ih+2], outline='#E0D8C8', width=1)
+
+        # Date line
+        draw.text((px, py), now.strftime('%m月%d日') + ' • 姫路市', font=f_date, fill='#888888')
 
         # Greeting
-        draw.text((left_x, int(h * 0.12)), "おはようございます", font=font_greeting, fill='#2C2C2C')
-        draw.text((left_x, int(h * 0.24)), now.strftime("%Y年%m月%d日 %A"), font=font_date, fill='#666666')
+        gy = py + int(h * 0.055)
+        draw.text((px, gy), "おはようございます。", font=f_greeting, fill='#2C2C2C')
 
-        # Weather
+        # Divider
+        dy = gy + int(h * 0.075)
+        draw.line([(px, dy), (left_max, dy)], fill='#E0D8C8', width=1)
+
+        # Weather message
+        my = dy + int(h * 0.04)
         if weather:
-            draw.text((left_x, int(h * 0.38)), f"{weather['temp']}°C", font=font_weather, fill='#2C2C2C')
-            draw.text((left_x + int(w * 0.15), int(h * 0.42)), weather['description'], font=font_small, fill='#666666')
+            lines = [f"今日は{weather['description']}です。", f"湿度 {weather['humidity']}% です。"]
+        else:
+            lines = ["今日は一日を通して穏やかな晴天です。", "朝晩は冷え込むので羽織るものを。"]
+        for i, line in enumerate(lines):
+            draw.text((px, my + i * int(h * 0.032)), line, font=f_msg, fill='#555555')
 
-        # Events
+        # Temperature
+        ty = my + int(h * 0.1)
+        temp_str = f"{weather['temp']}°" if weather else "21°"
+        draw.text((px, ty), temp_str, font=f_temp, fill='#7A8B6F')
+        draw.text((px + int(w * 0.11), ty + int(h * 0.018)), "現在気温", font=f_date, fill='#888888')
+
+        # Schedule (right column)
+        sx = right_col_x + int(w * 0.02)
+        sy = py
+        draw.text((sx, sy), "今日の予定", font=f_sched_h, fill='#8B7355')
+        
+        item_y = sy + int(h * 0.055)
         if events:
-            event_y = int(h * 0.58)
-            draw.text((left_x, event_y - int(h * 0.03)), "今日の予定", font=font_small, fill='#8B7355')
-            for event in events[:3]:
-                draw.text((left_x, event_y), event['time'], font=font_small, fill='#999999')
-                draw.text((left_x + int(w * 0.1), event_y), event['title'], font=font_event, fill='#2C2C2C')
-                event_y += int(h * 0.06)
+            for ev in events[:4]:
+                draw.text((sx, item_y), ev['time'], font=f_sched_t, fill='#888888')
+                draw.text((sx, item_y + int(h * 0.004)), ev['title'], font=f_sched_e, fill='#2C2C2C')
+                # Dotted underline
+                bbox = draw.textbbox((sx, item_y + int(h * 0.004)), ev['title'], font=f_sched_e)
+                tw = bbox[2] - bbox[0]
+                for dx in range(0, tw, 4):
+                    draw.line([(sx + dx, item_y + int(h * 0.03)), (sx + dx + 2, item_y + int(h * 0.03))], fill='#E0D8C8', width=1)
+                item_y += int(h * 0.05)
+        else:
+            draw.text((sx, item_y), "本日の予定はありません", font=f_sched_t, fill='#888888')
 
-        # Micro-season
+        # Micro-season stamp
         if season_info:
-            draw.text((left_x, int(h * 0.9)), f"時候: {season_info['micro_season']['kanji']}", font=font_small, fill='#8B7355')
+            ms_x = w - px
+            ms_y = h - int(h * 0.055)
+            k = f"時候: {season_info['micro_season']['kanji']}"
+            bbox = draw.textbbox((0, 0), k, font=f_ms)
+            draw.text((ms_x - (bbox[2]-bbox[0]), ms_y), k, font=f_ms, fill='#8B7355')
+            e = season_info['micro_season']['english']
+            bbox_e = draw.textbbox((0, 0), e, font=f_ms_en)
+            draw.text((ms_x - (bbox_e[2]-bbox_e[0]), ms_y + int(h * 0.022)), e, font=f_ms_en, fill='#888888')
 
         return img
 

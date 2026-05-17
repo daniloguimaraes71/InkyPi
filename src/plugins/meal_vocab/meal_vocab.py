@@ -102,42 +102,62 @@ class MealVocab(BasePlugin):
         return self._draw_card_pil(dimensions, orientation, vocab, meal, season_info, palette, settings, now, food_image)
 
     def _draw_card_pil(self, dimensions, orientation, vocab, meal, season_info, palette, settings, now, food_image):
-        """Fallback PIL rendering."""
+        """Elegant 50/50 split with vocab and meal."""
         w, h = dimensions
         if orientation == 'vertical':
             w, h = h, w
 
-        # Create base image
-        bg_color = '#FAF8F5'
-        img = Image.new('RGB', (w, h), bg_color)
+        img = Image.new('RGB', (w, h), '#FAF8F5')
         draw = ImageDraw.Draw(img)
 
-        # Fonts
-        font_word = get_font("Noto Sans JP", int(w * 0.08))
-        font_ja = get_font("Noto Serif JP", int(w * 0.045))
-        font_en = get_font("Noto Sans JP", int(w * 0.03))
-        font_section = get_font("Noto Sans JP", int(w * 0.025))
+        px = int(w * 0.06)
+        py = int(h * 0.08)
+        mid_x = w // 2
 
-        # Left side - Vocabulary
-        draw.text((int(w * 0.08), int(h * 0.15)), "Palavra do Dia", font=font_section, fill='#8B7355')
-        draw.text((int(w * 0.08), int(h * 0.22)), vocab["pt"], font=font_word, fill='#2C2C2C')
-        draw.text((int(w * 0.08), int(h * 0.38)), vocab["ja"], font=font_ja, fill='#666666')
-        draw.text((int(w * 0.08), int(h * 0.48)), vocab["en"], font=font_en, fill='#999999')
-        draw.text((int(w * 0.08), int(h * 0.58)), f'"{vocab["example"]}"', font=font_en, fill='#999999')
+        f_label = get_font("Noto Sans JP", int(w * 0.016))
+        f_vocab = get_font("Noto Sans JP", int(w * 0.065))
+        f_pron = get_font("Noto Sans JP", int(w * 0.02))
+        f_meaning = get_font("Noto Serif JP", int(w * 0.024))
+        f_example = get_font("Noto Sans JP", int(w * 0.018))
+        f_meal = get_font("Noto Serif JP", int(w * 0.032))
+        f_meal_desc = get_font("Noto Sans JP", int(w * 0.02))
+        f_ms = get_font("Noto Serif JP", int(w * 0.016))
+        f_ms_en = get_font("Noto Sans JP", int(w * 0.012))
 
-        # Divider
-        draw.line([(int(w * 0.5), int(h * 0.15)), (int(w * 0.5), int(h * 0.85))], fill='#E0D8C8', width=1)
+        # Left - Vocabulary
+        draw.text((px, py), "Palavra do Dia", font=f_label, fill='#8B7355')
+        draw.text((px, py + int(h * 0.05)), vocab["pt"], font=f_vocab, fill='#B87333')
+        draw.text((px, py + int(h * 0.14)), vocab["ja"], font=f_meaning, fill='#555555')
+        draw.text((px, py + int(h * 0.2)), f'"{vocab["example"]}"', font=f_example, fill='#888888')
 
-        # Right side - Meal
-        draw.text((int(w * 0.55), int(h * 0.15)), "今日のランチ", font=font_section, fill='#7A8B6F')
-        draw.text((int(w * 0.55), int(h * 0.22)), meal["ja"], font=font_ja, fill='#2C2C2C')
-        draw.text((int(w * 0.55), int(h * 0.35)), meal["en"], font=font_en, fill='#666666')
-        
-        # Food image
+        # Vertical divider
+        draw.line([(mid_x, int(h * 0.1)), (mid_x, int(h * 0.85))], fill='#E0D8C8', width=1)
+
+        # Right - Meal
+        rx = mid_x + int(w * 0.05)
+        draw.text((rx, py), "昼食のヒント", font=f_label, fill='#8B7355')
+        draw.text((rx, py + int(h * 0.05)), meal["ja"], font=f_meal, fill='#2C2C2C')
+        draw.text((rx, py + int(h * 0.12)), meal["en"], font=f_meal_desc, fill='#555555')
+
+        # Food image with frame
         if food_image:
-            img_x, img_y = int(w * 0.55), int(h * 0.5)
-            img_w, img_h = int(w * 0.35), int(h * 0.35)
-            food_resized = food_image.resize((img_w, img_h), Image.Resampling.LANCZOS)
-            img.paste(food_resized, (img_x, img_y))
+            ix = rx
+            iy = py + int(h * 0.22)
+            iw = int(w * 0.18)
+            ih = int(w * 0.18)
+            img.paste(food_image.resize((iw, ih), Image.Resampling.LANCZOS), (ix, iy))
+            draw = ImageDraw.Draw(img)
+            draw.rectangle([ix-2, iy-2, ix+iw+2, iy+ih+2], outline='#E0D8C8', width=1)
+
+        # Micro-season
+        if season_info:
+            ms_x = w - px
+            ms_y = h - int(h * 0.055)
+            k = f"時候: {season_info['micro_season']['kanji']}"
+            bbox = draw.textbbox((0, 0), k, font=f_ms)
+            draw.text((ms_x - (bbox[2]-bbox[0]), ms_y), k, font=f_ms, fill='#8B7355')
+            e = season_info['micro_season']['english']
+            bbox_e = draw.textbbox((0, 0), e, font=f_ms_en)
+            draw.text((ms_x - (bbox_e[2]-bbox_e[0]), ms_y + int(h * 0.022)), e, font=f_ms_en, fill='#888888')
 
         return img

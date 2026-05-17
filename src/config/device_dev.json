@@ -42,9 +42,9 @@
         "active_playlist": null
     },
     "refresh_info": {
-        "refresh_time": "2026-05-17T07:23:03.298350+00:00",
-        "image_hash": "11c6ab26ce115203b66e203ee1163c89bbdff2b1586c6d016a4ec1a8d72eea2f",
+        "refresh_time": "2026-05-17T07:35:43.328288+00:00",
+        "image_hash": "ae13074e8aa3080b685b986e20e706ccbae71128a9aed15eecfc12da2051fdd8",
         "refresh_type": "Manual Update",
-        "plugin_id": "kansai_events"
+        "plugin_id": "painting"
     }
 }

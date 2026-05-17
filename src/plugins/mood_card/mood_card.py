@@ -117,55 +117,73 @@ class MoodCard(BasePlugin):
         return self._draw_card_pil(dimensions, orientation, flower, mood, season_info, palette, settings, now, flower_image)
 
     def _draw_card_pil(self, dimensions, orientation, flower, mood, season_info, palette, settings, now, flower_image):
-        """Fallback PIL rendering."""
+        """Elegant flower + mood card with photo frame."""
         w, h = dimensions
         if orientation == 'vertical':
             w, h = h, w
 
-        # Create base image
-        bg_color = '#FAF8F5'
-        img = Image.new('RGB', (w, h), bg_color)
+        img = Image.new('RGB', (w, h), '#FAF8F5')
         draw = ImageDraw.Draw(img)
 
-        # Fonts
-        font_flower = get_font("Noto Serif JP", int(w * 0.08))
-        font_name = get_font("Noto Sans JP", int(w * 0.04))
-        font_kotoba = get_font("Noto Serif JP", int(w * 0.035))
-        font_mood = get_font("Noto Sans JP", int(w * 0.03))
+        px = int(w * 0.05)
+        py = int(h * 0.07)
+        photo_w = int(w * 0.28)
+        photo_h = h - py * 2
+        gap = int(w * 0.05)
+        text_x = px + photo_w + gap
 
-        # Photo frame area
+        f_flower = get_font("Noto Serif JP", int(w * 0.07))
+        f_en = get_font("Noto Serif JP", int(w * 0.028))
+        f_kotoba = get_font("Noto Sans JP", int(w * 0.02))
+        f_mood = get_font("Noto Serif JP", int(w * 0.024))
+        f_mood_en = get_font("Noto Sans JP", int(w * 0.018))
+        f_poem = get_font("Noto Serif JP", int(w * 0.016))
+        f_ms = get_font("Noto Serif JP", int(w * 0.016))
+        f_ms_en = get_font("Noto Sans JP", int(w * 0.012))
+
+        # Photo frame (left)
         if flower_image:
-            photo_x, photo_y = int(w * 0.06), int(h * 0.15)
-            photo_w, photo_h = int(w * 0.28), int(h * 0.65)
-            
-            # Resize and paste
-            photo_resized = flower_image.resize((photo_w, photo_h), Image.Resampling.LANCZOS)
-            img.paste(photo_resized, (photo_x, photo_y))
-            
-            # Add border
+            img.paste(flower_image.resize((photo_w, photo_h), Image.Resampling.LANCZOS), (px, py))
             draw = ImageDraw.Draw(img)
-            draw.rectangle([photo_x-2, photo_y-2, photo_x+photo_w+2, photo_y+photo_h+2], 
-                          outline='#E0D8C8', width=2)
-            
-            text_x = photo_x + photo_w + int(w * 0.06)
+            draw.rectangle([px-2, py-2, px+photo_w+2, py+photo_h+2], outline='#E0D8C8', width=1)
         else:
-            text_x = int(w * 0.1)
+            draw.rectangle([px, py, px+photo_w, py+photo_h], fill='#E8E4D9', outline='#E0D8C8', width=1)
+            bbox = draw.textbbox((0, 0), flower["ja"], font=f_flower)
+            tw = bbox[2] - bbox[0]
+            th = bbox[3] - bbox[1]
+            draw.text((px + (photo_w - tw) // 2, py + (photo_h - th) // 2), flower["ja"], font=f_flower, fill='#888888')
 
-        # Flower kanji
-        draw.text((text_x, int(h * 0.2)), flower["ja"], font=font_flower, fill='#2C2C2C')
-        
-        # English name
-        draw.text((text_x, int(h * 0.35)), flower["en"], font=font_name, fill='#666666')
-        
-        # 花言葉
-        draw.text((text_x, int(h * 0.45)), f"花言葉: {flower['kotoba']}", font=font_kotoba, fill='#8B7355')
-        
+        # Flower name
+        draw.text((text_x, py), flower["ja"], font=f_flower, fill='#2C2C2C')
+        draw.text((text_x, py + int(h * 0.1)), flower["en"], font=f_en, fill='#555555')
+
+        # 花言葉 with accent bar
+        ky_y = py + int(h * 0.18)
+        draw.line([(text_x, ky_y), (text_x + 3, ky_y + int(h * 0.06))], fill='#B87333', width=2)
+        draw.text((text_x + int(w * 0.02), ky_y), f"花言葉: {flower['kotoba']}", font=f_kotoba, fill='#8B7355')
+
+        # Divider
+        div_y = ky_y + int(h * 0.08)
+        draw.line([(text_x, div_y), (text_x + int(w * 0.35), div_y)], fill='#E0D8C8', width=1)
+
         # Mood message
-        draw.text((text_x, int(h * 0.6)), mood["ja"], font=font_mood, fill='#666666')
-        draw.text((text_x, int(h * 0.67)), mood["en"], font=font_mood, fill='#999999')
-        
+        my = div_y + int(h * 0.05)
+        draw.text((text_x, my), mood["ja"], font=f_mood, fill='#2C2C2C')
+        draw.text((text_x, my + int(h * 0.04)), mood["en"], font=f_mood_en, fill='#555555')
+
         # Poem
         if flower.get("poem"):
-            draw.text((text_x, int(h * 0.8)), flower["poem"], font=get_font("Noto Serif JP", int(w * 0.025)), fill='#999999')
+            draw.text((text_x, my + int(h * 0.1)), flower["poem"], font=f_poem, fill='#888888')
+
+        # Micro-season
+        if season_info:
+            ms_x = w - px
+            ms_y = h - int(h * 0.055)
+            k = f"時候: {season_info['micro_season']['kanji']}"
+            bbox = draw.textbbox((0, 0), k, font=f_ms)
+            draw.text((ms_x - (bbox[2]-bbox[0]), ms_y), k, font=f_ms, fill='#8B7355')
+            e = season_info['micro_season']['english']
+            bbox_e = draw.textbbox((0, 0), e, font=f_ms_en)
+            draw.text((ms_x - (bbox_e[2]-bbox_e[0]), ms_y + int(h * 0.022)), e, font=f_ms_en, fill='#888888')
 
         return img

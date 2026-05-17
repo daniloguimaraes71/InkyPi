@@ -23,7 +23,6 @@ class KansaiEvents(BasePlugin):
         season_info = get_full_season_info(now)
         palette = get_seasonal_palette(now)
 
-        # Determine current season
         month = now.month
         if month in [3, 4, 5]:
             season = "spring"
@@ -34,17 +33,14 @@ class KansaiEvents(BasePlugin):
         else:
             season = "winter"
 
-        # Get 2-3 events from live news or backup
         events = get_kansai_events_list(now, count=3)
 
-        # Find next weekend
         days_until_saturday = (5 - now.weekday()) % 7
         if days_until_saturday == 0 and now.weekday() == 5:
             days_until_saturday = 0
         weekend_start = now.date() + timedelta(days=days_until_saturday)
         weekend_date = f"{weekend_start.strftime('%m月%d日')} Weekend"
 
-        # Get images for each event
         event_images = []
         for event in events:
             wiki_term = event.get("wiki", "")
@@ -52,14 +48,10 @@ class KansaiEvents(BasePlugin):
                 wiki_term = event["location"]
             
             img = get_kansai_location_image(wiki_term, (200, 150)) if wiki_term else None
-            
-            # If no Wikipedia image, generate a location-based placeholder
             if not img:
                 img = self._generate_location_placeholder(event.get("wiki", "関西"), event.get("type", "イベント"), (200, 150))
-            
             event_images.append(img)
         
-        # Save images to static cache for HTML rendering
         event_image_urls = []
         for i, img in enumerate(event_images):
             if img:
@@ -72,7 +64,6 @@ class KansaiEvents(BasePlugin):
             else:
                 event_image_urls.append(None)
 
-        # Try HTML render first, fall back to PIL
         try:
             dimensions_for_render = device_config.get_resolution()
             if orientation == "vertical":
@@ -93,65 +84,91 @@ class KansaiEvents(BasePlugin):
         except Exception as e:
             logger.warning(f"HTML render failed, falling back to PIL: {e}")
 
-        # Fallback to PIL rendering
         return self._draw_card_pil(dimensions, orientation, events, season_info, palette, settings, now, weekend_date, event_images)
 
     def _draw_card_pil(self, dimensions, orientation, events, season_info, palette, settings, now, weekend_date, event_images):
-        """Fallback PIL rendering with multiple events."""
+        """Editorial-style events card with 55/45 split."""
         w, h = dimensions
         if orientation == 'vertical':
             w, h = h, w
 
-        # Create base image
-        bg_color = '#FAF8F5'
-        img = Image.new('RGB', (w, h), bg_color)
+        img = Image.new('RGB', (w, h), '#FAF8F5')
         draw = ImageDraw.Draw(img)
 
-        # Fonts
-        font_title = get_font("Noto Serif JP", int(w * 0.04))
-        font_desc = get_font("Noto Sans JP", int(w * 0.028))
-        font_info = get_font("Noto Sans JP", int(w * 0.025))
-        font_label = get_font("Noto Sans JP", int(w * 0.022))
-        font_header = get_font("Noto Serif JP", int(w * 0.035))
+        px = int(w * 0.045)
+        py = int(h * 0.06)
+        list_w = int(w * 0.52)
+        img_x = list_w + int(w * 0.02)
+        img_w = w - img_x - px
+        img_h = h - py * 2
+
+        f_weekend = get_font("Noto Sans JP", int(w * 0.016))
+        f_header = get_font("Noto Serif JP", int(w * 0.03))
+        f_tag = get_font("Noto Sans JP", int(w * 0.014))
+        f_name = get_font("Noto Serif JP", int(w * 0.022))
+        f_desc = get_font("Noto Sans JP", int(w * 0.016))
+        f_loc = get_font("Noto Sans JP", int(w * 0.014))
+        f_ms = get_font("Noto Serif JP", int(w * 0.014))
+        f_ms_en = get_font("Noto Sans JP", int(w * 0.011))
+
+        # Right side image
+        if event_images and event_images[0]:
+            img.paste(event_images[0].resize((img_w, img_h), Image.Resampling.LANCZOS), (img_x, py))
+            draw = ImageDraw.Draw(img)
+            draw.line([(img_x - 1, py), (img_x - 1, py + img_h)], fill='#E0D8C8', width=1)
 
         # Header
-        draw.text((int(w * 0.05), int(h * 0.03)), weekend_date, font=font_label, fill='#999999')
-        draw.text((int(w * 0.05), int(h * 0.08)), "週末のイベント", font=font_header, fill='#2C2C2C')
+        draw.text((px, py), weekend_date, font=f_weekend, fill='#888888')
+        draw.text((px, py + int(h * 0.04)), "週末のイベント", font=f_header, fill='#2C2C2C')
 
-        # Display events in a list format
-        y_start = int(h * 0.16)
-        event_height = int(h * 0.26)
-        
-        for i, (event, event_img) in enumerate(zip(events, event_images)):
-            y = y_start + i * (event_height + int(h * 0.02))
+        # Event list
+        ev_y = py + int(h * 0.12)
+        ev_h = int(h * 0.26)
+        for i, event in enumerate(events[:3]):
+            y = ev_y + i * (ev_h + int(h * 0.015))
             
-            # Event image thumbnail
-            if event_img:
-                thumb_x, thumb_y = int(w * 0.05), y
-                thumb_w, thumb_h = int(w * 0.15), int(event_height * 0.8)
-                thumb = event_img.resize((thumb_w, thumb_h), Image.Resampling.LANCZOS)
-                img.paste(thumb, (thumb_x, thumb_y))
-                
-                # Border
-                draw.rectangle([thumb_x-1, thumb_y-1, thumb_x+thumb_w+1, thumb_y+thumb_h+1], 
-                              outline='#E0D8C8', width=1)
-                
-                text_x = thumb_x + thumb_w + int(w * 0.03)
-            else:
-                text_x = int(w * 0.05)
+            # Tag with border
+            tag = event.get('type', 'イベント')
+            bbox = draw.textbbox((0, 0), tag, font=f_tag)
+            tw = bbox[2] - bbox[0]
+            th = bbox[3] - bbox[1]
+            draw.rectangle([px, y, px + tw + 12, y + th + 6], outline='#B87333', width=1)
+            draw.text((px + 6, y + 2), tag, font=f_tag, fill='#B87333')
             
-            # Event type tag
-            draw.text((text_x, y), f"{event.get('type', 'イベント')}", font=font_label, fill='#8B7355')
+            # Event name
+            name_y = y + int(ev_h * 0.18)
+            name = event.get("name", "")
+            # Truncate if too long
+            if len(name) > 45:
+                name = name[:44] + "…"
+            draw.text((px, name_y), name, font=f_name, fill='#2C2C2C')
             
-            # Event title
-            draw.text((text_x, y + int(event_height * 0.18)), event.get("name", ""), font=font_title, fill='#2C2C2C')
-            
-            # Description
-            draw.text((text_x, y + int(event_height * 0.52)), event.get("desc", ""), font=font_desc, fill='#666666')
+            # Description (subtitle)
+            desc = event.get("desc", "")
+            if len(desc) > 60:
+                desc = desc[:59] + "…"
+            draw.text((px, name_y + int(ev_h * 0.3)), desc, font=f_desc, fill='#555555')
             
             # Location
-            if event.get("location"):
-                draw.text((text_x, y + int(event_height * 0.78)), f"場所: {event['location']}", font=font_info, fill='#999999')
+            loc = event.get("location", "")
+            if loc:
+                draw.text((px, name_y + int(ev_h * 0.55)), f"場所: {loc}", font=f_loc, fill='#888888')
+            
+            # Divider
+            if i < 2:
+                div_y = y + ev_h + int(h * 0.005)
+                draw.line([(px, div_y), (list_w - int(w * 0.02), div_y)], fill='#E0D8C8', width=1)
+
+        # Micro-season
+        if season_info:
+            ms_x = list_w - int(w * 0.02)
+            ms_y = h - int(h * 0.05)
+            k = f"時候: {season_info['micro_season']['kanji']}"
+            bbox = draw.textbbox((0, 0), k, font=f_ms)
+            draw.text((ms_x - (bbox[2]-bbox[0]), ms_y), k, font=f_ms, fill='#8B7355')
+            e = season_info['micro_season']['english']
+            bbox_e = draw.textbbox((0, 0), e, font=f_ms_en)
+            draw.text((ms_x - (bbox_e[2]-bbox_e[0]), ms_y + int(h * 0.02)), e, font=f_ms_en, fill='#888888')
 
         return img
 
@@ -161,29 +178,20 @@ class KansaiEvents(BasePlugin):
         img = Image.new('RGB', (w, h), '#E8E4DC')
         draw = ImageDraw.Draw(img)
         
-        # Add a subtle gradient effect
         for y in range(h):
-            alpha = int(255 * (1 - y / h * 0.15))
-            draw.line([(0, y), (w, y)], fill=(alpha, alpha - 8, alpha - 16))
+            c = int(232 * (1 - y / h * 0.1))
+            draw.line([(0, y), (w, y)], fill=(c, c - 6, c - 14))
         
-        # Location name in center
-        font_loc = get_font("Noto Serif JP", int(w * 0.18))
-        font_type = get_font("Noto Sans JP", int(w * 0.12))
+        f_loc = get_font("Noto Serif JP", int(w * 0.18))
+        f_type = get_font("Noto Sans JP", int(w * 0.12))
         
-        # Draw location
         loc_text = location if location else "関西"
-        bbox = draw.textbbox((0, 0), loc_text, font=font_loc)
-        text_w = bbox[2] - bbox[0]
-        text_h = bbox[3] - bbox[1]
-        x = (w - text_w) // 2
-        y = (h - text_h) // 2 - int(h * 0.1)
-        draw.text((x, y), loc_text, font=font_loc, fill='#8B7355')
+        bbox = draw.textbbox((0, 0), loc_text, font=f_loc)
+        x = (w - (bbox[2]-bbox[0])) // 2
+        y = (h - (bbox[3]-bbox[1])) // 2 - int(h * 0.1)
+        draw.text((x, y), loc_text, font=f_loc, fill='#8B7355')
         
-        # Draw event type below
-        bbox2 = draw.textbbox((0, 0), event_type, font=font_type)
-        tw2 = bbox2[2] - bbox2[0]
-        x2 = (w - tw2) // 2
-        y2 = y + text_h + int(h * 0.05)
-        draw.text((x2, y2), event_type, font=font_type, fill='#AAAAAA')
+        bbox2 = draw.textbbox((0, 0), event_type, font=f_type)
+        draw.text(((w - (bbox2[2]-bbox2[0])) // 2, y + (bbox[3]-bbox[1]) + int(h * 0.05)), event_type, font=f_type, fill='#AAAAAA')
         
         return img
