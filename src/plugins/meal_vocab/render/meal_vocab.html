@@ -31,167 +31,121 @@
             width: 100%;
             height: 100%;
             box-sizing: border-box;
-            padding: 24px 28px;
+            padding: 32px 40px;
             position: relative;
-            display: flex;
         }
 
-        .vocab-side {
-            flex: 1;
-            padding-right: 24px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
+        .grid-2-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+            height: 100%;
         }
+
+        .flex-col { display: flex; flex-direction: column; }
+        .justify-center { justify-content: center; }
 
         .section-label {
-            font-size: 11px;
+            font-family: var(--font-sans);
+            font-size: 12px;
             color: var(--accent-gold);
-            letter-spacing: 0.12em;
-            margin-bottom: 10px;
+            letter-spacing: 0.1em;
+            margin-bottom: 16px;
         }
 
         .vocab-word {
             font-family: var(--font-sans);
-            font-size: 38px;
+            font-size: 48px;
             font-weight: 500;
             color: var(--accent-copper);
-            margin: 0 0 4px 0;
-            line-height: 1.15;
+            margin: 0 0 8px 0;
+            line-height: 1.1;
         }
 
-        .vocab-theme {
-            font-size: 13px;
+        .vocab-pronunciation {
+            font-family: var(--font-sans);
+            font-size: 16px;
             color: var(--text-light);
-            margin-bottom: 14px;
-        }
-
-        .divider-h {
-            width: 48px;
-            height: 2px;
-            background-color: var(--accent-copper);
-            margin: 0 0 14px 0;
+            margin-bottom: 20px;
         }
 
         .vocab-meaning {
             font-family: var(--font-serif);
-            font-size: 16px;
+            font-size: 18px;
             color: var(--text-secondary);
-            line-height: 1.5;
-            margin-bottom: 12px;
+            line-height: 1.6;
+            margin-bottom: 16px;
         }
 
         .vocab-example {
-            font-size: 13px;
+            font-family: var(--font-sans);
+            font-size: 14px;
             color: var(--text-light);
             font-style: italic;
-            line-height: 1.5;
-            padding-left: 10px;
-            border-left: 2px solid var(--divider);
-        }
-
-        .divider-v {
-            width: 1px;
-            background-color: var(--divider);
-            align-self: stretch;
-            margin: 20px 0;
         }
 
         .meal-side {
-            flex: 0 0 42%;
-            position: relative;
-            overflow: hidden;
-            border-radius: 4px;
-        }
-
-        .meal-side img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            filter: grayscale(8%) sepia(5%);
-        }
-
-        .meal-overlay {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            padding: 16px 18px;
-            background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.15) 70%, transparent 100%);
-            color: #fff;
-        }
-
-        .meal-label {
-            font-size: 9px;
-            letter-spacing: 0.1em;
-            opacity: 0.75;
-            margin-bottom: 3px;
+            border-left: 1px solid var(--divider);
+            padding-left: 32px;
         }
 
         .meal-title {
             font-family: var(--font-serif);
-            font-size: 17px;
-            margin: 0 0 3px 0;
+            font-size: 24px;
+            margin: 0 0 12px 0;
             line-height: 1.3;
         }
 
         .meal-desc {
-            font-size: 12px;
-            opacity: 0.8;
-            margin: 0;
+            font-family: var(--font-sans);
+            font-size: 15px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 20px;
         }
 
-        .micro-season {
-            position: absolute;
-            bottom: 18px;
-            right: 28px;
-            text-align: right;
+        .meal-photo-frame {
+            width: 100%;
+            max-width: 200px;
+            height: 180px;
+            border: 1px solid var(--divider);
+            padding: 4px;
+            background: white;
+            box-sizing: border-box;
+            margin-top: 8px;
         }
-        .micro-season .kanji {
-            font-family: var(--font-serif);
-            font-size: 12px;
-            color: var(--accent-gold);
-            letter-spacing: 0.1em;
+
+        .meal-photo-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: grayscale(10%) sepia(5%);
         }
-        .micro-season .meaning {
-            font-size: 10px;
-            color: var(--text-light);
-            margin-top: 2px;
-        }
+
     </style>
 </head>
 <body>
     <div class="card-container">
-        <div class="vocab-side">
-            <p class="section-label">Palavra do Dia</p>
-            <h1 class="vocab-word">{{ vocab.pt }}</h1>
-            <p class="vocab-theme">{{ vocab.theme }}</p>
-            <div class="divider-h"></div>
-            <p class="vocab-meaning">{{ vocab.ja }}</p>
-            <p class="vocab-example">"{{ vocab.example }}"</p>
-        </div>
-        
-        <div class="divider-v"></div>
-        
-        <div class="meal-side">
-            {% if food_image %}
-            <img src="{{ food_image }}" alt="Food">
-            {% else %}
-            <div style="width:100%;height:100%;background:linear-gradient(135deg,#E8E4DC,#D4CFC4);"></div>
-            {% endif %}
-            <div class="meal-overlay">
-                <p class="meal-label">昼食のヒント</p>
+        <div class="grid-2-col">
+            <div class="flex-col justify-center">
+                <p class="section-label">今日のポルトガル語</p>
+                <h1 class="vocab-word">{{ vocab.pt }}</h1>
+                <p class="vocab-pronunciation">[{{ vocab.theme }}]</p>
+                <p class="vocab-meaning">{{ vocab.ja }}</p>
+                <p class="vocab-example">"{{ vocab.example }}"</p>
+            </div>
+            
+            <div class="meal-side flex-col justify-center">
+                <p class="section-label">昼食のヒント</p>
                 <h2 class="meal-title">{{ meal.ja }}</h2>
                 <p class="meal-desc">{{ meal.en }}</p>
+                {% if food_image %}
+                <div class="meal-photo-frame">
+                    <img src="{{ food_image }}" alt="Food">
+                </div>
+                {% endif %}
             </div>
         </div>
-        
-        {% if season_info %}
-        <div class="micro-season">
-            <div class="kanji">時候: {{ season_info.micro_season.kanji }}</div>
-            <div class="meaning">{{ season_info.micro_season.english }}</div>
-        </div>
-        {% endif %}
     </div>
 </body>
 </html>

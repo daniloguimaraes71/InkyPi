@@ -138,23 +138,6 @@
             padding-bottom: 2px;
         }
 
-        .micro-season {
-            position: absolute;
-            bottom: 24px;
-            right: 36px;
-            text-align: right;
-        }
-        .micro-season .kanji {
-            font-family: var(--font-serif);
-            font-size: 13px;
-            color: var(--accent-gold);
-            letter-spacing: 0.1em;
-        }
-        .micro-season .meaning {
-            font-size: 11px;
-            color: var(--text-light);
-            margin-top: 2px;
-        }
     </style>
 </head>
 <body>
@@ -196,13 +179,6 @@
                 </div>
             </div>
         </div>
-        
-        {% if season_info %}
-        <div class="micro-season">
-            <div class="kanji">時候: {{ season_info.micro_season.kanji }}</div>
-            <div class="meaning">{{ season_info.micro_season.english }}</div>
-        </div>
-        {% endif %}
     </div>
 </body>
 </html>
