@@ -42,9 +42,9 @@
         "active_playlist": null
     },
     "refresh_info": {
-        "refresh_time": "2026-05-17T07:42:36.450030+00:00",
-        "image_hash": "8a844ed617516e2a1e72350fca799c420c4e3c902998b0faaa3b1650d6d7db6c",
+        "refresh_time": "2026-05-17T07:50:55.071868+00:00",
+        "image_hash": "25c628beaa96b2e6561da0fa6f1648a06823f2eb6b541e3653989c673d1d96fd",
         "refresh_type": "Manual Update",
-        "plugin_id": "morning_briefing"
+        "plugin_id": "painting"
     }
 }
