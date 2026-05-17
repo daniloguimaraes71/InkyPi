@@ -43,7 +43,7 @@
         }
 
         .flex-col { display: flex; flex-direction: column; }
-        .justify-center { justify-content: center; }
+        .justify-top { justify-content: flex-start; padding-top: 20px; }
 
         .section-label {
             font-family: var(--font-sans);
@@ -127,7 +127,7 @@
 <body>
     <div class="card-container">
         <div class="grid-2-col">
-            <div class="flex-col justify-center">
+            <div class="flex-col justify-top">
                 <p class="section-label">今日のポルトガル語</p>
                 <h1 class="vocab-word">{{ vocab.pt }}</h1>
                 <p class="vocab-pronunciation">[{{ vocab.theme }}]</p>
@@ -135,7 +135,7 @@
                 <p class="vocab-example">"{{ vocab.example }}"</p>
             </div>
             
-            <div class="meal-side flex-col justify-center">
+            <div class="meal-side flex-col justify-top">
                 <p class="section-label">昼食のヒント</p>
                 <h2 class="meal-title">{{ meal.ja }}</h2>
                 <p class="meal-desc">{{ meal.en }}</p>
