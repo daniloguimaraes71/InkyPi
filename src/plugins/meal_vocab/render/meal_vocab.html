@@ -1,151 +1,24 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <style>
-        :root {
-            --bg-base: {{ palette.bg or '#FAF8F5' }};
-            --text-primary: {{ palette.primary or '#2C2C2C' }};
-            --text-secondary: #555555;
-            --text-light: #888888;
-            --accent-gold: {{ palette.primary or '#8B7355' }};
-            --accent-copper: #B87333;
-            --divider: #E0D8C8;
-            --font-serif: 'Noto Serif JP', serif;
-            --font-sans: 'Noto Sans JP', sans-serif;
-        }
+{% extends "plugin.html" %}
 
-        body {
-            width: {{ width }}px;
-            height: {{ height }}px;
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            background-color: var(--bg-base);
-            color: var(--text-primary);
-            overflow: hidden;
-            font-family: var(--font-sans);
-        }
-
-        .card-container {
-            width: 100%;
-            height: 100%;
-            box-sizing: border-box;
-            padding: 32px 40px 0 40px;
-            position: relative;
-        }
-
-        .grid-2-col {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 32px;
-            height: 100%;
-        }
-
-        .flex-col { display: flex; flex-direction: column; }
-        .justify-top { justify-content: flex-start; padding-top: 20px; }
-
-        .section-label {
-            font-family: var(--font-sans);
-            font-size: 12px;
-            color: var(--accent-gold);
-            letter-spacing: 0.1em;
-            margin-bottom: 16px;
-        }
-
-        .vocab-word {
-            font-family: var(--font-sans);
-            font-size: 48px;
-            font-weight: 500;
-            color: var(--accent-copper);
-            margin: 0 0 8px 0;
-            line-height: 1.1;
-        }
-
-        .vocab-pronunciation {
-            font-family: var(--font-sans);
-            font-size: 16px;
-            color: var(--text-light);
-            margin-bottom: 20px;
-        }
-
-        .vocab-meaning {
-            font-family: var(--font-serif);
-            font-size: 18px;
-            color: var(--text-secondary);
-            line-height: 1.6;
-            margin-bottom: 16px;
-        }
-
-        .vocab-example {
-            font-family: var(--font-sans);
-            font-size: 14px;
-            color: var(--text-light);
-            font-style: italic;
-        }
-
-        .meal-side {
-            border-left: 1px solid var(--divider);
-            padding-left: 32px;
-        }
-
-        .meal-title {
-            font-family: var(--font-serif);
-            font-size: 24px;
-            margin: 0 0 12px 0;
-            line-height: 1.3;
-        }
-
-        .meal-desc {
-            font-family: var(--font-sans);
-            font-size: 15px;
-            color: var(--text-secondary);
-            line-height: 1.6;
-            margin-bottom: 20px;
-        }
-
-        .meal-photo-frame {
-            width: 100%;
-            max-width: 200px;
-            height: 180px;
-            border: 1px solid var(--divider);
-            padding: 4px;
-            background: white;
-            box-sizing: border-box;
-            margin-top: 8px;
-        }
-
-        .meal-photo-frame img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            filter: grayscale(10%) sepia(5%);
-        }
-
-    </style>
-</head>
-<body>
-    <div class="card-container">
-        <div class="grid-2-col">
-            <div class="flex-col justify-top">
-                <p class="section-label">今日のポルトガル語</p>
-                <h1 class="vocab-word">{{ vocab.pt }}</h1>
-                <p class="vocab-pronunciation">[{{ vocab.theme }}]</p>
-                <p class="vocab-meaning">{{ vocab.ja }}</p>
-                <p class="vocab-example">"{{ vocab.example }}"</p>
-            </div>
-            
-            <div class="meal-side flex-col justify-top">
-                <p class="section-label">昼食のヒント</p>
-                <h2 class="meal-title">{{ meal.ja }}</h2>
-                <p class="meal-desc">{{ meal.en }}</p>
-                {% if food_image %}
-                <div class="meal-photo-frame">
-                    <img src="{{ food_image }}" alt="Food">
-                </div>
-                {% endif %}
-            </div>
-        </div>
+{% block content %}
+<div class="meal-vocab-container">
+    <div class="vocab-side">
+        <p class="section-label">今日のポルトガル語</p>
+        <h1 class="vocab-word">{{ vocab.pt }}</h1>
+        <p class="vocab-pronunciation">[{{ vocab.theme }}]</p>
+        <p class="vocab-meaning">{{ vocab.ja }}</p>
+        <p class="vocab-example">"{{ vocab.example }}"</p>
     </div>
-</body>
-</html>
+    <div class="divider-v"></div>
+    <div class="meal-side">
+        <p class="section-label">昼食のヒント</p>
+        <h2 class="meal-title">{{ meal.ja }}</h2>
+        <p class="meal-desc">{{ meal.en }}</p>
+        {% if food_image %}
+        <div class="meal-photo-frame">
+            <img src="{{ food_image }}" alt="Food">
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

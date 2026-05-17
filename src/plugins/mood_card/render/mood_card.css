@@ -1,0 +1,100 @@
+.mood-container {
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+    width: 100%;
+    gap: 40px;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.photo-frame {
+    width: 220px;
+    height: 100%;
+    border: 1px solid var(--divider, #E0D8C8);
+    padding: 6px;
+    background: white;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+.photo-frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: grayscale(20%) sepia(10%);
+}
+
+.photo-placeholder {
+    width: 100%;
+    height: 100%;
+    background: #E8E4D9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-serif, 'Noto Serif JP', serif);
+    font-size: 48px;
+    color: var(--text-light, #888888);
+}
+
+.mood-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 20px 0;
+}
+
+.flower-name {
+    font-family: var(--font-serif, 'Noto Serif JP', serif);
+    font-size: 56px;
+    margin: 0 0 8px 0;
+    line-height: 1.1;
+}
+
+.flower-en {
+    font-family: var(--font-serif, 'Noto Serif JP', serif);
+    font-size: 20px;
+    color: var(--text-secondary, #555555);
+    margin-bottom: 20px;
+}
+
+.hanakotoba {
+    font-family: var(--font-sans, 'Noto Sans JP', sans-serif);
+    font-size: 15px;
+    color: var(--accent-gold, #8B7355);
+    padding-left: 16px;
+    border-left: 2px solid var(--accent-gold, #8B7355);
+    margin-bottom: 28px;
+}
+
+.divider {
+    width: 50%;
+    height: 1px;
+    background-color: var(--divider, #E0D8C8);
+    margin: 0 0 24px 0;
+}
+
+.mood-msg {
+    font-family: var(--font-serif, 'Noto Serif JP', serif);
+    font-size: 18px;
+    color: var(--text-primary, #2C2C2C);
+    line-height: 1.6;
+    margin-bottom: 8px;
+}
+
+.mood-msg-en {
+    font-family: var(--font-sans, 'Noto Sans JP', sans-serif);
+    font-size: 14px;
+    color: var(--text-secondary, #555555);
+    line-height: 1.5;
+}
+
+.poem {
+    font-family: var(--font-serif, 'Noto Serif JP', serif);
+    font-size: 13px;
+    color: var(--text-light, #888888);
+    margin-top: 20px;
+    font-style: italic;
+    letter-spacing: 0.05em;
+}

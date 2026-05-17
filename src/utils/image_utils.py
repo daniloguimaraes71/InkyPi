@@ -7,6 +7,9 @@ import hashlib
 import tempfile
 import subprocess
 import shutil
+import json
+import time
+import socket
 
 logger = logging.getLogger(__name__)
 
@@ -120,51 +123,95 @@ def _find_chromium_binary():
 def take_screenshot(target, dimensions, timeout_ms=None):
     image = None
     try:
-        # Find available browser binary
-        browser = _find_chromium_binary()
-        if not browser:
-            logger.error("No Chromium-based browser found. Install chromium, chromium-headless-shell, or chrome.")
+        from playwright.sync_api import sync_playwright
+        
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            context = browser.new_context(
+                viewport={"width": dimensions[0], "height": dimensions[1]},
+                device_scale_factor=1
+            )
+            page = context.new_page()
+            
+            # Determine if target is a file path or HTML content
+            if os.path.exists(target) and (target.endswith('.html') or target.endswith('.htm')):
+                page.goto(f"file://{os.path.abspath(target)}", wait_until="networkidle", timeout=30000)
+            elif target.startswith("http://") or target.startswith("https://"):
+                page.goto(target, wait_until="networkidle", timeout=30000)
+            else:
+                # Target is HTML content
+                page.set_content(target, wait_until="networkidle", timeout=30000)
+            
+            # Wait for fonts to load
+            page.wait_for_timeout(1000)
+            
+            # Force document height to match viewport
+            page.evaluate(f"""
+                document.documentElement.style.height = '{dimensions[1]}px';
+                document.body.style.height = '{dimensions[1]}px';
+                document.body.style.overflow = 'hidden';
+            """)
+            
+            # Wait for layout to update
+            page.wait_for_timeout(500)
+            
+            # Take screenshot with exact dimensions
+            screenshot_bytes = page.screenshot(
+                clip={"x": 0, "y": 0, "width": dimensions[0], "height": dimensions[1]}
+            )
+            
+            image = Image.open(BytesIO(screenshot_bytes)).copy()
+            
+            browser.close()
+
+    except ImportError:
+        logger.warning("Playwright not available, falling back to Chrome CLI")
+        return _take_screenshot_cli(target, dimensions, timeout_ms)
+    except Exception as e:
+        logger.error(f"Playwright screenshot failed: {e}")
+        try:
+            return _take_screenshot_cli(target, dimensions, timeout_ms)
+        except Exception as e2:
+            logger.error(f"CLI fallback also failed: {e2}")
             return None
 
-        # Create a temporary output file for the screenshot
+    return image
+
+def _take_screenshot_cli(target, dimensions, timeout_ms=None):
+    """Fallback screenshot using Chrome CLI."""
+    image = None
+    try:
+        browser = _find_chromium_binary()
+        if not browser:
+            logger.error("No Chromium-based browser found.")
+            return None
+
         with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as img_file:
             img_file_path = img_file.name
 
         command = [
             browser,
             target,
-            "--headless",
+            "--headless=new",
             f"--screenshot={img_file_path}",
             f"--window-size={dimensions[0]},{dimensions[1]}",
             "--disable-dev-shm-usage",
             "--disable-gpu",
-            "--use-gl=swiftshader",
-            "--hide-scrollbars",
-            "--in-process-gpu",
-            "--js-flags=--jitless",
-            "--disable-zero-copy",
-            "--disable-gpu-memory-buffer-compositor-resources",
-            "--disable-extensions",
-            "--disable-plugins",
-            "--mute-audio",
-            "--renderer-process-limit=1",
-            "--no-zygote",
-            "--no-sandbox"
+            "--no-sandbox",
+            "--disable-gpu-compositing",
+            "--force-device-scale-factor=1",
+            "--disable-features=PaintHolding,VizDisplayCompositor",
+            "--virtual-time-budget=5000"
         ]
-        if timeout_ms:
-            command.append(f"--timeout={timeout_ms}")
-        result = subprocess.run(command, capture_output=True, check=False)
+        result = subprocess.run(command, capture_output=True, timeout=30)
 
-        # Check if the process failed or the output file is missing
         if result.returncode != 0 or not os.path.exists(img_file_path):
             logger.error(f"Failed to take screenshot (return code: {result.returncode})")
             return None
 
-        # Load the image using PIL
         with Image.open(img_file_path) as img:
             image = img.copy()
 
-        # Remove image files
         os.remove(img_file_path)
 
     except Exception as e:

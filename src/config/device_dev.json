@@ -42,9 +42,9 @@
         "active_playlist": null
     },
     "refresh_info": {
-        "refresh_time": "2026-05-17T08:39:21.893695+00:00",
-        "image_hash": "e9f911ccc61ec0ca148019f5856194faadd089f42b485380d5b458ab5d318b06",
+        "refresh_time": "2026-05-17T09:35:13.174888+00:00",
+        "image_hash": "2a02b15b821be8b1ee6690901abb93f6058af655ed3488e71a5cec1fd0e36780",
         "refresh_type": "Manual Update",
-        "plugin_id": "goodnight_card"
+        "plugin_id": "year_progress"
     }
 }

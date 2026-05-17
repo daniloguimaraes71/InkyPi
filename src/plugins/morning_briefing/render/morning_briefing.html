@@ -1,199 +1,46 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <style>
-        :root {
-            --bg-base: {{ palette.bg or '#FAF8F5' }};
-            --text-primary: {{ palette.primary or '#2C2C2C' }};
-            --text-secondary: #555555;
-            --text-light: #888888;
-            --accent-gold: {{ palette.primary or '#8B7355' }};
-            --accent-sage: {{ palette.accent or '#7A8B6F' }};
-            --divider: #E0D8C8;
-            --font-serif: 'Noto Serif JP', serif;
-            --font-sans: 'Noto Sans JP', sans-serif;
-        }
+{% extends "plugin.html" %}
 
-        body {
-            width: {{ width }}px;
-            height: {{ height }}px;
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            background-color: var(--bg-base);
-            color: var(--text-primary);
-            overflow: hidden;
-            font-family: var(--font-sans);
-        }
-
-        .card-container {
-            width: 100%;
-            height: 100%;
-            box-sizing: border-box;
-            padding: 24px 28px 0 28px;
-            position: relative;
-        }
-
-        .grid-60-40 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 32px;
-            height: 100%;
-        }
-
-        .flex-col { display: flex; flex-direction: column; }
-        .align-top { justify-content: flex-start; padding-top: 8px; }
-
-        .date-line {
-            font-family: var(--font-sans);
-            font-size: 13px;
-            color: var(--text-light);
-            margin-bottom: 8px;
-            letter-spacing: 0.05em;
-        }
-
-        .greeting {
-            font-family: var(--font-serif);
-            font-size: 40px;
-            font-weight: 500;
-            margin: 0 0 20px 0;
-            line-height: 1.2;
-        }
-
-        .divider-h {
-            width: 100%;
-            height: 1px;
-            background-color: var(--divider);
-            margin: 16px 0;
-        }
-
-        .weather-msg {
-            font-family: var(--font-sans);
-            font-size: 15px;
-            line-height: 1.7;
-            color: var(--text-secondary);
-            margin-bottom: 24px;
-        }
-
-        .weather-row {
-            display: flex;
-            align-items: baseline;
-            gap: 16px;
-        }
-
-        .temp-display {
-            font-family: var(--font-serif);
-            font-size: 48px;
-            color: var(--accent-sage);
-            line-height: 1;
-        }
-
-        .temp-range {
-            font-family: var(--font-sans);
-            font-size: 13px;
-            color: var(--text-light);
-        }
-
-        .schedule-side {
-            border-left: 1px solid var(--divider);
-            padding-left: 32px;
-        }
-
-        .schedule-header {
-            font-family: var(--font-serif);
-            font-size: 18px;
-            color: var(--accent-gold);
-            margin-bottom: 20px;
-        }
-
-        .schedule-item {
-            display: flex;
-            align-items: baseline;
-            margin-bottom: 14px;
-        }
-
-        .schedule-time {
-            font-family: var(--font-sans);
-            font-size: 13px;
-            color: var(--text-light);
-            width: 55px;
-            flex-shrink: 0;
-        }
-
-        .schedule-event {
-            font-family: var(--font-serif);
-            font-size: 15px;
-            color: var(--text-primary);
-            border-bottom: 1px dotted var(--divider);
-            flex: 1;
-            padding-bottom: 3px;
-        }
-
-        .image-frame {
-            width: 100%;
-            height: 100%;
-            border: 1px solid var(--divider);
-            padding: 4px;
-            background: white;
-            box-sizing: border-box;
-        }
-        .image-frame img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            filter: grayscale(15%) sepia(8%);
-        }
-    </style>
-</head>
-<body>
-    <div class="card-container">
-        <div class="grid-60-40">
-            <div class="flex-col align-top">
-                <div>
-                    <p class="date-line">{{ now.strftime('%m月%d日') }} • {{ location or '姫路市' }}</p>
-                    <h1 class="greeting">おはようございます。</h1>
-                    <div class="divider-h"></div>
-                    {% if weather %}
-                    <p class="weather-msg">
-                        今日は{{ weather.description }}です。<br>
-                        湿度 {{ weather.humidity }}% です。
-                    </p>
-                    {% else %}
-                    <p class="weather-msg">今日は一日を通して穏やかな晴天です。<br>朝晩は冷え込むので羽織るものを。</p>
-                    {% endif %}
-                    <div class="weather-row">
-                        <span class="temp-display">{% if weather %}{{ weather.temp }}{% else %}21{% endif %}°</span>
-                        <span class="temp-range">現在気温</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="schedule-side" style="display: flex; flex-direction: column;">
-                <h3 class="schedule-header">今日の予定</h3>
-                {% if events %}
-                    {% for event in events[:4] %}
-                    <div class="schedule-item">
-                        <span class="schedule-time">{{ event.time }}</span>
-                        <span class="schedule-event">{{ event.title }}</span>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="schedule-item">
-                        <span class="schedule-event" style="color: var(--text-light);">本日の予定はありません</span>
-                    </div>
-                {% endif %}
-                
-                {% if morning_image %}
-                <div style="margin-top: auto; min-height: 120px; max-height: 200px;">
-                    <div class="image-frame" style="height: 100%;">
-                        <img src="{{ morning_image }}" alt="Morning">
-                    </div>
-                    <div style="font-size: 10px; color: var(--text-light); text-align: center; margin-top: 4px;">{{ image_label }}</div>
-                </div>
-                {% endif %}
-            </div>
+{% block content %}
+<div class="morning-container">
+    <div class="weather-side">
+        <p class="date-line">{{ now.strftime('%m月%d日') }} • {{ location or '姫路市' }}</p>
+        <h1 class="greeting">おはようございます。</h1>
+        <div class="divider-h"></div>
+        {% if weather %}
+        <p class="weather-msg">
+            今日は{{ weather.description }}です。<br>
+            湿度 {{ weather.humidity }}% です。
+        </p>
+        {% else %}
+        <p class="weather-msg">今日は一日を通して穏やかな晴天です。<br>朝晩は冷え込むので羽織るものを。</p>
+        {% endif %}
+        <div class="weather-row">
+            <span class="temp-display">{% if weather %}{{ weather.temp }}{% else %}21{% endif %}°</span>
+            <span class="temp-range">現在気温</span>
         </div>
     </div>
-</body>
-</html>
+    <div class="divider-v"></div>
+    <div class="schedule-side">
+        <h3 class="schedule-header">今日の予定</h3>
+        {% if events %}
+            {% for event in events[:4] %}
+            <div class="schedule-item">
+                <span class="schedule-time">{{ event.time }}</span>
+                <span class="schedule-event">{{ event.title }}</span>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="schedule-item">
+                <span class="schedule-event" style="color: var(--text-light, #888888);">本日の予定はありません</span>
+            </div>
+        {% endif %}
+        
+        {% if morning_image %}
+        <div class="image-frame">
+            <img src="{{ morning_image }}" alt="Morning">
+        </div>
+        <div class="image-label">{{ image_label }}</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

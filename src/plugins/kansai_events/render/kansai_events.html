@@ -1,158 +1,28 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <style>
-        :root {
-            --bg-base: {{ palette.bg or '#FAF8F5' }};
-            --text-primary: {{ palette.primary or '#2C2C2C' }};
-            --text-secondary: #555555;
-            --text-light: #888888;
-            --accent-gold: {{ palette.primary or '#8B7355' }};
-            --accent-copper: #B87333;
-            --divider: #E0D8C8;
-            --font-serif: 'Noto Serif JP', serif;
-            --font-sans: 'Noto Sans JP', sans-serif;
-        }
+{% extends "plugin.html" %}
 
-        body {
-            width: {{ width }}px;
-            height: {{ height }}px;
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            background-color: var(--bg-base);
-            color: var(--text-primary);
-            overflow: hidden;
-            font-family: var(--font-sans);
-        }
-
-        .card-container {
-            width: 100%;
-            height: 100%;
-            box-sizing: border-box;
-            padding: 24px 28px 0 28px;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .header {
-            margin-bottom: 16px;
-        }
-
-        .weekend-label {
-            font-size: 11px;
-            color: var(--text-light);
-            letter-spacing: 0.05em;
-            margin-bottom: 2px;
-        }
-
-        .header-title {
-            font-family: var(--font-serif);
-            font-size: 20px;
-            color: var(--text-primary);
-            margin: 0;
-        }
-
-        .events-list {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .event-row {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid var(--divider);
-        }
-
-        .event-row:last-child {
-            border-bottom: none;
-            padding-bottom: 0;
-        }
-
-        .event-thumb {
-            flex: 0 0 100px;
-            height: 70px;
-            border-radius: 3px;
-            overflow: hidden;
-            border: 1px solid var(--divider);
-        }
-
-        .event-thumb img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            filter: grayscale(10%) sepia(5%);
-        }
-
-        .event-thumb .placeholder {
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #E8E4DC, #D4CFC4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 11px;
-            color: var(--text-light);
-        }
-
-        .event-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .event-tag {
-            display: inline-block;
-            padding: 2px 8px;
-            border: 1px solid var(--accent-copper);
-            color: var(--accent-copper);
-            font-size: 10px;
-            letter-spacing: 0.05em;
-            margin-bottom: 4px;
-        }
-
-        .event-name {
-            font-family: var(--font-serif);
-            font-size: 15px;
-            margin: 0 0 3px 0;
-            line-height: 1.35;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-    </style>
-</head>
-<body>
-    <div class="card-container">
-        <div class="header">
-            <p class="weekend-label">{{ weekend_date }}</p>
-            <h1 class="header-title">週末のイベント</h1>
-        </div>
-
-        <div class="events-list">
-            {% for event in events %}
-            <div class="event-row">
-                <div class="event-thumb">
-                    {% if event_images and event_images[loop.index0] %}
-                    <img src="{{ event_images[loop.index0] }}" alt="">
-                    {% else %}
-                    <div class="placeholder">{{ event.wiki or '関西' }}</div>
-                    {% endif %}
-                </div>
-                <div class="event-info">
-                    <span class="event-tag">{{ event.type }}</span>
-                    <h2 class="event-name">{{ event.name }}</h2>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
+{% block content %}
+<div class="events-container">
+    <div class="header">
+        <p class="weekend-label">{{ weekend_date }}</p>
+        <h1 class="header-title">週末のイベント</h1>
     </div>
-</body>
-</html>
+
+    <div class="events-list">
+        {% for event in events %}
+        <div class="event-row">
+            <div class="event-thumb">
+                {% if event_images and event_images[loop.index0] %}
+                <img src="{{ event_images[loop.index0] }}" alt="">
+                {% else %}
+                <div class="placeholder">{{ event.wiki or '関西' }}</div>
+                {% endif %}
+            </div>
+            <div class="event-info">
+                <span class="event-tag">{{ event.type }}</span>
+                <h2 class="event-name">{{ event.name }}</h2>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
