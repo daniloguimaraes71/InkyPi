@@ -4,60 +4,119 @@
     <meta charset="UTF-8">
     <style>
         :root {
-            --bg-base: {{ palette.bg or '#FAF8F5' }};
+            --bg-base: {{ palette.bg or '#F5F7FA' }};
             --text-primary: {{ palette.primary or '#2C2C2C' }};
-            --text-secondary: #666666;
-            --text-tertiary: #999999;
-            --border-subtle: #E0D8C8;
-            --season-primary: {{ palette.primary or '#8B7355' }};
+            --text-secondary: #555555;
+            --text-light: #888888;
+            --accent-gold: {{ palette.primary or '#8B7355' }};
+            --divider: #E0D8C8;
             --font-serif: 'Noto Serif JP', serif;
             --font-sans: 'Noto Sans JP', sans-serif;
         }
 
         body {
-            width: 800px;
-            height: 480px;
+            width: {{ width }}px;
+            height: {{ height }}px;
             margin: 0;
-            padding: 40px 48px;
+            padding: 0;
             box-sizing: border-box;
             background-color: var(--bg-base);
             color: var(--text-primary);
             overflow: hidden;
+            font-family: var(--font-sans);
+        }
+
+        .card-container {
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            padding: 32px 40px;
             position: relative;
         }
 
-        .micro-season-stamp {
-            position: absolute;
-            top: 40px;
-            right: 48px;
-            text-align: right;
-        }
-        .micro-season-kanji {
+        .flex-col { display: flex; flex-direction: column; }
+        .space-between { justify-content: space-between; }
+
+        .evening-greeting {
             font-family: var(--font-serif);
-            font-size: 14px;
-            color: var(--season-primary);
-            letter-spacing: 0.1em;
+            font-size: 28px;
+            font-weight: 500;
+            margin: 0 0 8px 0;
+            line-height: 1.3;
         }
 
-        .evening-grid { display: flex; height: 100%; gap: 32px; }
-        .evening-left { flex: 0 0 55%; display: flex; flex-direction: column; justify-content: space-between; }
-        .evening-right { flex: 1; display: flex; flex-direction: column; justify-content: center; }
-        
-        .evening-header h2 { font-family: var(--font-serif); font-size: 28px; font-weight: 400; margin: 0; }
-        .evening-header p { font-family: var(--font-sans); font-size: 14px; color: var(--text-secondary); margin-top: 8px; }
-        
-        .tomorrow-box { background: #FFFFFF; border: 1px solid var(--border-subtle); padding: 24px; border-radius: 4px; flex: 1; margin-top: 24px; }
-        
-        .schedule-item { display: flex; align-items: baseline; margin-bottom: 12px; }
-        .time { font-family: var(--font-sans); font-size: 14px; color: var(--text-secondary); width: 80px; }
-        .event { font-family: var(--font-serif); font-size: 16px; border-bottom: 1px dotted var(--border-subtle); flex: 1; padding-bottom: 4px; }
-        .divider { border-top: 1px solid var(--border-subtle); margin: 12px 0; }
+        .evening-sub {
+            font-family: var(--font-sans);
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .divider-h {
+            width: 100%;
+            height: 1px;
+            background-color: var(--divider);
+            margin: 20px 0;
+        }
+
+        .tomorrow-section {
+            flex: 1;
+        }
+
+        .section-label {
+            font-family: var(--font-sans);
+            font-size: 12px;
+            color: var(--accent-gold);
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .tomorrow-weather {
+            font-family: var(--font-serif);
+            font-size: 24px;
+            margin: 0 0 4px 0;
+        }
+
+        .tomorrow-note {
+            font-family: var(--font-sans);
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .schedule-box {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--divider);
+        }
+
+        .schedule-item {
+            display: flex;
+            align-items: baseline;
+            margin-bottom: 12px;
+        }
+
+        .schedule-time {
+            font-family: var(--font-sans);
+            font-size: 13px;
+            color: var(--text-light);
+            width: 70px;
+            flex-shrink: 0;
+        }
+
+        .schedule-event {
+            font-family: var(--font-serif);
+            font-size: 15px;
+            color: var(--text-primary);
+            border-bottom: 1px dotted var(--divider);
+            flex: 1;
+            padding-bottom: 3px;
+        }
 
         .image-frame {
             width: 100%;
             height: 100%;
-            border: 1px solid var(--border-subtle);
-            padding: 6px;
+            border: 1px solid var(--divider);
+            padding: 4px;
             background: white;
             box-sizing: border-box;
         }
@@ -67,56 +126,50 @@
             object-fit: cover;
             filter: grayscale(15%) sepia(8%);
         }
-        .image-label {
-            font-family: var(--font-sans);
-            font-size: 10px;
-            color: var(--text-tertiary);
-            text-align: center;
-            margin-top: 4px;
-        }
     </style>
 </head>
 <body>
-    {% if season_info %}
-    <div class="micro-season-stamp">
-        <div class="micro-season-kanji">候: {{ season_info.micro_season.kanji }}</div>
-    </div>
-    {% endif %}
-
-    <div class="evening-grid">
-        <div class="evening-left">
-            <div class="evening-header">
-                <h2>今日もお疲れ様でした。</h2>
-                {% if weather %}
-                <p>明日の天気は{{ weather.description }}です。{% if '雨' in weather.description %}傘をお忘れなく。{% endif %}</p>
-                {% else %}
-                <p>明日も良い一日になりますように。</p>
-                {% endif %}
+    <div class="card-container">
+        <div class="flex-col space-between" style="height: 100%;">
+            <div>
+                <h2 class="evening-greeting">今日も一日、お疲れ様でした。</h2>
+                <p class="evening-sub">ゆっくりとお茶を淹れて、一息つきましょう。</p>
             </div>
-            <div class="tomorrow-box">
+            
+            <div class="divider-h"></div>
+            
+            <div class="tomorrow-section">
+                <p class="section-label">明日の天気</p>
+                {% if weather %}
+                <h3 class="tomorrow-weather">{{ weather.description }}</h3>
+                <p class="tomorrow-note">最高{{ weather.high }}°C / 最低{{ weather.low }}°C{% if '雨' in weather.description %} • 傘をお持ちください{% endif %}</p>
+                {% else %}
+                <h3 class="tomorrow-weather">晴れのち曇り</h3>
+                <p class="tomorrow-note">明日も良い一日になりますように。</p>
+                {% endif %}
+                
                 {% if events %}
+                <div class="schedule-box">
+                    <p class="section-label">明日の予定</p>
                     {% for event in events[:3] %}
                     <div class="schedule-item">
-                        <span class="time">明日 {{ event.time }}</span>
-                        <span class="event">{{ event.title }}</span>
+                        <span class="schedule-time">{{ event.time }}</span>
+                        <span class="schedule-event">{{ event.title }}</span>
                     </div>
-                    {% if not loop.last %}<div class="divider"></div>{% endif %}
                     {% endfor %}
-                {% else %}
-                    <div class="schedule-item">
-                        <span class="event" style="color: var(--text-tertiary);">明日の予定はありません</span>
-                    </div>
+                </div>
                 {% endif %}
             </div>
         </div>
-        <div class="evening-right">
-            {% if evening_image %}
+        
+        {% if evening_image %}
+        <div style="position: absolute; top: 32px; right: 40px; width: 200px; height: 140px;">
             <div class="image-frame">
                 <img src="{{ evening_image }}" alt="Evening">
             </div>
-            <div class="image-label">{{ image_label }}</div>
-            {% endif %}
+            <div style="font-size: 10px; color: var(--text-light); text-align: center; margin-top: 4px;">{{ image_label }}</div>
         </div>
+        {% endif %}
     </div>
 </body>
 </html>

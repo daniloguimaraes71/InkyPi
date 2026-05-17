@@ -139,61 +139,62 @@ class Painting(BasePlugin):
             seed = now.year * 10000 + now.month * 100 + now.day
             random.seed(seed)
             
-            # 50% chance of curated theme, 50% seasonal keyword
+            # Build list of candidate keywords
+            candidates = []
             if random.random() < 0.5:
-                keyword = random.choice(CURATED_THEMES)
+                candidates = list(CURATED_THEMES)
             else:
-                keywords = GLOBAL_ART_KEYWORDS.get(season, ["landscape"])
-                keyword = random.choice(keywords)
+                candidates = list(GLOBAL_ART_KEYWORDS.get(season, ["landscape"]))
             
+            random.shuffle(candidates)
             random.seed()  # Reset random state
 
             # Allow user override
             if settings.get("searchKeyword"):
-                keyword = settings["searchKeyword"]
+                candidates = [settings["searchKeyword"]] + candidates
 
-            logger.info(f"Searching Met for: {keyword}")
+            # Try each keyword until we find one with results
+            for keyword in candidates:
+                logger.info(f"Searching Met for: {keyword}")
 
-            # Search for objects with images
-            search_url = f"{MET_API}/search?q={keyword}&hasImages=true"
-            resp = requests.get(search_url, timeout=15)
-            if resp.status_code != 200:
-                return None
-
-            data = resp.json()
-            object_ids = data.get("objectIDs", [])
-            if not object_ids:
-                return None
-
-            # Try up to 8 random objects to find one with a valid image
-            random.shuffle(object_ids)
-            for obj_id in object_ids[:8]:
-                obj_url = f"{MET_API}/objects/{obj_id}"
-                obj_resp = requests.get(obj_url, timeout=10)
-                if obj_resp.status_code != 200:
+                search_url = f"{MET_API}/search?q={keyword}&hasImages=true"
+                resp = requests.get(search_url, timeout=15)
+                if resp.status_code != 200:
                     continue
 
-                obj = obj_resp.json()
-                primary_image = obj.get("primaryImage")
-                if primary_image:
-                    # Get culture/region info if available
-                    culture = obj.get("culture", "")
-                    period = obj.get("period", "")
-                    dynasty = obj.get("dynasty", "")
-                    
-                    artist = obj.get("artistDisplayName", "Unknown")
-                    if culture:
-                        artist = f"{artist} ({culture})" if artist != "Unknown" else culture
+                data = resp.json()
+                object_ids = data.get("objectIDs")
+                if not object_ids:
+                    continue
 
-                    return {
-                        "title": obj.get("title", "Untitled"),
-                        "artist": artist,
-                        "date": obj.get("objectDate", ""),
-                        "image_url": primary_image,
-                        "source": "Metropolitan Museum of Art",
-                        "culture": culture,
-                        "period": period,
-                    }
+                # Try up to 8 random objects to find one with a valid image
+                random.shuffle(object_ids)
+                for obj_id in object_ids[:8]:
+                    obj_url = f"{MET_API}/objects/{obj_id}"
+                    obj_resp = requests.get(obj_url, timeout=10)
+                    if obj_resp.status_code != 200:
+                        continue
+
+                    obj = obj_resp.json()
+                    primary_image = obj.get("primaryImage")
+                    if primary_image:
+                        culture = obj.get("culture", "")
+                        period = obj.get("period", "")
+                        dynasty = obj.get("dynasty", "")
+                        
+                        artist = obj.get("artistDisplayName", "Unknown")
+                        if culture:
+                            artist = f"{artist} ({culture})" if artist != "Unknown" else culture
+
+                        return {
+                            "title": obj.get("title", "Untitled"),
+                            "artist": artist,
+                            "date": obj.get("objectDate", ""),
+                            "image_url": primary_image,
+                            "source": "Metropolitan Museum of Art",
+                            "culture": culture,
+                            "period": period,
+                        }
 
             return None
 

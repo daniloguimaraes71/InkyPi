@@ -1,42 +1,14 @@
 import logging
-import random
 import pytz
 from datetime import datetime, timedelta
 from plugins.base_plugin.base_plugin import BasePlugin
 from utils.micro_season import get_full_season_info, get_seasonal_palette
 from utils.wikipedia_images import get_kansai_location_image
+from utils.kansai_news import get_kansai_events_list
 from utils.app_utils import get_font
 from PIL import Image, ImageDraw, ImageColor
 
 logger = logging.getLogger(__name__)
-
-# Curated Kansai events with Wikipedia search terms
-EVENTS = {
-    "spring": [
-        {"name": "お花見ピクニック", "location": "大阪城公園", "type": "花見", "desc": "Cherry blossom viewing picnic", "wiki": "大阪城"},
-        {"name": "奈良公園の鹿と散歩", "location": "奈良", "type": "アウトドア", "desc": "Walk with deer in Nara Park", "wiki": "奈良公園"},
-        {"name": "清水寺と祇園散策", "location": "京都", "type": "観光", "desc": "Kiyomizdera & Gion walk", "wiki": "清水寺"},
-        {"name": "箕面の滝ハイキング", "location": "箕面", "type": "ハイキング", "desc": "Minoh waterfall hike", "wiki": "箕面"},
-    ],
-    "summer": [
-        {"name": "天神祭りの花火", "location": "大阪", "type": "祭り", "desc": "Tenjin Matsuri fireworks", "wiki": "天神祭"},
-        {"name": "須磨海水浴場", "location": "神戸", "type": "ビーチ", "desc": "Suma Beach day", "wiki": "須磨海水浴場"},
-        {"name": "有馬温泉でリフレッシュ", "location": "神戸", "type": "温泉", "desc": "Arima Onsen refresh", "wiki": "有馬温泉"},
-        {"name": "梅田スカイビルの夜景", "location": "大阪", "type": "観光", "desc": "Umeda Sky Building night view", "wiki": "梅田スカイビル"},
-    ],
-    "autumn": [
-        {"name": "紅葉狩り", "location": "京都", "type": "紅葉", "desc": "Autumn leaf viewing", "wiki": "京都"},
-        {"name": "伏見稲荷大社", "location": "京都", "type": "観光", "desc": "Fushimi Inari shrine", "wiki": "伏見稲荷大社"},
-        {"name": "神戸ルミナリー", "location": "神戸", "type": "イベント", "desc": "Kobe Luminarie", "wiki": "神戸ルミナリー"},
-        {"name": "姫路城と日本庭園", "location": "姫路", "type": "観光", "desc": "Himeji Castle & garden", "wiki": "姫路城"},
-    ],
-    "winter": [
-        {"name": "奈良のイルミネーション", "location": "奈良", "type": "イルミネーション", "desc": "Nara illumination", "wiki": "奈良公園"},
-        {"name": "大阪クリスマスマーケット", "location": "大阪", "type": "マーケット", "desc": "Osaka Christmas Market", "wiki": "大阪"},
-        {"name": "神戸の光のルナリエ", "location": "神戸", "type": "イルミネーション", "desc": "Kobe Luminarie", "wiki": "神戸ルミナリー"},
-        {"name": "有馬温泉日帰り旅行", "location": "有馬", "type": "温泉", "desc": "Arima Onsen day trip", "wiki": "有馬温泉"},
-    ],
-}
 
 
 class KansaiEvents(BasePlugin):
@@ -62,12 +34,8 @@ class KansaiEvents(BasePlugin):
         else:
             season = "winter"
 
-        # Pick event based on date
-        seed = now.year * 10000 + now.month * 100 + now.day
-        random.seed(seed)
-        events = EVENTS.get(season, EVENTS["spring"])
-        event = random.choice(events)
-        random.seed()
+        # Get 2-3 events from live news or backup
+        events = get_kansai_events_list(now, count=3)
 
         # Find next weekend
         days_until_saturday = (5 - now.weekday()) % 7
@@ -76,17 +44,33 @@ class KansaiEvents(BasePlugin):
         weekend_start = now.date() + timedelta(days=days_until_saturday)
         weekend_date = f"{weekend_start.strftime('%m月%d日')} Weekend"
 
-        # Get location image from Wikipedia
-        event_image = get_kansai_location_image(event.get("wiki", event["location"]), (350, 400))
+        # Get images for each event
+        event_images = []
+        for event in events:
+            wiki_term = event.get("wiki", "")
+            if not wiki_term and event.get("location"):
+                wiki_term = event["location"]
+            
+            img = get_kansai_location_image(wiki_term, (200, 150)) if wiki_term else None
+            
+            # If no Wikipedia image, generate a location-based placeholder
+            if not img:
+                img = self._generate_location_placeholder(event.get("wiki", "関西"), event.get("type", "イベント"), (200, 150))
+            
+            event_images.append(img)
         
-        # Save image to temporary file for HTML rendering
-        event_image_url = None
-        if event_image:
-            import tempfile
-            import os
-            with tempfile.NamedTemporaryFile(suffix='.png', delete=False, dir='/tmp') as f:
-                event_image.save(f, 'PNG')
-                event_image_url = f'file://{f.name}'
+        # Save images to static cache for HTML rendering
+        event_image_urls = []
+        for i, img in enumerate(event_images):
+            if img:
+                import os
+                static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'static', 'images', 'cache')
+                os.makedirs(static_dir, exist_ok=True)
+                image_path = os.path.join(static_dir, f'kansai_event_{i}.png')
+                img.save(image_path, 'PNG')
+                event_image_urls.append(f'/static/images/cache/kansai_event_{i}.png')
+            else:
+                event_image_urls.append(None)
 
         # Try HTML render first, fall back to PIL
         try:
@@ -97,8 +81,8 @@ class KansaiEvents(BasePlugin):
             template_params = {
                 "palette": palette,
                 "season_info": season_info,
-                "event": event,
-                "event_image": event_image_url,
+                "events": events,
+                "event_images": event_image_urls,
                 "weekend_date": weekend_date,
                 "season_label": f"{season_info['micro_season']['kanji']} - {season_info['micro_season']['english']}" if season_info else "",
             }
@@ -110,10 +94,10 @@ class KansaiEvents(BasePlugin):
             logger.warning(f"HTML render failed, falling back to PIL: {e}")
 
         # Fallback to PIL rendering
-        return self._draw_card_pil(dimensions, orientation, event, season_info, palette, settings, now, weekend_date, event_image)
+        return self._draw_card_pil(dimensions, orientation, events, season_info, palette, settings, now, weekend_date, event_images)
 
-    def _draw_card_pil(self, dimensions, orientation, event, season_info, palette, settings, now, weekend_date, event_image):
-        """Fallback PIL rendering."""
+    def _draw_card_pil(self, dimensions, orientation, events, season_info, palette, settings, now, weekend_date, event_images):
+        """Fallback PIL rendering with multiple events."""
         w, h = dimensions
         if orientation == 'vertical':
             w, h = h, w
@@ -124,42 +108,82 @@ class KansaiEvents(BasePlugin):
         draw = ImageDraw.Draw(img)
 
         # Fonts
-        font_title = get_font("Noto Serif JP", int(w * 0.06))
-        font_desc = get_font("Noto Sans JP", int(w * 0.035))
-        font_info = get_font("Noto Sans JP", int(w * 0.03))
-        font_label = get_font("Noto Sans JP", int(w * 0.025))
+        font_title = get_font("Noto Serif JP", int(w * 0.04))
+        font_desc = get_font("Noto Sans JP", int(w * 0.028))
+        font_info = get_font("Noto Sans JP", int(w * 0.025))
+        font_label = get_font("Noto Sans JP", int(w * 0.022))
+        font_header = get_font("Noto Serif JP", int(w * 0.035))
 
-        # Photo area
-        if event_image:
-            photo_x, photo_y = int(w * 0.04), int(h * 0.1)
-            photo_w, photo_h = int(w * 0.4), int(h * 0.8)
-            
-            # Resize and paste
-            photo_resized = event_image.resize((photo_w, photo_h), Image.Resampling.LANCZOS)
-            img.paste(photo_resized, (photo_x, photo_y))
-            
-            # Add border
-            draw = ImageDraw.Draw(img)
-            draw.rectangle([photo_x-2, photo_y-2, photo_x+photo_w+2, photo_y+photo_h+2], 
-                          outline='#E0D8C8', width=2)
-            
-            text_x = photo_x + photo_w + int(w * 0.06)
-        else:
-            text_x = int(w * 0.08)
+        # Header
+        draw.text((int(w * 0.05), int(h * 0.03)), weekend_date, font=font_label, fill='#999999')
+        draw.text((int(w * 0.05), int(h * 0.08)), "週末のイベント", font=font_header, fill='#2C2C2C')
 
-        # Weekend label
-        draw.text((text_x, int(h * 0.15)), weekend_date, font=font_label, fill='#999999')
+        # Display events in a list format
+        y_start = int(h * 0.16)
+        event_height = int(h * 0.26)
         
-        # Event tag
-        draw.text((text_x, int(h * 0.22)), f"週末のおすすめ • {event['type']}", font=font_label, fill='#8B7355')
-        
-        # Event title
-        draw.text((text_x, int(h * 0.3)), event["name"], font=font_title, fill='#2C2C2C')
-        
-        # Description
-        draw.text((text_x, int(h * 0.45)), event["desc"], font=font_desc, fill='#666666')
-        
-        # Location
-        draw.text((text_x, int(h * 0.55)), f"場所: {event['location']}", font=font_info, fill='#666666')
+        for i, (event, event_img) in enumerate(zip(events, event_images)):
+            y = y_start + i * (event_height + int(h * 0.02))
+            
+            # Event image thumbnail
+            if event_img:
+                thumb_x, thumb_y = int(w * 0.05), y
+                thumb_w, thumb_h = int(w * 0.15), int(event_height * 0.8)
+                thumb = event_img.resize((thumb_w, thumb_h), Image.Resampling.LANCZOS)
+                img.paste(thumb, (thumb_x, thumb_y))
+                
+                # Border
+                draw.rectangle([thumb_x-1, thumb_y-1, thumb_x+thumb_w+1, thumb_y+thumb_h+1], 
+                              outline='#E0D8C8', width=1)
+                
+                text_x = thumb_x + thumb_w + int(w * 0.03)
+            else:
+                text_x = int(w * 0.05)
+            
+            # Event type tag
+            draw.text((text_x, y), f"{event.get('type', 'イベント')}", font=font_label, fill='#8B7355')
+            
+            # Event title
+            draw.text((text_x, y + int(event_height * 0.18)), event.get("name", ""), font=font_title, fill='#2C2C2C')
+            
+            # Description
+            draw.text((text_x, y + int(event_height * 0.52)), event.get("desc", ""), font=font_desc, fill='#666666')
+            
+            # Location
+            if event.get("location"):
+                draw.text((text_x, y + int(event_height * 0.78)), f"場所: {event['location']}", font=font_info, fill='#999999')
 
+        return img
+
+    def _generate_location_placeholder(self, location, event_type, size):
+        """Generate a colored placeholder image with location name."""
+        w, h = size
+        img = Image.new('RGB', (w, h), '#E8E4DC')
+        draw = ImageDraw.Draw(img)
+        
+        # Add a subtle gradient effect
+        for y in range(h):
+            alpha = int(255 * (1 - y / h * 0.15))
+            draw.line([(0, y), (w, y)], fill=(alpha, alpha - 8, alpha - 16))
+        
+        # Location name in center
+        font_loc = get_font("Noto Serif JP", int(w * 0.18))
+        font_type = get_font("Noto Sans JP", int(w * 0.12))
+        
+        # Draw location
+        loc_text = location if location else "関西"
+        bbox = draw.textbbox((0, 0), loc_text, font=font_loc)
+        text_w = bbox[2] - bbox[0]
+        text_h = bbox[3] - bbox[1]
+        x = (w - text_w) // 2
+        y = (h - text_h) // 2 - int(h * 0.1)
+        draw.text((x, y), loc_text, font=font_loc, fill='#8B7355')
+        
+        # Draw event type below
+        bbox2 = draw.textbbox((0, 0), event_type, font=font_type)
+        tw2 = bbox2[2] - bbox2[0]
+        x2 = (w - tw2) // 2
+        y2 = y + text_h + int(h * 0.05)
+        draw.text((x2, y2), event_type, font=font_type, fill='#AAAAAA')
+        
         return img

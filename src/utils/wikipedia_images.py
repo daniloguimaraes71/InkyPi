@@ -55,6 +55,12 @@ ARTICLE_MAPPINGS = {
     "天神祭": "Tenjin_Matsuri",
     "神戸ルミナリー": "Kobe_Luminarie",
     "好古園": "Koko-en",
+    "京都": "Kyoto",
+    "大阪": "Osaka",
+    "神戸": "Kobe",
+    "奈良": "Nara_(city)",
+    "須磨海水浴場": "Suma_Beach",
+    "大阪": "Osaka",
     
     # Food
     "おにぎり": "Onigiri",
@@ -66,6 +72,12 @@ ARTICLE_MAPPINGS = {
     "カレー": "Curry",
     "抹茶": "Matcha",
     "珈琲": "Coffee",
+    "パスタ": "Pasta",
+    "サラダ": "Salad",
+    "フレンチトースト": "French_toast",
+    "ナン": "Naan",
+    "お寿司": "Sushi",
+    "おでん": "Oden",
     
     # General
     "月": "Moon",

@@ -42,9 +42,9 @@
         "active_playlist": null
     },
     "refresh_info": {
-        "refresh_time": "2026-05-17T03:48:33.023839+00:00",
-        "image_hash": "e776d477cce839a456772f3148498458cdafdaaf6ffc5358dcc2c5681da03038",
+        "refresh_time": "2026-05-17T07:23:03.298350+00:00",
+        "image_hash": "11c6ab26ce115203b66e203ee1163c89bbdff2b1586c6d016a4ec1a8d72eea2f",
         "refresh_type": "Manual Update",
-        "plugin_id": "clock"
+        "plugin_id": "kansai_events"
     }
 }

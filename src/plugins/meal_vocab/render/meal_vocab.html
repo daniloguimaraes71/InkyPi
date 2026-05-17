@@ -6,130 +6,169 @@
         :root {
             --bg-base: {{ palette.bg or '#FAF8F5' }};
             --text-primary: {{ palette.primary or '#2C2C2C' }};
-            --text-secondary: #666666;
-            --text-tertiary: #999999;
-            --border-subtle: #E0D8C8;
-            --season-primary: {{ palette.primary or '#8B7355' }};
-            --season-green: #7A8B6F;
+            --text-secondary: #555555;
+            --text-light: #888888;
+            --accent-gold: {{ palette.primary or '#8B7355' }};
+            --accent-copper: #B87333;
+            --divider: #E0D8C8;
             --font-serif: 'Noto Serif JP', serif;
             --font-sans: 'Noto Sans JP', sans-serif;
         }
 
         body {
-            width: 800px;
-            height: 480px;
+            width: {{ width }}px;
+            height: {{ height }}px;
             margin: 0;
-            padding: 40px 48px;
+            padding: 0;
             box-sizing: border-box;
             background-color: var(--bg-base);
             color: var(--text-primary);
             overflow: hidden;
+            font-family: var(--font-sans);
+        }
+
+        .card-container {
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            padding: 32px 40px;
             position: relative;
         }
 
-        .micro-season-stamp {
-            position: absolute;
-            top: 40px;
-            right: 48px;
-            text-align: right;
-        }
-        .micro-season-kanji {
-            font-family: var(--font-serif);
-            font-size: 14px;
-            color: var(--season-primary);
-            letter-spacing: 0.1em;
+        .grid-2-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+            height: 100%;
         }
 
-        .split-card { display: flex; height: 100%; align-items: center; }
-        .vocab-side { flex: 1; padding-right: 32px; }
-        .meal-side { flex: 1; padding-left: 32px; }
-        .divider-vertical { border-left: 1px solid var(--border-subtle); margin: 0 24px; height: 60%; }
-        
-        .section-label { 
-            font-family: var(--font-sans); 
-            font-size: 12px; 
-            color: var(--season-primary); 
-            text-transform: uppercase; 
-            letter-spacing: 0.1em; 
-            margin-bottom: 16px; 
-        }
-        
-        .pt-word { 
-            font-family: var(--font-sans); 
-            font-size: 36px; 
-            font-weight: 500; 
-            margin: 0; 
-        }
-        
-        .pt-pronunciation { 
-            font-family: var(--font-sans); 
-            font-size: 14px; 
-            color: var(--text-tertiary); 
-            margin-bottom: 16px; 
-            display: block; 
-        }
-        
-        .ja-meaning { 
-            font-family: var(--font-serif); 
-            font-size: 18px; 
-            color: var(--text-secondary); 
+        .flex-col { display: flex; flex-direction: column; }
+        .justify-center { justify-content: center; }
+
+        .section-label {
+            font-family: var(--font-sans);
+            font-size: 12px;
+            color: var(--accent-gold);
+            letter-spacing: 0.1em;
             margin-bottom: 16px;
         }
-        
-        .example {
+
+        .vocab-word {
             font-family: var(--font-sans);
-            font-size: 14px;
-            color: var(--text-tertiary);
-            font-style: italic;
-        }
-        
-        .meal-title { 
-            font-family: var(--font-serif); 
-            font-size: 24px; 
-            margin: 0 0 12px 0; 
-        }
-        
-        .meal-desc { 
-            font-family: var(--font-sans); 
-            font-size: 14px; 
-            line-height: 1.6; 
-            color: var(--text-secondary); 
+            font-size: 48px;
+            font-weight: 500;
+            color: var(--accent-copper);
+            margin: 0 0 8px 0;
+            line-height: 1.1;
         }
 
-        .meal-photo {
+        .vocab-pronunciation {
+            font-family: var(--font-sans);
+            font-size: 16px;
+            color: var(--text-light);
+            margin-bottom: 20px;
+        }
+
+        .vocab-meaning {
+            font-family: var(--font-serif);
+            font-size: 18px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+
+        .vocab-example {
+            font-family: var(--font-sans);
+            font-size: 14px;
+            color: var(--text-light);
+            font-style: italic;
+        }
+
+        .meal-side {
+            border-left: 1px solid var(--divider);
+            padding-left: 32px;
+        }
+
+        .meal-title {
+            font-family: var(--font-serif);
+            font-size: 24px;
+            margin: 0 0 12px 0;
+            line-height: 1.3;
+        }
+
+        .meal-desc {
+            font-family: var(--font-sans);
+            font-size: 15px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .meal-photo-frame {
+            width: 140px;
+            height: 140px;
+            border: 1px solid var(--divider);
+            padding: 4px;
+            background: white;
+            box-sizing: border-box;
+        }
+
+        .meal-photo-frame img {
             width: 100%;
-            height: 200px;
+            height: 100%;
             object-fit: cover;
-            border: 1px solid var(--border-subtle);
-            border-radius: 4px;
-            margin-top: 16px;
+            filter: grayscale(10%) sepia(5%);
+        }
+
+        .micro-season {
+            position: absolute;
+            bottom: 32px;
+            right: 40px;
+            text-align: right;
+        }
+        .micro-season .kanji {
+            font-family: var(--font-serif);
+            font-size: 13px;
+            color: var(--accent-gold);
+            letter-spacing: 0.1em;
+        }
+        .micro-season .meaning {
+            font-family: var(--font-sans);
+            font-size: 11px;
+            color: var(--text-light);
+            margin-top: 2px;
         }
     </style>
 </head>
 <body>
-    {% if season_info %}
-    <div class="micro-season-stamp">
-        <div class="micro-season-kanji">候: {{ season_info.micro_season.kanji }}</div>
-    </div>
-    {% endif %}
-
-    <div class="split-card">
-        <div class="vocab-side">
-            <div class="section-label">Palavra do Dia</div>
-            <h2 class="pt-word">{{ vocab.pt }}</h2>
-            <span class="pt-pronunciation">{{ vocab.theme }}</span>
-            <p class="ja-meaning">{{ vocab.ja }}</p>
-            <p class="example">"{{ vocab.example }}"</p>
+    <div class="card-container">
+        <div class="grid-2-col">
+            <div class="flex-col justify-center">
+                <p class="section-label">今日のポルトガル語</p>
+                <h1 class="vocab-word">{{ vocab.pt }}</h1>
+                <p class="vocab-pronunciation">[{{ vocab.theme }}]</p>
+                <p class="vocab-meaning">{{ vocab.ja }}</p>
+                <p class="vocab-example">"{{ vocab.example }}"</p>
+            </div>
+            
+            <div class="meal-side flex-col justify-center">
+                <p class="section-label">昼食のヒント</p>
+                <h2 class="meal-title">{{ meal.ja }}</h2>
+                <p class="meal-desc">{{ meal.en }}</p>
+                {% if food_image %}
+                <div class="meal-photo-frame">
+                    <img src="{{ food_image }}" alt="Food">
+                </div>
+                {% endif %}
+            </div>
         </div>
-        <div class="divider-vertical"></div>
-        <div class="meal-side">
-            <div class="section-label">今日のランチ</div>
-            <h3 class="meal-title">{{ meal.ja }}</h3>
-            <p class="meal-desc">{{ meal.en }}</p>
-            {% if food_image %}
-            <img src="{{ food_image }}" alt="Food" class="meal-photo">
-            {% endif %}
+        
+        {% if season_info %}
+        <div class="micro-season">
+            <div class="kanji">時候: {{ season_info.micro_season.kanji }}</div>
+            <div class="meaning">{{ season_info.micro_season.english }}</div>
         </div>
+        {% endif %}
     </div>
 </body>
 </html>
