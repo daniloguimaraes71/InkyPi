@@ -43,8 +43,23 @@ class EveningCard(BasePlugin):
         else:
             season = "winter"
         
-        image_keyword = EVENING_IMAGES.get(season, "Sunset")
-        evening_image = get_wikipedia_image(image_keyword, (280, 350))
+        # Fetch image based on tomorrow's weather or fallback to seasonal
+        if tomorrow_weather:
+            desc = tomorrow_weather.get("description", "").lower()
+            if "rain" in desc or "雨" in desc:
+                image_keyword = "Rain"
+            elif "cloud" in desc or "曇" in desc:
+                image_keyword = "Cloud"
+            elif "snow" in desc or "雪" in desc:
+                image_keyword = "Snow"
+            elif "clear" in desc or "晴" in desc:
+                image_keyword = "Sunset"
+            else:
+                image_keyword = EVENING_IMAGES.get(season, "Sunset")
+        else:
+            image_keyword = EVENING_IMAGES.get(season, "Sunset")
+        
+        evening_image = get_wikipedia_image(image_keyword, (320, 240))
         
         image_data_uri = self.image_to_data_uri(evening_image)
 

@@ -145,24 +145,25 @@ def parse_rss(xml_text, source_name):
 
 
 def _extract_subtitle(title, source=""):
-    """Extract a meaningful subtitle from a Google News title."""
-    # Remove source suffix like " - いこーよニュース"
+    """Extract a meaningful short subtitle from a Google News title."""
+    import re
     clean = title
     if source and source in clean:
         clean = clean.replace(f" - {source}", "").replace(f" {source}", "")
     elif " - " in clean:
         parts = clean.rsplit(" - ", 1)
         clean = parts[0]
-    
-    # Remove bracket prefixes like 【関西】or【大阪】
-    import re
     clean = re.sub(r'^【[^】]*】\s*', '', clean)
     
-    # If the cleaned title is still long, use it as subtitle
-    if len(clean) > 10:
-        return clean
+    # Extract the key descriptive part after the date/number prefix
+    # Remove leading date patterns like "2026年5月16日・17日"
+    clean = re.sub(r'^\d{4}年\d{1,2}月\d{1,2}日[・〜]?\d{1,2}日?\s*', '', clean)
     
-    return title
+    # Truncate to reasonable subtitle length
+    if len(clean) > 30:
+        clean = clean[:29] + "…"
+    
+    return clean if len(clean) > 3 else title
 
 
 def get_kansai_events_list(now, count=3):
