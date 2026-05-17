@@ -9,50 +9,39 @@ from PIL import Image, ImageDraw, ImageColor
 
 logger = logging.getLogger(__name__)
 
-# Curated Portuguese vocabulary by theme
+# Intermediate Portuguese vocabulary with themes
 VOCABULARY = [
-    {"pt": "Bom dia", "ja": "おはようございます", "en": "Good morning", "theme": "greeting"},
-    {"pt": "Obrigada", "ja": "ありがとう", "en": "Thank you", "theme": "greeting"},
-    {"pt": "Por favor", "ja": "お願いします", "en": "Please", "theme": "greeting"},
-    {"pt": "Água", "ja": "水", "en": "Water", "theme": "food"},
-    {"pt": "Café", "ja": "コーヒー", "en": "Coffee", "theme": "food"},
-    {"pt": "Pão", "ja": "パン", "en": "Bread", "theme": "food"},
-    {"pt": "Arroz", "ja": "ご飯", "en": "Rice", "theme": "food"},
-    {"pt": "Fruta", "ja": "フルーツ", "en": "Fruit", "theme": "food"},
-    {"pt": "Queijo", "ja": "チーズ", "en": "Cheese", "theme": "food"},
-    {"pt": "Vinho", "ja": "ワイン", "en": "Wine", "theme": "food"},
-    {"pt": "Sol", "ja": "太陽", "en": "Sun", "theme": "nature"},
-    {"pt": "Lua", "ja": "月", "en": "Moon", "theme": "nature"},
-    {"pt": "Flor", "ja": "花", "en": "Flower", "theme": "nature"},
-    {"pt": "Mar", "ja": "海", "en": "Sea", "theme": "nature"},
-    {"pt": "Céu", "ja": "空", "en": "Sky", "theme": "nature"},
-    {"pt": "Chuva", "ja": "雨", "en": "Rain", "theme": "nature"},
-    {"pt": "Vento", "ja": "風", "en": "Wind", "theme": "nature"},
-    {"pt": "Estrela", "ja": "星", "en": "Star", "theme": "nature"},
-    {"pt": "Livro", "ja": "本", "en": "Book", "theme": "daily"},
-    {"pt": "Música", "ja": "音楽", "en": "Music", "theme": "daily"},
-    {"pt": "Caminhar", "ja": "歩く", "en": "To walk", "theme": "daily"},
-    {"pt": "Amigo", "ja": "友達", "en": "Friend", "theme": "people"},
-    {"pt": "Família", "ja": "家族", "en": "Family", "theme": "people"},
-    {"pt": "Saudade", "ja": "懐かしさ", "en": "Longing/nostalgia", "theme": "emotion"},
-    {"pt": "Feliz", "ja": "幸せ", "en": "Happy", "theme": "emotion"},
-    {"pt": "Bonito", "ja": "美しい", "en": "Beautiful", "theme": "adjective"},
-    {"pt": "Pequeno", "ja": "小さい", "en": "Small", "theme": "adjective"},
-    {"pt": "Grande", "ja": "大きい", "en": "Big", "theme": "adjective"},
-    {"pt": "Quente", "ja": "温かい", "en": "Warm/hot", "theme": "adjective"},
-    {"pt": "Frio", "ja": "寒い", "en": "Cold", "theme": "adjective"},
+    {"pt": "Saudade", "ja": "懐かしさ・切なさ", "en": "A deep emotional longing", "theme": "emotion", "example": "Tenho saudade da minha avó."},
+    {"pt": "Desenrascanço", "ja": "場当たり的な対応", "en": "To improvise a solution", "theme": "daily", "example": "Vou me desenrascar com o que tenho."},
+    {"pt": "Cafuné", "ja": "頭を撫でること", "en": "The act of stroking someone's hair", "theme": "affection", "example": "Ela fez cafuné no filho."},
+    {"pt": "Fofura", "ja": "かわいさ・愛らしさ", "en": "Something adorable or cute", "theme": "adjective", "example": "Que fofura de bebê!"},
+    {"pt": "Xodó", "ja": "大切な人・お気に入り", "en": "A cherished person or thing", "theme": "affection", "example": "Esse livro é meu xodó."},
+    {"pt": "Ansiedade", "ja": "不安・焦り", "en": "Anxiety, restlessness", "theme": "emotion", "example": "Sinto muita ansiedade antes de viajar."},
+    {"pt": "Aproveitar", "ja": "楽しむ・活用する", "en": "To enjoy, to make the most of", "theme": "daily", "example": "Vou aproveitar o dia de folga."},
+    {"pt": "Simpático", "ja": "感じがいい・親しみやすい", "en": "Friendly, likeable", "theme": "adjective", "example": "O atendente foi muito simpático."},
+    {"pt": "Ficar com", "ja": "気になる・気にする", "en": "To be concerned about", "theme": "expression", "example": "Fiquei com medo de perder o voo."},
+    {"pt": "Dar um jeito", "ja": "何とかする", "en": "To find a way, to manage", "theme": "expression", "example": "Vou dar um jeito de chegar a tempo."},
+    {"pt": "Tô de olho", "ja": "注目している", "en": "I'm keeping an eye on it", "theme": "expression", "example": "Tô de olho nessa promoção."},
+    {"pt": "Bora lá", "ja": "さあ行こう", "en": "Let's go!", "theme": "expression", "example": "Bora lá jantar!"},
+    {"pt": "Que saudade!", "ja": "会いたかった！", "en": "I missed you so much!", "theme": "expression", "example": "Que saudade de você!"},
+    {"pt": "Legal", "ja": "いいね・素敵", "en": "Cool, nice", "theme": "adjective", "example": "Essa música é muito legal."},
+    {"pt": "Beleza", "ja": "了解・わかった", "en": "Got it, okay", "theme": "expression", "example": "Beleza, nos vemos amanhã."},
+    {"pt": "Pôr do sol", "ja": "夕日・日の入り", "en": "Sunset", "theme": "nature", "example": "O pôr do sol na praia é lindo."},
+    {"pt": "Cheirinho de", "ja": "～の香り", "en": "A hint of scent", "theme": "nature", "example": "Cheirinho de café fresquinho."},
+    {"pt": "Madrugada", "ja": "早朝・夜明け前", "en": "Early morning hours", "theme": "time", "example": "Estudei até a madrugada."},
+    {"pt": "Vontade de", "ja": "～したい気分", "en": "A desire to, feeling like", "theme": "emotion", "example": "Tenho vontade de viajar agora."},
+    {"pt": "Faz sentido", "ja": "意味がある・納得できる", "en": "It makes sense", "theme": "expression", "example": "O que você disse faz sentido."},
 ]
 
-# Simple meal suggestions
 MEALS = [
-    {"ja": "おにぎりと味噌汁", "en": "Rice balls and miso soup", "emoji": "🍙"},
-    {"ja": "パンとコーヒー", "en": "Bread and coffee", "emoji": "☕"},
-    {"ja": "パスタとサラダ", "en": "Pasta and salad", "emoji": "🍝"},
-    {"ja": "カレーとナン", "en": "Curry and naan", "emoji": "🍛"},
-    {"ja": "お寿司", "en": "Sushi", "emoji": "🍣"},
-    {"ja": "ラーメン", "en": "Ramen", "emoji": "🍜"},
-    {"ja": "たこ焼き", "en": "Takoyaki", "emoji": "🐙"},
-    {"ja": "お好み焼き", "en": "Okonomiyaki", "emoji": "🥞"},
+    {"ja": "おにぎりと温かい味噌汁", "en": "Rice balls with warm miso soup", "emoji": "🍙"},
+    {"ja": "フレンチトーストと珈琲", "en": "French toast with coffee", "emoji": "☕"},
+    {"ja": "パスタとフレッシュサラダ", "en": "Pasta with fresh salad", "emoji": "🍝"},
+    {"ja": "カレーとガーリックナン", "en": "Curry with garlic naan", "emoji": "🍛"},
+    {"ja": "お寿司とお味噌汁", "en": "Sushi with miso soup", "emoji": "🍣"},
+    {"ja": "自家製ラーメン", "en": "Homemade ramen", "emoji": "🍜"},
+    {"ja": "たこ焼きとおでん", "en": "Takoyaki and oden", "emoji": "🐙"},
+    {"ja": "お好み焼きと冷やし@update", "en": "Okonomiyaki with cold noodles", "emoji": "🥞"},
 ]
 
 
@@ -69,55 +58,82 @@ class MealVocab(BasePlugin):
         season_info = get_full_season_info(now)
         palette = get_seasonal_palette(now)
 
-        # Pick vocabulary and meal
+        # Pick vocabulary and meal based on date
         seed = now.year * 10000 + now.month * 100 + now.day
         random.seed(seed)
         vocab = random.choice(VOCABULARY)
         meal = random.choice(MEALS)
-        random.seed()  # Reset random state
+        random.seed()
 
         return self._draw_card(dimensions, vocab, meal, season_info, palette, settings, now)
 
     def _draw_card(self, dimensions, vocab, meal, season_info, palette, settings, now):
         w, h = dimensions
-        bg_color = ImageColor.getcolor(settings.get("backgroundColor", palette.get("bg", "#F8F5F0")), "RGB")
-
+        
+        # Elegant background with subtle gradient
+        bg_color = ImageColor.getcolor(settings.get("backgroundColor", "#FAFAF8"), "RGB")
         img = Image.new("RGBA", dimensions, bg_color + (255,))
         draw = ImageDraw.Draw(img)
 
-        primary = ImageColor.getcolor(settings.get("textColor", palette.get("primary", "#333333")), "RGB")
-        accent = ImageColor.getcolor(palette.get("accent", "#888888"), "RGB")
+        primary = ImageColor.getcolor(settings.get("textColor", "#2C2C2C"), "RGB")
+        accent = ImageColor.getcolor(palette.get("accent", "#8B7355"), "RGB")
+        secondary = ImageColor.getcolor(palette.get("secondary", "#C4B99C"), "RGB")
 
-        font_title = get_font("Noto Serif JP", int(w * 0.06))
-        font_word = get_font("Noto Serif JP", int(w * 0.1))
-        font_body = get_font("Noto Sans JP", int(w * 0.04))
-        font_small = get_font("Noto Sans JP", int(w * 0.03))
-        font_emoji = get_font("Noto Sans JP", int(w * 0.08))
+        # Fonts - elegant hierarchy
+        font_title = get_font("Noto Serif JP", int(w * 0.055))
+        font_word = get_font("Noto Serif JP", int(w * 0.11))
+        font_meaning = get_font("Noto Sans JP", int(w * 0.038))
+        font_example = get_font("Noto Sans JP", int(w * 0.03))
+        font_section = get_font("Noto Serif JP", int(w * 0.042))
+        font_small = get_font("Noto Sans JP", int(w * 0.028))
 
-        # Header
-        draw.text((w * 0.08, h * 0.06), "今日の Portuguese", font=font_title, fill=primary + (200,))
+        # Left side - Vocabulary
+        left_x = int(w * 0.08)
+        
+        # Subtle section indicator
+        draw.line([(left_x, int(h * 0.12)), (left_x + int(w * 0.03), int(h * 0.12))], fill=accent, width=2)
+        draw.text((left_x + int(w * 0.04), int(h * 0.10)), "Vocabulário", font=font_small, fill=accent)
+        
+        # Portuguese word - elegant and prominent
+        draw.text((left_x, int(h * 0.18)), vocab["pt"], font=font_word, fill=primary)
+        
+        # Japanese meaning
+        draw.text((left_x, int(h * 0.34)), vocab["ja"], font=font_title, fill=primary)
+        
+        # English meaning - subtle
+        draw.text((left_x, int(h * 0.44)), vocab["en"], font=font_meaning, fill=primary + (180,))
+        
+        # Example sentence - italic style
+        draw.text((left_x, int(h * 0.56)), f'"{vocab["example"]}"', font=font_example, fill=primary + (140,))
 
-        # Vocabulary section
-        draw.text((w * 0.08, h * 0.18), vocab["pt"], font=font_word, fill=primary)
-        draw.text((w * 0.08, h * 0.32), vocab["ja"], font=font_title, fill=primary)
-        draw.text((w * 0.08, h * 0.40), vocab["en"], font=font_body, fill=primary + (150,))
+        # Vertical divider - elegant line
+        div_x = int(w * 0.52)
+        draw.line([(div_x, int(h * 0.15)), (div_x, int(h * 0.75))], fill=secondary + (100,), width=1)
 
-        # Divider
-        draw.line([(w * 0.08, h * 0.50), (w * 0.92, h * 0.50)], fill=accent + (80,), width=1)
+        # Right side - Meal
+        right_x = int(w * 0.58)
+        
+        # Section indicator
+        draw.line([(right_x, int(h * 0.12)), (right_x + int(w * 0.03), int(h * 0.12))], fill=accent, width=2)
+        draw.text((right_x + int(w * 0.04), int(h * 0.10)), "Almoço", font=font_small, fill=accent)
+        
+        # Meal suggestion
+        draw.text((right_x, int(h * 0.18)), meal["ja"], font=font_section, fill=primary)
+        draw.text((right_x, int(h * 0.28)), meal["en"], font=font_meaning, fill=primary + (180,))
 
-        # Meal section
-        draw.text((w * 0.08, h * 0.54), "今日のランチ", font=font_title, fill=primary + (200,))
-        draw.text((w * 0.08, h * 0.64), meal["ja"], font=font_title, fill=primary)
-        draw.text((w * 0.08, h * 0.72), meal["en"], font=font_body, fill=primary + (150,))
-
-        # Date and season footer
-        draw.line([(w * 0.08, h * 0.84), (w * 0.92, h * 0.84)], fill=accent + (80,), width=1)
-
-        date_str = now.strftime("%A, %B %d")
-        draw.text((w * 0.08, h * 0.87), date_str, font=font_small, fill=primary + (150,))
-
+        # Bottom - Season and date
+        bottom_y = int(h * 0.82)
+        draw.line([(left_x, bottom_y), (w - left_x, bottom_y)], fill=secondary + (60,), width=1)
+        
+        # Date - clean format
+        date_str = now.strftime("%Y年%m月%d日")
+        draw.text((left_x, bottom_y + int(h * 0.04)), date_str, font=font_small, fill=primary + (150,))
+        
+        # Micro-season - with context
         if season_info:
-            season_label = season_info["micro_season"]["kanji"]
-            draw.text((w * 0.92, h * 0.87), season_label, font=font_small, fill=accent + (180,), anchor="rt")
+            season_label = f"時候の挨拶: {season_info['micro_season']['kanji']}"
+            season_meaning = season_info['micro_season']['english']
+            draw.text((w - left_x, bottom_y + int(h * 0.04)), season_label, font=font_small, fill=accent, anchor="rt")
+            draw.text((w - left_x, bottom_y + int(h * 0.08)), season_meaning, font=font_small, fill=primary + (120,), anchor="rt")
 
         return img

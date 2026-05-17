@@ -9,31 +9,31 @@ from PIL import Image, ImageDraw, ImageColor
 
 logger = logging.getLogger(__name__)
 
-# Curated Kansai events and activities by season
+# Curated Kansai events by season with more detail
 EVENTS = {
     "spring": [
-        {"name": " cherry blossom viewing", "location": "Osaka Castle Park", "type": "花見"},
-        {"name": "Nara Park picnic", "location": "Nara", "type": "アウトドア"},
-        {"name": "Kyoto temple visit", "location": "Kyoto", "type": "観光"},
-        {"name": "Minoh waterfall hike", "location": "Minoh", "type": "ハイキング"},
+        {"name": "お花見ピクニック", "location": "大阪城公園", "type": "花見", "desc": "Cherry blossom viewing picnic"},
+        {"name": "奈良公園の鹿と散歩", "location": "奈良", "type": "アウトドア", "desc": "Walk with deer in Nara Park"},
+        {"name": "清水寺と祇園散策", "location": "京都", "type": "観光", "desc": "Kiyomizdera & Gion walk"},
+        {"name": "箕面の滝ハイキング", "location": "箕面", "type": "ハイキング", "desc": "Minoh waterfall hike"},
     ],
     "summer": [
-        {"name": "Tenjin Matsuri", "location": "Osaka", "type": "祭り"},
-        {"name": "Suma Beach", "location": "Kobe", "type": "ビーチ"},
-        {"name": "Arima Onsen", "location": "Kobe", "type": "温泉"},
-        {"name": "Umeda Sky Building", "location": "Osaka", "type": "観光"},
+        {"name": "天神祭りの花火", "location": "大阪", "type": "祭り", "desc": "Tenjin Matsuri fireworks"},
+        {"name": "須磨海水浴場", "location": "神戸", "type": "ビーチ", "desc": "Suma Beach day"},
+        {"name": "有馬温泉でリフレッシュ", "location": "神戸", "type": "温泉", "desc": "Arima Onsen refresh"},
+        {"name": "梅田スカイビルの夜景", "location": "大阪", "type": "観光", "desc": "Umeda Sky Building night view"},
     ],
     "autumn": [
-        {"name": "Momiji viewing", "location": "Kyoto", "type": "紅葉"},
-        {"name": "Fushimi Inari", "location": "Kyoto", "type": "観光"},
-        {"name": "Kobe Luminarie", "location": "Kobe", "type": "イベント"},
-        {"name": "Himeji Castle", "location": "Himeji", "type": "観光"},
+        {"name": "紅葉狩り", "location": "京都", "type": "紅葉", "desc": "Autumn leaf viewing"},
+        {"name": "伏見稲荷大社", "location": "京都", "type": "観光", "desc": "Fushimi Inari shrine"},
+        {"name": "神戸ルミナリー", "location": "神戸", "type": "イベント", "desc": "Kobe Luminarie"},
+        {"name": "姫路城と日本庭園", "location": "姫路", "type": "観光", "desc": "Himeji Castle & garden"},
     ],
     "winter": [
-        {"name": "Nara illumination", "location": "Nara", "type": "イルミネーション"},
-        {"name": "Osaka Christmas Market", "location": "Osaka", "type": "マーケット"},
-        {"name": "Kobe illumination", "location": "Kobe", "type": "イルミネーション"},
-        {"name": "Hot spring day trip", "location": "Arima", "type": "温泉"},
+        {"name": "奈良のイルミネーション", "location": "奈良", "type": "イルミネーション", "desc": "Nara illumination"},
+        {"name": "大阪クリスマスマーケット", "location": "大阪", "type": "マーケット", "desc": "Osaka Christmas Market"},
+        {"name": "神戸の光のルナリエ", "location": "神戸", "type": "イルミネーション", "desc": "Kobe Luminarie"},
+        {"name": "有馬温泉日帰り旅行", "location": "有馬", "type": "温泉", "desc": "Arima Onsen day trip"},
     ],
 }
 
@@ -78,40 +78,72 @@ class KansaiEvents(BasePlugin):
 
     def _draw_card(self, dimensions, events, season_info, palette, settings, now, weekend_start, season):
         w, h = dimensions
-        bg_color = ImageColor.getcolor(settings.get("backgroundColor", palette.get("bg", "#F8F5F0")), "RGB")
-
+        
+        # Elegant background
+        bg_color = ImageColor.getcolor(settings.get("backgroundColor", "#FAFAF8"), "RGB")
         img = Image.new("RGBA", dimensions, bg_color + (255,))
         draw = ImageDraw.Draw(img)
 
-        primary = ImageColor.getcolor(settings.get("textColor", palette.get("primary", "#333333")), "RGB")
-        accent = ImageColor.getcolor(palette.get("accent", "#888888"), "RGB")
+        primary = ImageColor.getcolor(settings.get("textColor", "#2C2C2C"), "RGB")
+        accent = ImageColor.getcolor(palette.get("accent", "#8B7355"), "RGB")
+        secondary = ImageColor.getcolor(palette.get("secondary", "#C4B99C"), "RGB")
 
+        # Fonts
         font_title = get_font("Noto Serif JP", int(w * 0.06))
-        font_event = get_font("Noto Sans JP", int(w * 0.04))
-        font_small = get_font("Noto Sans JP", int(w * 0.03))
+        font_subtitle = get_font("Noto Sans JP", int(w * 0.035))
+        font_event_name = get_font("Noto Serif JP", int(w * 0.045))
+        font_event_desc = get_font("Noto Sans JP", int(w * 0.03))
+        font_location = get_font("Noto Sans JP", int(w * 0.028))
+        font_small = get_font("Noto Sans JP", int(w * 0.025))
 
         # Header
-        draw.text((w * 0.08, h * 0.06), "週末の関西", font=font_title, fill=primary)
-        draw.text((w * 0.08, h * 0.13), f"Weekend in Kansai · {season.title()}", font=font_small, fill=primary + (150,))
-
+        left_x = int(w * 0.08)
+        
+        # Title - Japanese with English subtitle
+        draw.text((left_x, int(h * 0.08)), "週末のおでかけ", font=font_title, fill=primary)
+        
         # Weekend date
         weekend_end = weekend_start + timedelta(days=1)
-        date_str = f"{weekend_start.strftime('%b %d')} - {weekend_end.strftime('%b %d')}"
-        draw.text((w * 0.08, h * 0.20), date_str, font=font_small, fill=accent)
+        date_str = f"{weekend_start.strftime('%m月%d日')} - {weekend_end.strftime('%m月%d日')}"
+        draw.text((left_x, int(h * 0.16)), date_str, font=font_subtitle, fill=primary + (180,))
 
-        # Divider
-        draw.line([(w * 0.08, h * 0.26), (w * 0.92, h * 0.26)], fill=accent + (60,), width=1)
+        # Subtle divider
+        draw.line([(left_x, int(h * 0.22)), (w - left_x, int(h * 0.22))], fill=secondary + (80,), width=1)
 
-        # Events list
-        y = h * 0.30
-        for event in events:
-            draw.text((w * 0.08, y), event["name"], font=font_event, fill=primary)
-            draw.text((w * 0.08, y + w * 0.035), f"{event['location']} · {event['type']}", font=font_small, fill=primary + (150,))
-            y += h * 0.15
+        # Events list - elegant layout
+        y = int(h * 0.28)
+        for i, event in enumerate(events):
+            # Event number - subtle circle
+            circle_x = left_x + int(w * 0.02)
+            circle_y = y + int(h * 0.02)
+            draw.ellipse([circle_x - 8, circle_y - 8, circle_x + 8, circle_y + 8], fill=accent + (60,))
+            draw.text((circle_x, circle_y), str(i + 1), font=font_small, fill=accent, anchor="mm")
+            
+            # Event name
+            draw.text((left_x + int(w * 0.06), y), event["name"], font=font_event_name, fill=primary)
+            
+            # Location and type
+            loc_text = f"{event['location']} · {event['type']}"
+            draw.text((left_x + int(w * 0.06), y + int(h * 0.04)), loc_text, font=font_location, fill=primary + (150,))
+            
+            # English description
+            draw.text((left_x + int(w * 0.06), y + int(h * 0.07)), event["desc"], font=font_event_desc, fill=primary + (120,))
+            
+            y += int(h * 0.18)
 
-        # Footer with micro-season
+        # Footer - Season context
+        footer_y = int(h * 0.88)
+        draw.line([(left_x, footer_y), (w - left_x, footer_y)], fill=secondary + (60,), width=1)
+        
+        # Date
+        date_str = now.strftime("%Y年%m月%d日")
+        draw.text((left_x, footer_y + int(h * 0.03)), date_str, font=font_small, fill=primary + (150,))
+        
+        # Micro-season with context
         if season_info:
-            season_label = season_info["micro_season"]["kanji"]
-            draw.text((w * 0.92, h * 0.92), season_label, font=font_small, fill=accent + (180,), anchor="rt")
+            season_label = f"時候: {season_info['micro_season']['kanji']}"
+            season_meaning = season_info['micro_season']['english']
+            draw.text((w - left_x, footer_y + int(h * 0.03)), season_label, font=font_small, fill=accent, anchor="rt")
+            draw.text((w - left_x, footer_y + int(h * 0.07)), season_meaning, font=font_small, fill=primary + (120,), anchor="rt")
 
         return img

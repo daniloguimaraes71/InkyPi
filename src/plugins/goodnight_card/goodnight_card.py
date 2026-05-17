@@ -3,7 +3,7 @@ import math
 import pytz
 from datetime import datetime
 from plugins.base_plugin.base_plugin import BasePlugin
-from utils.micro_season import get_full_season_info
+from utils.micro_season import get_full_season_info, get_seasonal_palette
 from utils.app_utils import get_font
 from PIL import Image, ImageDraw, ImageColor
 
@@ -21,51 +21,75 @@ class GoodnightCard(BasePlugin):
             dimensions = dimensions[::-1]
 
         season_info = get_full_season_info(now)
-        palette = season_info["palette"] if season_info else {
-            "primary": "#333333", "secondary": "#888888", "accent": "#666666", "bg": "#F5F5F5"
-        }
+        palette = get_seasonal_palette(now)
 
         return self._draw_card(dimensions, now, season_info, palette, settings)
 
     def _draw_card(self, dimensions, now, season_info, palette, settings):
         w, h = dimensions
-        bg_color = ImageColor.getcolor(settings.get("backgroundColor", palette.get("bg", "#1a1a2e")), "RGB")
-
+        
+        # Elegant dark background for night
+        bg_color = ImageColor.getcolor(settings.get("backgroundColor", "#1A1A2E"), "RGB")
         img = Image.new("RGBA", dimensions, bg_color + (255,))
         draw = ImageDraw.Draw(img)
 
-        primary = ImageColor.getcolor(settings.get("textColor", palette.get("primary", "#e0d8c0")), "RGB")
+        primary = ImageColor.getcolor(settings.get("textColor", "#E0D8C0"), "RGB")
+        accent = ImageColor.getcolor(palette.get("accent", "#8B7355"), "RGB")
+        secondary = ImageColor.getcolor(palette.get("secondary", "#C4B99C"), "RGB")
 
-        # Moon
-        cx, cy = w * 0.5, h * 0.35
-        radius = min(w, h) * 0.15
-        self._draw_moon(draw, cx, cy, radius, now)
+        # Fonts
+        font_greeting = get_font("Noto Serif JP", int(w * 0.1))
+        font_subtitle = get_font("Noto Sans JP", int(w * 0.04))
+        font_poem = get_font("Noto Serif JP", int(w * 0.035))
+        font_small = get_font("Noto Sans JP", int(w * 0.028))
 
-        # Goodnight text
-        font_large = get_font("Noto Serif JP", int(w * 0.08))
-        font_small = get_font("Noto Serif JP", int(w * 0.04))
+        # Center - Moon
+        center_x = int(w * 0.35)
+        center_y = int(h * 0.35)
+        radius = int(min(w, h) * 0.12)
+        
+        # Draw moon - elegant crescent
+        self._draw_moon(draw, center_x, center_y, radius, now)
 
-        # Japanese text
-        text_y = h * 0.62
-        draw.text((w / 2, text_y), "おやすみなさい", font=font_large, fill=primary, anchor="mm")
+        # Greeting - elegant Japanese
+        draw.text((center_x, int(h * 0.58)), "おやすみなさい", font=font_greeting, fill=primary, anchor="mm")
+        draw.text((center_x, int(h * 0.66)), "Good Night", font=font_subtitle, fill=primary + (180,), anchor="mm")
 
-        # English subtitle
-        draw.text((w / 2, text_y + w * 0.07), "Good Night", font=font_small, fill=primary + (180,), anchor="mm")
+        # Right side - Poetic message
+        right_x = int(w * 0.62)
+        
+        # Seasonal poem or message
+        poems = [
+            "月影に 包まれて 眠る夜",
+            "静寂の 夜に溶けて ゆく夢",
+            "星の光 導くままに 安らかに",
+            "夜の帳 降りる中で 息を整え",
+        ]
+        
+        seed = now.year * 10000 + now.month * 100 + now.day
+        poem_idx = seed % len(poems)
+        draw.text((right_x, int(h * 0.35)), poems[poem_idx], font=font_poem, fill=primary + (150,))
 
+        # Footer - Season context
+        footer_y = int(h * 0.85)
+        left_x = int(w * 0.08)
+        draw.line([(left_x, footer_y), (w - left_x, footer_y)], fill=secondary + (40,), width=1)
+        
         # Date
-        date_str = now.strftime("%A, %B %d")
-        draw.text((w / 2, h * 0.82), date_str, font=font_small, fill=primary + (150,), anchor="mm")
-
-        # Micro-season footer
+        date_str = now.strftime("%Y年%m月%d日")
+        draw.text((left_x, footer_y + int(h * 0.03)), date_str, font=font_small, fill=primary + (150,))
+        
+        # Micro-season with context
         if season_info:
-            season_label = season_info["micro_season"]["kanji"]
-            font_tiny = get_font("Noto Serif JP", int(w * 0.03))
-            draw.text((w / 2, h * 0.92), season_label, font=font_tiny, fill=primary + (120,), anchor="mm")
+            season_label = f"時候: {season_info['micro_season']['kanji']}"
+            season_meaning = season_info['micro_season']['english']
+            draw.text((w - left_x, footer_y + int(h * 0.03)), season_label, font=font_small, fill=accent, anchor="rt")
+            draw.text((w - left_x, footer_y + int(h * 0.07)), season_meaning, font=font_small, fill=primary + (120,), anchor="rt")
 
         return img
 
     def _draw_moon(self, draw, cx, cy, radius, now):
-        # Simple waxing crescent moon
+        # Elegant crescent moon
         moon_color = (240, 230, 200, 255)
         shadow_color = (30, 30, 50, 255)
 
@@ -78,7 +102,7 @@ class GoodnightCard(BasePlugin):
         # Shadow overlay for crescent effect
         phase = (now.day % 30) / 30.0
         offset = radius * (1 - 2 * phase)
-        shadow_radius = radius * 1.05
+        shadow_radius = int(radius * 1.05)
 
         draw.ellipse(
             [cx + offset - shadow_radius, cy - shadow_radius,

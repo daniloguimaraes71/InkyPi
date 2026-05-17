@@ -3,7 +3,9 @@ import requests
 import pytz
 from datetime import datetime, timedelta
 from plugins.base_plugin.base_plugin import BasePlugin
-from utils.micro_season import get_full_season_info
+from utils.micro_season import get_full_season_info, get_seasonal_palette
+from utils.app_utils import get_font
+from PIL import Image, ImageDraw, ImageColor
 
 logger = logging.getLogger(__name__)
 
@@ -20,22 +22,74 @@ class EveningCard(BasePlugin):
             dimensions = dimensions[::-1]
 
         season_info = get_full_season_info(now)
+        palette = get_seasonal_palette(now)
         tomorrow_weather = self._get_tomorrow_weather(device_config, tz, now)
         tomorrow_events = self._get_tomorrow_events(settings, device_config, tz, now)
 
-        template_params = {
-            "now": now,
-            "time_format": time_format,
-            "season_info": season_info,
-            "weather": tomorrow_weather,
-            "events": tomorrow_events,
-            "plugin_settings": settings,
-        }
+        return self._draw_card(dimensions, now, season_info, palette, tomorrow_weather, tomorrow_events, settings, time_format)
 
-        image = self.render_image(dimensions, "evening_card.html", "evening_card.css", template_params)
-        if not image:
-            raise RuntimeError("Failed to render evening card.")
-        return image
+    def _draw_card(self, dimensions, now, season_info, palette, weather, events, settings, time_format):
+        w, h = dimensions
+        
+        # Elegant background
+        bg_color = ImageColor.getcolor(settings.get("backgroundColor", "#FAFAF8"), "RGB")
+        img = Image.new("RGBA", dimensions, bg_color + (255,))
+        draw = ImageDraw.Draw(img)
+
+        primary = ImageColor.getcolor(settings.get("textColor", "#2C2C2C"), "RGB")
+        accent = ImageColor.getcolor(palette.get("accent", "#8B7355"), "RGB")
+        secondary = ImageColor.getcolor(palette.get("secondary", "#C4B99C"), "RGB")
+
+        # Fonts
+        font_greeting = get_font("Noto Serif JP", int(w * 0.08))
+        font_subtitle = get_font("Noto Sans JP", int(w * 0.035))
+        font_weather = get_font("Noto Serif JP", int(w * 0.05))
+        font_event = get_font("Noto Sans JP", int(w * 0.032))
+        font_small = get_font("Noto Sans JP", int(w * 0.028))
+
+        left_x = int(w * 0.08)
+        
+        # Greeting - elegant Japanese
+        draw.text((left_x, int(h * 0.12)), "今晩は", font=font_greeting, fill=primary)
+        draw.text((left_x, int(h * 0.22)), "Good Evening", font=font_subtitle, fill=primary + (180,))
+
+        # Subtle divider
+        draw.line([(left_x, int(h * 0.30)), (w - left_x, int(h * 0.30))], fill=secondary + (80,), width=1)
+
+        # Tomorrow's weather
+        if weather:
+            draw.text((left_x, int(h * 0.35)), "明日の天気", font=font_small, fill=accent)
+            draw.text((left_x, int(h * 0.42)), f"{weather['high']}° / {weather['low']}°", font=font_weather, fill=primary)
+            draw.text((left_x + int(w * 0.2), int(h * 0.45)), weather['description'], font=font_subtitle, fill=primary + (180,))
+
+        # Tomorrow's events
+        if events:
+            event_y = int(h * 0.58)
+            draw.text((left_x, event_y - int(h * 0.04)), "明日の予定", font=font_small, fill=accent)
+            
+            for event in events[:3]:
+                time_str = event['time']
+                title = event['title']
+                draw.text((left_x, event_y), time_str, font=font_small, fill=primary + (150,))
+                draw.text((left_x + int(w * 0.1), event_y), title, font=font_event, fill=primary)
+                event_y += int(h * 0.06)
+
+        # Footer - Season context
+        footer_y = int(h * 0.85)
+        draw.line([(left_x, footer_y), (w - left_x, footer_y)], fill=secondary + (60,), width=1)
+        
+        # Date
+        date_str = now.strftime("%Y年%m月%d日")
+        draw.text((left_x, footer_y + int(h * 0.03)), date_str, font=font_small, fill=primary + (150,))
+        
+        # Micro-season with context
+        if season_info:
+            season_label = f"時候: {season_info['micro_season']['kanji']}"
+            season_meaning = season_info['micro_season']['english']
+            draw.text((w - left_x, footer_y + int(h * 0.03)), season_label, font=font_small, fill=accent, anchor="rt")
+            draw.text((w - left_x, footer_y + int(h * 0.07)), season_meaning, font=font_small, fill=primary + (120,), anchor="rt")
+
+        return img
 
     def _get_tomorrow_weather(self, device_config, tz, now):
         try:
