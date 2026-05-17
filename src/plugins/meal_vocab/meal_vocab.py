@@ -4,6 +4,7 @@ import pytz
 from datetime import datetime
 from plugins.base_plugin.base_plugin import BasePlugin
 from utils.micro_season import get_full_season_info, get_seasonal_palette
+from utils.card_design import CardDesign, wrap_text
 from utils.app_utils import get_font
 from PIL import Image, ImageDraw, ImageColor
 
@@ -34,14 +35,14 @@ VOCABULARY = [
 ]
 
 MEALS = [
-    {"ja": "おにぎりと温かい味噌汁", "en": "Rice balls with warm miso soup", "emoji": "🍙"},
-    {"ja": "フレンチトーストと珈琲", "en": "French toast with coffee", "emoji": "☕"},
-    {"ja": "パスタとフレッシュサラダ", "en": "Pasta with fresh salad", "emoji": "🍝"},
-    {"ja": "カレーとガーリックナン", "en": "Curry with garlic naan", "emoji": "🍛"},
-    {"ja": "お寿司とお味噌汁", "en": "Sushi with miso soup", "emoji": "🍣"},
-    {"ja": "自家製ラーメン", "en": "Homemade ramen", "emoji": "🍜"},
-    {"ja": "たこ焼きとおでん", "en": "Takoyaki and oden", "emoji": "🐙"},
-    {"ja": "お好み焼きと冷やし@update", "en": "Okonomiyaki with cold noodles", "emoji": "🥞"},
+    {"ja": "おにぎりと温かい味噌汁", "en": "Rice balls with warm miso soup"},
+    {"ja": "フレンチトーストと珈琲", "en": "French toast with coffee"},
+    {"ja": "パスタとフレッシュサラダ", "en": "Pasta with fresh salad"},
+    {"ja": "カレーとガーリックナン", "en": "Curry with garlic naan"},
+    {"ja": "お寿司とお味噌汁", "en": "Sushi with miso soup"},
+    {"ja": "自家製ラーメン", "en": "Homemade ramen"},
+    {"ja": "たこ焼きとおでん", "en": "Takoyaki and oden"},
+    {"ja": "お好み焼きと冷やし@update", "en": "Okonomiyaki with cold noodles"},
 ]
 
 
@@ -52,8 +53,7 @@ class MealVocab(BasePlugin):
         now = datetime.now(tz)
 
         dimensions = device_config.get_resolution()
-        if device_config.get_config("orientation") == "vertical":
-            dimensions = dimensions[::-1]
+        orientation = device_config.get_config("orientation", "horizontal")
 
         season_info = get_full_season_info(now)
         palette = get_seasonal_palette(now)
@@ -65,75 +65,72 @@ class MealVocab(BasePlugin):
         meal = random.choice(MEALS)
         random.seed()
 
-        return self._draw_card(dimensions, vocab, meal, season_info, palette, settings, now)
+        return self._draw_card(dimensions, orientation, vocab, meal, season_info, palette, settings, now)
 
-    def _draw_card(self, dimensions, vocab, meal, season_info, palette, settings, now):
+    def _draw_card(self, dimensions, orientation, vocab, meal, season_info, palette, settings, now):
         w, h = dimensions
+        if orientation == 'vertical':
+            w, h = h, w
+
+        # Initialize design system
+        design = CardDesign((w, h), orientation)
         
-        # Elegant background with subtle gradient
-        bg_color = ImageColor.getcolor(settings.get("backgroundColor", "#FAFAF8"), "RGB")
-        img = Image.new("RGBA", dimensions, bg_color + (255,))
+        # Create base card
+        img = design.create_base_card(palette=palette)
         draw = ImageDraw.Draw(img)
 
-        primary = ImageColor.getcolor(settings.get("textColor", "#2C2C2C"), "RGB")
-        accent = ImageColor.getcolor(palette.get("accent", "#8B7355"), "RGB")
-        secondary = ImageColor.getcolor(palette.get("secondary", "#C4B99C"), "RGB")
-
-        # Fonts - elegant hierarchy
-        font_title = get_font("Noto Serif JP", int(w * 0.055))
-        font_word = get_font("Noto Serif JP", int(w * 0.11))
-        font_meaning = get_font("Noto Sans JP", int(w * 0.038))
-        font_example = get_font("Noto Sans JP", int(w * 0.03))
-        font_section = get_font("Noto Serif JP", int(w * 0.042))
-        font_small = get_font("Noto Sans JP", int(w * 0.028))
+        # Header
+        y_pos = design.draw_header(draw, "今日の Português", 
+                                  "Vocabulário & Almoço")
 
         # Left side - Vocabulary
-        left_x = int(w * 0.08)
+        left_x = design.margin
         
-        # Subtle section indicator
-        draw.line([(left_x, int(h * 0.12)), (left_x + int(w * 0.03), int(h * 0.12))], fill=accent, width=2)
-        draw.text((left_x + int(w * 0.04), int(h * 0.10)), "Vocabulário", font=font_small, fill=accent)
+        # Section header
+        y_pos = design.draw_section(draw, "Vocabulário", y_pos)
         
-        # Portuguese word - elegant and prominent
-        draw.text((left_x, int(h * 0.18)), vocab["pt"], font=font_word, fill=primary)
+        # Portuguese word - large and prominent
+        draw.text((left_x, y_pos), vocab["pt"], font=design.fonts['display'], 
+                 fill=design.COLORS['text_primary'])
+        y_pos += int(h * 0.12)
         
         # Japanese meaning
-        draw.text((left_x, int(h * 0.34)), vocab["ja"], font=font_title, fill=primary)
+        draw.text((left_x, y_pos), vocab["ja"], font=design.fonts['h2'], 
+                 fill=design.COLORS['text_primary'])
+        y_pos += int(h * 0.06)
         
-        # English meaning - subtle
-        draw.text((left_x, int(h * 0.44)), vocab["en"], font=font_meaning, fill=primary + (180,))
+        # English meaning
+        draw.text((left_x, y_pos), vocab["en"], font=design.fonts['body'], 
+                 fill=design.COLORS['text_secondary'])
+        y_pos += int(h * 0.05)
         
-        # Example sentence - italic style
-        draw.text((left_x, int(h * 0.56)), f'"{vocab["example"]}"', font=font_example, fill=primary + (140,))
+        # Example sentence
+        example_y = y_pos + int(h * 0.02)
+        draw.text((left_x, example_y), f'"{vocab["example"]}"', font=design.fonts['caption'], 
+                 fill=design.COLORS['text_light'])
 
-        # Vertical divider - elegant line
+        # Vertical divider
         div_x = int(w * 0.52)
-        draw.line([(div_x, int(h * 0.15)), (div_x, int(h * 0.75))], fill=secondary + (100,), width=1)
+        draw.line([(div_x, int(h * 0.25)), (div_x, int(h * 0.75))], 
+                 fill=design.COLORS['divider'], width=1)
 
         # Right side - Meal
         right_x = int(w * 0.58)
+        meal_y = y_pos - int(h * 0.15)
         
-        # Section indicator
-        draw.line([(right_x, int(h * 0.12)), (right_x + int(w * 0.03), int(h * 0.12))], fill=accent, width=2)
-        draw.text((right_x + int(w * 0.04), int(h * 0.10)), "Almoço", font=font_small, fill=accent)
+        # Section header
+        meal_y = design.draw_section(draw, "Almoço", meal_y)
         
         # Meal suggestion
-        draw.text((right_x, int(h * 0.18)), meal["ja"], font=font_section, fill=primary)
-        draw.text((right_x, int(h * 0.28)), meal["en"], font=font_meaning, fill=primary + (180,))
+        draw.text((right_x, meal_y), meal["ja"], font=design.fonts['h2'], 
+                 fill=design.COLORS['text_primary'])
+        meal_y += int(h * 0.06)
+        
+        # English translation
+        draw.text((right_x, meal_y), meal["en"], font=design.fonts['body'], 
+                 fill=design.COLORS['text_secondary'])
 
-        # Bottom - Season and date
-        bottom_y = int(h * 0.82)
-        draw.line([(left_x, bottom_y), (w - left_x, bottom_y)], fill=secondary + (60,), width=1)
-        
-        # Date - clean format
-        date_str = now.strftime("%Y年%m月%d日")
-        draw.text((left_x, bottom_y + int(h * 0.04)), date_str, font=font_small, fill=primary + (150,))
-        
-        # Micro-season - with context
-        if season_info:
-            season_label = f"時候の挨拶: {season_info['micro_season']['kanji']}"
-            season_meaning = season_info['micro_season']['english']
-            draw.text((w - left_x, bottom_y + int(h * 0.04)), season_label, font=font_small, fill=accent, anchor="rt")
-            draw.text((w - left_x, bottom_y + int(h * 0.08)), season_meaning, font=font_small, fill=primary + (120,), anchor="rt")
+        # Footer
+        design.draw_footer(draw, now.strftime("%Y年%m月%d日"), season_info)
 
         return img

@@ -4,6 +4,7 @@ import pytz
 from datetime import datetime
 from plugins.base_plugin.base_plugin import BasePlugin
 from utils.micro_season import get_full_season_info, get_seasonal_palette
+from utils.card_design import CardDesign, ImageLoader
 from utils.app_utils import get_font
 from PIL import Image, ImageDraw, ImageColor
 
@@ -39,12 +40,12 @@ FLOWERS = {
 
 # Elegant mood messages - more poetic
 MOODS = [
-    {"ja": "今日は自分を大切にする日", "en": "A day to cherish yourself", "poem": ""},
-    {"ja": "深呼吸して、リラックス", "en": "Take a deep breath and relax", "poem": ""},
-    {"ja": "小さな幸せを見つけて", "en": "Find small moments of joy", "poem": ""},
-    {"ja": "季節の移ろいを感じて", "en": "Feel the changing of seasons", "poem": ""},
-    {"ja": "お茶を一杯、ゆっくりと", "en": "A cup of tea, slowly", "poem": ""},
-    {"ja": "今日も一日お疲れ様", "en": "Well done for today", "poem": ""},
+    {"ja": "今日は自分を大切にする日", "en": "A day to cherish yourself"},
+    {"ja": "深呼吸して、リラックス", "en": "Take a deep breath and relax"},
+    {"ja": "小さな幸せを見つけて", "en": "Find small moments of joy"},
+    {"ja": "季節の移ろいを感じて", "en": "Feel the changing of seasons"},
+    {"ja": "お茶を一杯、ゆっくりと", "en": "A cup of tea, slowly"},
+    {"ja": "今日も一日お疲れ様", "en": "Well done for today"},
 ]
 
 
@@ -55,8 +56,7 @@ class MoodCard(BasePlugin):
         now = datetime.now(tz)
 
         dimensions = device_config.get_resolution()
-        if device_config.get_config("orientation") == "vertical":
-            dimensions = dimensions[::-1]
+        orientation = device_config.get_config("orientation", "horizontal")
 
         season_info = get_full_season_info(now)
         palette = get_seasonal_palette(now)
@@ -80,71 +80,69 @@ class MoodCard(BasePlugin):
         mood = random.choice(MOODS)
         random.seed()
 
-        return self._draw_card(dimensions, flower, mood, season_info, palette, settings, now)
+        return self._draw_card(dimensions, orientation, flower, mood, season_info, palette, settings, now)
 
-    def _draw_card(self, dimensions, flower, mood, season_info, palette, settings, now):
+    def _draw_card(self, dimensions, orientation, flower, mood, season_info, palette, settings, now):
         w, h = dimensions
+        if orientation == 'vertical':
+            w, h = h, w
+
+        # Initialize design system
+        design = CardDesign((w, h), orientation)
         
-        # Elegant background with subtle gradient
-        bg_color = ImageColor.getcolor(settings.get("backgroundColor", "#FAFAF8"), "RGB")
-        img = Image.new("RGBA", dimensions, bg_color + (255,))
+        # Create base card
+        img = design.create_base_card(palette=palette)
         draw = ImageDraw.Draw(img)
 
-        primary = ImageColor.getcolor(settings.get("textColor", "#2C2C2C"), "RGB")
-        accent = ImageColor.getcolor(palette.get("accent", "#8B7355"), "RGB")
-        secondary = ImageColor.getcolor(palette.get("secondary", "#C4B99C"), "RGB")
-
-        # Fonts - elegant hierarchy
-        font_flower_kanji = get_font("Noto Serif JP", int(w * 0.14))
-        font_flower_name = get_font("Noto Serif JP", int(w * 0.05))
-        font_kotoba = get_font("Noto Sans JP", int(w * 0.035))
-        font_poem = get_font("Noto Serif JP", int(w * 0.032))
-        font_mood = get_font("Noto Serif JP", int(w * 0.045))
-        font_small = get_font("Noto Sans JP", int(w * 0.028))
+        # Header
+        y_pos = design.draw_header(draw, "今日の花", 
+                                  "Flower & Mood")
 
         # Center - Flower kanji as main visual
         center_x = int(w * 0.35)
-        center_y = int(h * 0.35)
+        center_y = int(h * 0.40)
         
         # Large flower kanji - elegant and prominent
-        draw.text((center_x, center_y), flower["ja"], font=font_flower_kanji, fill=primary, anchor="mm")
+        draw.text((center_x, center_y), flower["ja"], font=design.fonts['display'], 
+                 fill=design.COLORS['text_primary'], anchor="mm")
         
         # English name below
-        draw.text((center_x, center_y + int(h * 0.12)), flower["en"], font=font_flower_name, fill=primary + (180,), anchor="mm")
+        draw.text((center_x, center_y + int(h * 0.10)), flower["en"], 
+                 font=design.fonts['h2'], fill=design.COLORS['text_secondary'], anchor="mm")
         
         # 花言葉 (flower language)
         kotoba_text = f"花言葉: {flower['kotoba']}"
-        draw.text((center_x, center_y + int(h * 0.20)), kotoba_text, font=font_kotoba, fill=accent, anchor="mm")
+        draw.text((center_x, center_y + int(h * 0.16)), kotoba_text, 
+                 font=design.fonts['body'], fill=design.COLORS['accent_gold'], anchor="mm")
 
-        # Vertical divider - elegant line
-        div_x = int(w * 0.58)
-        draw.line([(div_x, int(h * 0.20)), (div_x, int(h * 0.70))], fill=secondary + (80,), width=1)
+        # Vertical divider
+        div_x = int(w * 0.55)
+        draw.line([(div_x, int(h * 0.25)), (div_x, int(h * 0.75))], 
+                 fill=design.COLORS['divider'], width=1)
 
         # Right side - Mood message
-        right_x = int(w * 0.65)
+        right_x = int(w * 0.62)
+        mood_y = int(h * 0.30)
+        
+        # Section header
+        mood_y = design.draw_section(draw, "Mood", mood_y)
         
         # Mood message
-        draw.text((right_x, int(h * 0.30)), mood["ja"], font=font_mood, fill=primary)
-        draw.text((right_x, int(h * 0.38)), mood["en"], font=font_kotoba, fill=primary + (180,))
+        draw.text((right_x, mood_y), mood["ja"], font=design.fonts['h2'], 
+                 fill=design.COLORS['text_primary'])
+        mood_y += int(h * 0.06)
+        
+        # English translation
+        draw.text((right_x, mood_y), mood["en"], font=design.fonts['body'], 
+                 fill=design.COLORS['text_secondary'])
+        mood_y += int(h * 0.08)
 
         # Poem - haiku or tanka
         if flower.get("poem"):
-            draw.text((right_x, int(h * 0.50)), flower["poem"], font=font_poem, fill=primary + (150,))
+            draw.text((right_x, mood_y), flower["poem"], font=design.fonts['caption'], 
+                     fill=design.COLORS['text_light'])
 
-        # Bottom - Season and date
-        footer_y = int(h * 0.82)
-        left_x = int(w * 0.08)
-        draw.line([(left_x, footer_y), (w - left_x, footer_y)], fill=secondary + (60,), width=1)
-        
-        # Date
-        date_str = now.strftime("%Y年%m月%d日")
-        draw.text((left_x, footer_y + int(h * 0.04)), date_str, font=font_small, fill=primary + (150,))
-        
-        # Micro-season with context
-        if season_info:
-            season_label = f"時候: {season_info['micro_season']['kanji']}"
-            season_meaning = season_info['micro_season']['english']
-            draw.text((w - left_x, footer_y + int(h * 0.04)), season_label, font=font_small, fill=accent, anchor="rt")
-            draw.text((w - left_x, footer_y + int(h * 0.08)), season_meaning, font=font_small, fill=primary + (120,), anchor="rt")
+        # Footer
+        design.draw_footer(draw, now.strftime("%Y年%m月%d日"), season_info)
 
         return img

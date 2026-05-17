@@ -4,6 +4,7 @@ import pytz
 from datetime import datetime
 from plugins.base_plugin.base_plugin import BasePlugin
 from utils.micro_season import get_full_season_info, get_seasonal_palette
+from utils.card_design import CardDesign
 from utils.app_utils import get_font
 from PIL import Image, ImageDraw, ImageColor
 
@@ -17,31 +18,28 @@ class GoodnightCard(BasePlugin):
         now = datetime.now(tz)
 
         dimensions = device_config.get_resolution()
-        if device_config.get_config("orientation") == "vertical":
-            dimensions = dimensions[::-1]
+        orientation = device_config.get_config("orientation", "horizontal")
 
         season_info = get_full_season_info(now)
         palette = get_seasonal_palette(now)
 
-        return self._draw_card(dimensions, now, season_info, palette, settings)
+        return self._draw_card(dimensions, orientation, now, season_info, palette, settings)
 
-    def _draw_card(self, dimensions, now, season_info, palette, settings):
+    def _draw_card(self, dimensions, orientation, now, season_info, palette, settings):
         w, h = dimensions
+        if orientation == 'vertical':
+            w, h = h, w
+
+        # Initialize design system
+        design = CardDesign((w, h), orientation)
         
-        # Elegant dark background for night
-        bg_color = ImageColor.getcolor(settings.get("backgroundColor", "#1A1A2E"), "RGB")
-        img = Image.new("RGBA", dimensions, bg_color + (255,))
+        # Create base card with dark background
+        img = design.create_base_card(bg_color='#1A1A2E', palette=palette)
         draw = ImageDraw.Draw(img)
 
-        primary = ImageColor.getcolor(settings.get("textColor", "#E0D8C0"), "RGB")
-        accent = ImageColor.getcolor(palette.get("accent", "#8B7355"), "RGB")
-        secondary = ImageColor.getcolor(palette.get("secondary", "#C4B99C"), "RGB")
-
-        # Fonts
-        font_greeting = get_font("Noto Serif JP", int(w * 0.1))
-        font_subtitle = get_font("Noto Sans JP", int(w * 0.04))
-        font_poem = get_font("Noto Serif JP", int(w * 0.035))
-        font_small = get_font("Noto Sans JP", int(w * 0.028))
+        # Override colors for dark theme
+        primary_color = '#E0D8C0'
+        secondary_color = '#8B7355'
 
         # Center - Moon
         center_x = int(w * 0.35)
@@ -52,8 +50,10 @@ class GoodnightCard(BasePlugin):
         self._draw_moon(draw, center_x, center_y, radius, now)
 
         # Greeting - elegant Japanese
-        draw.text((center_x, int(h * 0.58)), "おやすみなさい", font=font_greeting, fill=primary, anchor="mm")
-        draw.text((center_x, int(h * 0.66)), "Good Night", font=font_subtitle, fill=primary + (180,), anchor="mm")
+        draw.text((center_x, int(h * 0.58)), "おやすみなさい", font=design.fonts['display'], 
+                 fill=primary_color, anchor="mm")
+        draw.text((center_x, int(h * 0.66)), "Good Night", font=design.fonts['body'], 
+                 fill=primary_color + 'B0', anchor="mm")
 
         # Right side - Poetic message
         right_x = int(w * 0.62)
@@ -68,23 +68,11 @@ class GoodnightCard(BasePlugin):
         
         seed = now.year * 10000 + now.month * 100 + now.day
         poem_idx = seed % len(poems)
-        draw.text((right_x, int(h * 0.35)), poems[poem_idx], font=font_poem, fill=primary + (150,))
+        draw.text((right_x, int(h * 0.35)), poems[poem_idx], font=design.fonts['caption'], 
+                 fill=primary_color + '99')
 
-        # Footer - Season context
-        footer_y = int(h * 0.85)
-        left_x = int(w * 0.08)
-        draw.line([(left_x, footer_y), (w - left_x, footer_y)], fill=secondary + (40,), width=1)
-        
-        # Date
-        date_str = now.strftime("%Y年%m月%d日")
-        draw.text((left_x, footer_y + int(h * 0.03)), date_str, font=font_small, fill=primary + (150,))
-        
-        # Micro-season with context
-        if season_info:
-            season_label = f"時候: {season_info['micro_season']['kanji']}"
-            season_meaning = season_info['micro_season']['english']
-            draw.text((w - left_x, footer_y + int(h * 0.03)), season_label, font=font_small, fill=accent, anchor="rt")
-            draw.text((w - left_x, footer_y + int(h * 0.07)), season_meaning, font=font_small, fill=primary + (120,), anchor="rt")
+        # Footer
+        design.draw_footer(draw, now.strftime("%Y年%m月%d日"), season_info)
 
         return img
 
@@ -101,7 +89,7 @@ class GoodnightCard(BasePlugin):
 
         # Shadow overlay for crescent effect
         phase = (now.day % 30) / 30.0
-        offset = radius * (1 - 2 * phase)
+        offset = int(radius * (1 - 2 * phase))
         shadow_radius = int(radius * 1.05)
 
         draw.ellipse(
