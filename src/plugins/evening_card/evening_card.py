@@ -10,11 +10,20 @@ from PIL import Image, ImageDraw, ImageColor
 
 logger = logging.getLogger(__name__)
 
+# Varied evening images - rotate by day for variety
 EVENING_IMAGES = {
-    "spring": "Hanami",
-    "summer": "Sunset",
-    "autumn": "Momiji",
-    "winter": "Hot_spring",
+    "spring": ["Hanami", "Cherry_blossom", "Japanese_garden", "Wisteria", "Azalea"],
+    "summer": ["Sunset", "Firefly", "Hydrangea", "Lotus", "Summer_festival"],
+    "autumn": ["Momiji", "Autumn_leaves", "Ginkgo", "Harvest_moon", "Japanese_garden"],
+    "winter": ["Hot_spring", "Snow_landscape", "Winter_illumination", "Camellia", "Frost"],
+}
+
+# Weather-based image themes
+WEATHER_IMAGES = {
+    "rain": ["Rain", "Umbrella", "Rainy_day", "Pluviophile"],
+    "cloud": ["Cloud", "Overcast", "Stratus_cloud", "Cumulus"],
+    "snow": ["Snow", "Snowfall", "Winter_landscape", "Snowflake"],
+    "clear": ["Sunset", "Golden_hour", "Twilight", "Dusk"],
 }
 
 
@@ -46,18 +55,18 @@ class EveningCard(BasePlugin):
         # Fetch image based on tomorrow's weather or fallback to seasonal
         if tomorrow_weather:
             desc = tomorrow_weather.get("description", "").lower()
-            if "rain" in desc or "雨" in desc:
-                image_keyword = "Rain"
-            elif "cloud" in desc or "曇" in desc:
-                image_keyword = "Cloud"
-            elif "snow" in desc or "雪" in desc:
-                image_keyword = "Snow"
-            elif "clear" in desc or "晴" in desc:
-                image_keyword = "Sunset"
-            else:
-                image_keyword = EVENING_IMAGES.get(season, "Sunset")
+            theme = None
+            for key in WEATHER_IMAGES:
+                if key in desc or (key == "rain" and "雨" in desc) or (key == "cloud" and "曇" in desc) or (key == "snow" and "雪" in desc) or (key == "clear" and "晴" in desc):
+                    theme = key
+                    break
+            candidates = WEATHER_IMAGES.get(theme, EVENING_IMAGES.get(season, EVENING_IMAGES["summer"]))
         else:
-            image_keyword = EVENING_IMAGES.get(season, "Sunset")
+            candidates = EVENING_IMAGES.get(season, EVENING_IMAGES["spring"])
+        
+        # Rotate by day for variety
+        seed = now.year * 10000 + now.month * 100 + now.day
+        image_keyword = candidates[seed % len(candidates)]
         
         evening_image = get_wikipedia_image(image_keyword, (320, 240))
         

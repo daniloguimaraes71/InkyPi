@@ -1,193 +1,207 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
-  <head>
-    <meta charset="UTF-8" />
+<head>
+    <meta charset="UTF-8">
     <style>
-      :root {
-          --bg-base: {{ palette.bg or '#F5F7FA' }};
-          --text-primary: {{ palette.primary or '#2C2C2C' }};
-          --text-secondary: #555555;
-          --text-light: #888888;
-          --accent-gold: {{ palette.primary or '#8B7355' }};
-          --divider: #E0D8C8;
-          --font-serif: 'Noto Serif JP', serif;
-          --font-sans: 'Noto Sans JP', sans-serif;
-      }
+        :root {
+            --bg-base: {{ palette.bg or '#F5F7FA' }};
+            --text-primary: {{ palette.primary or '#2C2C2C' }};
+            --text-secondary: #555555;
+            --text-light: #888888;
+            --accent-gold: {{ palette.primary or '#8B7355' }};
+            --divider: #E0D8C8;
+            --font-serif: 'Noto Serif JP', serif;
+            --font-sans: 'Noto Sans JP', sans-serif;
+        }
 
-      body {
-          width: {{ width }}px;
-          height: {{ height }}px;
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-          background-color: var(--bg-base);
-          color: var(--text-primary);
-          overflow: hidden;
-          font-family: var(--font-sans);
-      }
+        body {
+            width: {{ width }}px;
+            height: {{ height }}px;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            overflow: hidden;
+            font-family: var(--font-sans);
+        }
 
-      .card-container {
-          width: 100%;
-          height: 100%;
-          box-sizing: border-box;
-          padding: 28px 280px 28px 32px;
-          position: relative;
-      }
+        .card-container {
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            position: relative;
+            display: flex;
+        }
 
-      .flex-col { display: flex; flex-direction: column; }
-      .space-between { justify-content: space-between; }
+        .image-side {
+            width: 45%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
 
-      .evening-greeting {
-          font-family: var(--font-serif);
-          font-size: 28px;
-          font-weight: 500;
-          margin: 0 0 8px 0;
-          line-height: 1.3;
-      }
+        .image-side img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: grayscale(10%) sepia(8%) brightness(0.95);
+        }
 
-      .evening-sub {
-          font-family: var(--font-sans);
-          font-size: 14px;
-          color: var(--text-secondary);
-          margin-bottom: 24px;
-      }
+        .image-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to right, rgba(245,247,250,0.3) 0%, transparent 20%);
+        }
 
-      .divider-h {
-          width: 100%;
-          height: 1px;
-          background-color: var(--divider);
-          margin: 20px 0;
-      }
+        .content-side {
+            width: 55%;
+            padding: 32px 36px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
 
-      .tomorrow-section {
-          flex: 1;
-      }
+        .greeting {
+            font-family: var(--font-serif);
+            font-size: 28px;
+            font-weight: 500;
+            margin: 0 0 8px 0;
+            line-height: 1.3;
+        }
 
-      .section-label {
-          font-family: var(--font-sans);
-          font-size: 12px;
-          color: var(--accent-gold);
-          letter-spacing: 0.05em;
-          margin-bottom: 8px;
-      }
+        .sub-msg {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
 
-      .tomorrow-weather {
-          font-family: var(--font-serif);
-          font-size: 24px;
-          margin: 0 0 4px 0;
-      }
+        .divider-h {
+            width: 100%;
+            height: 1px;
+            background-color: var(--divider);
+            margin: 0 0 20px 0;
+        }
 
-      .tomorrow-note {
-          font-family: var(--font-sans);
-          font-size: 14px;
-          color: var(--text-secondary);
-      }
+        .tomorrow-section {
+            flex: 1;
+        }
 
-      .schedule-box {
-          margin-top: 20px;
-          padding-top: 20px;
-          border-top: 1px solid var(--divider);
-      }
+        .section-label {
+            font-size: 12px;
+            color: var(--accent-gold);
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
 
-      .schedule-item {
-          display: flex;
-          align-items: baseline;
-          margin-bottom: 12px;
-      }
+        .tomorrow-weather {
+            font-family: var(--font-serif);
+            font-size: 24px;
+            margin: 0 0 4px 0;
+        }
 
-      .schedule-time {
-          font-family: var(--font-sans);
-          font-size: 13px;
-          color: var(--text-light);
-          width: 70px;
-          flex-shrink: 0;
-      }
+        .tomorrow-note {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
 
-      .schedule-event {
-          font-family: var(--font-serif);
-          font-size: 15px;
-          color: var(--text-primary);
-          border-bottom: 1px dotted var(--divider);
-          flex: 1;
-          padding-bottom: 3px;
-      }
+        .schedule-box {
+            padding-top: 16px;
+            border-top: 1px solid var(--divider);
+        }
 
-      .image-frame {
-          width: 100%;
-          height: 100%;
-          border: 1px solid var(--divider);
-          padding: 4px;
-          background: white;
-          box-sizing: border-box;
-      }
-      .image-frame img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-          filter: grayscale(15%) sepia(8%);
-      }
-    </style>
-  </head>
-  <body>
-    <div class="card-container">
-      <div class="flex-col space-between" style="height: 100%">
-        <div>
-          <h2 class="evening-greeting">今日も一日、お疲れ様でした。</h2>
-          <p class="evening-sub">ゆっくりとお茶を淹れて、一息つきましょう。</p>
-        </div>
+        .schedule-item {
+            display: flex;
+            align-items: baseline;
+            margin-bottom: 10px;
+        }
 
-        <div class="divider-h"></div>
-
-        <div class="tomorrow-section">
-          <p class="section-label">明日の天気</p>
-          {% if weather %}
-          <h3 class="tomorrow-weather">{{ weather.description }}</h3>
-          <p class="tomorrow-note">
-            最高{{ weather.high }}°C / 最低{{ weather.low }}°C{% if '雨' in
-            weather.description %} • 傘をお持ちください{% endif %}
-          </p>
-          {% else %}
-          <h3 class="tomorrow-weather">晴れのち曇り</h3>
-          <p class="tomorrow-note">明日も良い一日になりますように。</p>
-          {% endif %} {% if events %}
-          <div class="schedule-box">
-            <p class="section-label">明日の予定</p>
-            {% for event in events[:3] %}
-            <div class="schedule-item">
-              <span class="schedule-time">{{ event.time }}</span>
-              <span class="schedule-event">{{ event.title }}</span>
-            </div>
-            {% endfor %}
-          </div>
-          {% endif %}
-        </div>
-      </div>
-
-      {% if evening_image %}
-      <div
-        style="
-          position: absolute;
-          top: 120px;
-          right: 24px;
-          width: 360px;
-          height: 270px;
-        "
-      >
-        <div class="image-frame" style="height: 100%">
-          <img src="{{ evening_image }}" alt="Evening" />
-        </div>
-        <div
-          style="
-            font-size: 10px;
+        .schedule-time {
+            font-size: 13px;
             color: var(--text-light);
-            text-align: center;
-            margin-top: 4px;
-          "
-        >
-          {{ image_label }}
+            width: 65px;
+            flex-shrink: 0;
+        }
+
+        .schedule-event {
+            font-family: var(--font-serif);
+            font-size: 15px;
+            color: var(--text-primary);
+            border-bottom: 1px dotted var(--divider);
+            flex: 1;
+            padding-bottom: 2px;
+        }
+
+        .micro-season {
+            position: absolute;
+            bottom: 24px;
+            right: 36px;
+            text-align: right;
+        }
+        .micro-season .kanji {
+            font-family: var(--font-serif);
+            font-size: 13px;
+            color: var(--accent-gold);
+            letter-spacing: 0.1em;
+        }
+        .micro-season .meaning {
+            font-size: 11px;
+            color: var(--text-light);
+            margin-top: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card-container">
+        <div class="image-side">
+            {% if evening_image %}
+            <img src="{{ evening_image }}" alt="Evening">
+            {% endif %}
+            <div class="image-overlay"></div>
         </div>
-      </div>
-      {% endif %}
+        
+        <div class="content-side">
+            <div>
+                <h2 class="greeting">今日も一日、お疲れ様でした。</h2>
+                <p class="sub-msg">ゆっくりとお茶を淹れて、一息つきましょう。</p>
+                <div class="divider-h"></div>
+                
+                <div class="tomorrow-section">
+                    <p class="section-label">明日の天気</p>
+                    {% if weather %}
+                    <h3 class="tomorrow-weather">{{ weather.description }}</h3>
+                    <p class="tomorrow-note">最高{{ weather.high }}°C / 最低{{ weather.low }}°C{% if '雨' in weather.description %} • 傘をお持ちください{% endif %}</p>
+                    {% else %}
+                    <h3 class="tomorrow-weather">晴れのち曇り</h3>
+                    <p class="tomorrow-note">明日も良い一日になりますように。</p>
+                    {% endif %}
+                    
+                    {% if events %}
+                    <div class="schedule-box">
+                        <p class="section-label">明日の予定</p>
+                        {% for event in events[:3] %}
+                        <div class="schedule-item">
+                            <span class="schedule-time">{{ event.time }}</span>
+                            <span class="schedule-event">{{ event.title }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        {% if season_info %}
+        <div class="micro-season">
+            <div class="kanji">時候: {{ season_info.micro_season.kanji }}</div>
+            <div class="meaning">{{ season_info.micro_season.english }}</div>
+        </div>
+        {% endif %}
     </div>
-  </body>
+</body>
 </html>
