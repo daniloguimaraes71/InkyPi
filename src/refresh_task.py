@@ -108,6 +108,12 @@ class RefreshTask:
                             self.log_system_stats()
 
                         if self.scheduler.is_enabled():
+                            # Check for interrupts (calendar events, weather alerts)
+                            tz_str = self.device_config.get_config("timezone", default="UTC")
+                            tz = pytz.timezone(tz_str)
+                            self.scheduler.check_calendar_interrupts(current_dt, tz)
+                            self.scheduler.check_weather_alerts(current_dt, self.device_config)
+
                             # Use scheduler engine
                             logger.info(f"Scheduler check. | current_time: {current_dt.strftime('%Y-%m-%d %H:%M:%S')} | mode: {self.scheduler._current_mode}")
                             action, next_sleep = self.scheduler.next_action(current_dt, playlist_manager, latest_refresh)
@@ -301,3 +307,94 @@ class PlaylistRefresh(RefreshAction):
                 image = img.copy()
 
         return image
+
+
+class CalendarInterrupt(RefreshAction):
+    """Interrupt action for upcoming calendar events.
+
+    Generates a simple notification card showing the upcoming event.
+    """
+
+    def __init__(self, event_data):
+        self.event_data = event_data
+        self.plugin_id = "calendar_interrupt"
+
+    def execute(self, plugin, device_config, current_dt: datetime):
+        """Generate a calendar notification card."""
+        from PIL import Image, ImageDraw
+        from utils.app_utils import get_font
+
+        w, h = device_config.get_resolution()
+        if device_config.get_config("orientation") == "vertical":
+            w, h = h, w
+
+        img = Image.new("RGBA", (w, h), (250, 248, 245, 255))
+        draw = ImageDraw.Draw(img)
+
+        font_large = get_font("Noto Serif JP", int(w * 0.07))
+        font_medium = get_font("Noto Sans JP", int(w * 0.04))
+        font_small = get_font("Noto Sans JP", int(w * 0.03))
+
+        title = self.event_data.get("title", "Event")
+        minutes = self.event_data.get("minutes_until", 0)
+
+        if minutes <= 0:
+            time_str = "Starting now"
+        elif minutes == 1:
+            time_str = "In 1 minute"
+        else:
+            time_str = f"In {minutes} minutes"
+
+        # Draw notification card
+        draw.text((w * 0.08, h * 0.25), "📅 Upcoming", font=font_medium, fill=(120, 120, 120, 255))
+        draw.text((w * 0.08, h * 0.35), title, font=font_large, fill=(40, 40, 40, 255))
+        draw.text((w * 0.08, h * 0.50), time_str, font=font_medium, fill=(100, 100, 100, 255))
+
+        return img
+
+    def get_refresh_info(self):
+        return {"refresh_type": "Calendar Interrupt", "plugin_id": self.plugin_id}
+
+    def get_plugin_id(self):
+        return self.plugin_id
+
+
+class WeatherAlertInterrupt(RefreshAction):
+    """Interrupt action for weather alerts."""
+
+    def __init__(self, alert_data):
+        self.alert_data = alert_data
+        self.plugin_id = "weather_alert_interrupt"
+
+    def execute(self, plugin, device_config, current_dt: datetime):
+        """Generate a weather alert card."""
+        from PIL import Image, ImageDraw
+        from utils.app_utils import get_font
+
+        w, h = device_config.get_resolution()
+        if device_config.get_config("orientation") == "vertical":
+            w, h = h, w
+
+        img = Image.new("RGBA", (w, h), (255, 248, 240, 255))
+        draw = ImageDraw.Draw(img)
+
+        font_large = get_font("Noto Serif JP", int(w * 0.06))
+        font_medium = get_font("Noto Sans JP", int(w * 0.04))
+        font_small = get_font("Noto Sans JP", int(w * 0.03))
+
+        event = self.alert_data.get("event", "Weather Alert")
+        description = self.alert_data.get("description", "")[:100]
+
+        # Draw alert card
+        draw.text((w * 0.08, h * 0.20), "⚠️ Weather Alert", font=font_medium, fill=(180, 100, 60, 255))
+        draw.text((w * 0.08, h * 0.32), event, font=font_large, fill=(60, 40, 20, 255))
+        if description:
+            draw.text((w * 0.08, h * 0.48), description, font=font_small, fill=(100, 80, 60, 255))
+
+        return img
+
+    def get_refresh_info(self):
+        return {"refresh_type": "Weather Alert", "plugin_id": self.plugin_id}
+
+    def get_plugin_id(self):
+        return self.plugin_id

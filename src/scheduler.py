@@ -1,5 +1,6 @@
 import logging
-from datetime import datetime
+import requests
+from datetime import datetime, timedelta
 from model import PlaylistManager
 
 logger = logging.getLogger(__name__)
@@ -7,6 +8,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_PHOTO_DWELL = 1800    # 30 minutes for photo frame
 DEFAULT_CARD_DWELL = 300      # 5 minutes for info cards
 DEFAULT_CARD_ROTATE = 60      # 1 minute between card rotations
+DEFAULT_INTERRUPT_CHECK = 300 # Check for interrupts every 5 minutes
 
 
 class SchedulerEngine:
@@ -34,6 +36,7 @@ class SchedulerEngine:
         self._current_mode = None
         self._current_playlist_name = None
         self._interrupt_queue = []
+        self._last_interrupt_check = None
 
     def is_enabled(self):
         return self.enabled and len(self.modes) > 0
@@ -126,6 +129,113 @@ class SchedulerEngine:
         """Queue a high-priority interrupt (e.g., calendar event, weather alert)."""
         self._interrupt_queue.append(refresh_action)
         logger.info(f"Interrupt queued: {refresh_action}")
+
+    def check_calendar_interrupts(self, current_dt, tz):
+        """Check for upcoming calendar events and queue interrupts if needed.
+
+        Called periodically by RefreshTask. Checks calendar URLs configured
+        in scheduler.interrupts.calendar for events starting within the
+        configured threshold (default 15 minutes).
+        """
+        interrupt_config = self.scheduler_config.get("interrupts", {})
+        calendar_config = interrupt_config.get("calendar", {})
+
+        if not calendar_config.get("enabled", False):
+            return
+
+        # Rate limit checks
+        check_interval = calendar_config.get("check_interval_seconds", DEFAULT_INTERRUPT_CHECK)
+        if self._last_interrupt_check:
+            elapsed = (current_dt - self._last_interrupt_check).total_seconds()
+            if elapsed < check_interval:
+                return
+
+        self._last_interrupt_check = current_dt
+
+        calendar_urls = calendar_config.get("urls", [])
+        threshold_minutes = calendar_config.get("threshold_minutes", 15)
+
+        for url in calendar_urls:
+            try:
+                events = self._fetch_upcoming_events(url, current_dt, tz, threshold_minutes)
+                for event in events:
+                    # Create a calendar notification card action
+                    from refresh_task import CalendarInterrupt
+                    interrupt = CalendarInterrupt(event)
+                    self.queue_interrupt(interrupt)
+            except Exception as e:
+                logger.warning(f"Failed to check calendar interrupts for {url}: {e}")
+
+    def check_weather_alerts(self, current_dt, device_config):
+        """Check for weather alerts and queue interrupts if needed."""
+        interrupt_config = self.scheduler_config.get("interrupts", {})
+        weather_config = interrupt_config.get("weather_alerts", {})
+
+        if not weather_config.get("enabled", False):
+            return
+
+        try:
+            api_key = device_config.load_env_key("OPEN_WEATHER_MAP_SECRET")
+            if not api_key:
+                return
+
+            lat = device_config.get_config("latitude", default=None)
+            lon = device_config.get_config("longitude", default=None)
+            if not lat or not lon:
+                return
+
+            url = f"https://api.openweathermap.org/data/2.5/alerts?lat={lat}&lon={lon}&appid={api_key}"
+            resp = requests.get(url, timeout=10)
+            if resp.status_code != 200:
+                return
+
+            data = resp.json()
+            alerts = data.get("alerts", [])
+
+            if alerts:
+                from refresh_task import WeatherAlertInterrupt
+                for alert in alerts[:1]:  # Only queue one alert at a time
+                    interrupt = WeatherAlertInterrupt(alert)
+                    self.queue_interrupt(interrupt)
+
+        except Exception as e:
+            logger.warning(f"Failed to check weather alerts: {e}")
+
+    def _fetch_upcoming_events(self, calendar_url, current_dt, tz, threshold_minutes):
+        """Fetch events starting within the next threshold_minutes."""
+        try:
+            import icalendar
+            import recurring_ical_events
+
+            if calendar_url.startswith("webcal://"):
+                calendar_url = calendar_url.replace("webcal://", "https://")
+
+            resp = requests.get(calendar_url, timeout=15)
+            resp.raise_for_status()
+            cal = icalendar.Calendar.from_ical(resp.text)
+
+            # Look for events in the next threshold_minutes
+            start = current_dt
+            end = current_dt + timedelta(minutes=threshold_minutes)
+            events = recurring_ical_events.of(cal).between(start, end)
+
+            upcoming = []
+            for event in events:
+                dtstart = event.decoded("dtstart")
+                if isinstance(dtstart, datetime):
+                    dtstart = dtstart.astimezone(tz)
+
+                upcoming.append({
+                    "title": str(event.get("summary", "")),
+                    "start": dtstart,
+                    "minutes_until": int((dtstart - current_dt).total_seconds() / 60),
+                })
+
+            return upcoming
+
+        except Exception as e:
+            logger.warning(f"Failed to fetch calendar for interrupts: {e}")
+            return []
 
     def _get_next_plugin(self, mode_playlists, playlist_manager, mode):
         """Get the next plugin from the mode's playlist list."""
