@@ -31,7 +31,7 @@
             width: 100%;
             height: 100%;
             box-sizing: border-box;
-            padding: 32px 40px;
+            padding: 28px 36px 52px 36px;
             position: relative;
         }
 
@@ -188,7 +188,7 @@
                 </div>
             </div>
             
-            <div class="schedule-side">
+            <div class="schedule-side" style="display: flex; flex-direction: column;">
                 <h3 class="schedule-header">今日の予定</h3>
                 {% if events %}
                     {% for event in events[:4] %}
@@ -204,8 +204,8 @@
                 {% endif %}
                 
                 {% if morning_image %}
-                <div style="margin-top: 16px; flex: 1; min-height: 0;">
-                    <div class="image-frame" style="height: 100%; min-height: 140px;">
+                <div style="margin-top: auto; min-height: 120px; max-height: 200px;">
+                    <div class="image-frame" style="height: 100%;">
                         <img src="{{ morning_image }}" alt="Morning">
                     </div>
                     <div style="font-size: 10px; color: var(--text-light); text-align: center; margin-top: 4px;">{{ image_label }}</div>
