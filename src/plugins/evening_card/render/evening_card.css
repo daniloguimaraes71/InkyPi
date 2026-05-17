@@ -1,0 +1,99 @@
+.evening {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 8% 10%;
+    box-sizing: border-box;
+    font-family: "Noto Serif JP", "Jost", serif;
+}
+
+.evening-header {
+    margin-bottom: 5%;
+}
+
+.title {
+    font-size: 2.4em;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+}
+
+.subtitle {
+    font-size: 1.1em;
+    color: #888;
+    margin-top: 0.2em;
+}
+
+.section-label {
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #888;
+    margin-bottom: 0.5em;
+}
+
+.tomorrow-section {
+    margin-bottom: 4%;
+}
+
+.weather-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 1.2em;
+    padding: 0.4em 0;
+}
+
+.weather-desc {
+    text-transform: capitalize;
+}
+
+.weather-temps {
+    font-weight: 600;
+}
+
+.events-section {
+    flex: 1;
+    overflow: hidden;
+}
+
+.event-row {
+    display: flex;
+    align-items: baseline;
+    gap: 1em;
+    padding: 0.3em 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 1em;
+}
+
+.event-time {
+    min-width: 4em;
+    color: #888;
+    font-size: 0.9em;
+}
+
+.event-title {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.season-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 0.85em;
+    color: #999;
+    padding-top: 0.5em;
+    border-top: 1px solid #eee;
+}
+
+.season-kanji {
+    font-size: 1.1em;
+}
+
+.season-english {
+    color: #aaa;
+}

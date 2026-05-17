@@ -175,12 +175,13 @@ class Playlist:
         current_plugin_index (int): Index of the currently active plugin in the playlist.
     """
 
-    def __init__(self, name, start_time, end_time, plugins=None, current_plugin_index=None):
+    def __init__(self, name, start_time, end_time, plugins=None, current_plugin_index=None, mode=None):
         self.name = name
         self.start_time = start_time
         self.end_time = end_time
         self.plugins = [PluginInstance.from_dict(p) for p in (plugins or [])]
         self.current_plugin_index = current_plugin_index
+        self.mode = mode
 
     def is_active(self, current_time):
         """Check if the playlist is active at the given time."""
@@ -257,7 +258,8 @@ class Playlist:
             "start_time": self.start_time,
             "end_time": self.end_time,
             "plugins": [p.to_dict() for p in self.plugins],
-            "current_plugin_index": self.current_plugin_index
+            "current_plugin_index": self.current_plugin_index,
+            "mode": self.mode
         }
 
     @classmethod
@@ -267,7 +269,8 @@ class Playlist:
             start_time=data["start_time"],
             end_time=data["end_time"],
             plugins=data["plugins"],
-            current_plugin_index=data.get("current_plugin_index", None)
+            current_plugin_index=data.get("current_plugin_index", None),
+            mode=data.get("mode", None)
         )
 
 class PluginInstance:
@@ -281,12 +284,13 @@ class PluginInstance:
         latest_refresh (str): ISO-formatted string representing the last refresh time.
     """
 
-    def __init__(self, plugin_id, name, settings, refresh, latest_refresh_time=None):
+    def __init__(self, plugin_id, name, settings, refresh, latest_refresh_time=None, dwell_seconds=None):
         self.plugin_id = plugin_id
         self.name = name
         self.settings = settings
         self.refresh = refresh
         self.latest_refresh_time = latest_refresh_time
+        self.dwell_seconds = dwell_seconds
 
     def update(self, updated_data):
         """Update attributes of the class with the dictionary values."""
@@ -340,13 +344,16 @@ class PluginInstance:
         return latest_refresh
     
     def to_dict(self):
-        return {
+        result = {
             "plugin_id": self.plugin_id,
             "name": self.name,
             "plugin_settings": self.settings,
             "refresh": self.refresh,
             "latest_refresh_time": self.latest_refresh_time,
         }
+        if self.dwell_seconds is not None:
+            result["dwell_seconds"] = self.dwell_seconds
+        return result
 
     @classmethod
     def from_dict(cls, data):
@@ -356,4 +363,5 @@ class PluginInstance:
             settings=data["plugin_settings"],
             refresh=data["refresh"],
             latest_refresh_time=data.get("latest_refresh_time"),
+            dwell_seconds=data.get("dwell_seconds"),
         )

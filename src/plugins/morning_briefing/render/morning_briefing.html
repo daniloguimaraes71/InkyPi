@@ -1,0 +1,43 @@
+{% extends "plugin.html" %}
+
+{% block content %}
+<div class="briefing">
+    <div class="briefing-header">
+        <div class="greeting">{{ greeting }}</div>
+        <div class="date-line">
+            <span class="date">{{ now.strftime("%A, %B %d") }}</span>
+            {% if season_info %}
+            <span class="season-dot">·</span>
+            <span class="season">{{ season_info.micro_season.kanji }}</span>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if weather %}
+    <div class="weather-strip">
+        <span class="weather-temp">{{ weather.temp }}°C</span>
+        <span class="weather-desc">{{ weather.description }}</span>
+        <span class="weather-humidity">💧 {{ weather.humidity }}%</span>
+    </div>
+    {% endif %}
+
+    {% if events %}
+    <div class="events-section">
+        <div class="events-title">Today's Schedule</div>
+        {% for event in events %}
+        <div class="event-row">
+            <span class="event-time">{{ event.time }}</span>
+            <span class="event-title">{{ event.title }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if season_info %}
+    <div class="season-footer">
+        <span class="season-name">{{ season_info.solar_term.name }} {{ season_info.solar_term.english }}</span>
+        <span class="season-desc">{{ season_info.micro_season.english }}</span>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

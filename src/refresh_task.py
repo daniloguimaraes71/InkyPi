@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from plugins.plugin_registry import get_plugin_instance
 from utils.image_utils import compute_image_hash
 from model import RefreshInfo, PlaylistManager
+from scheduler import SchedulerEngine
 from PIL import Image
 
 logger = logging.getLogger(__name__)
@@ -18,6 +19,7 @@ class RefreshTask:
     def __init__(self, device_config, display_manager):
         self.device_config = device_config
         self.display_manager = display_manager
+        self.scheduler = SchedulerEngine(device_config)
 
         self.thread = None
         self.lock = threading.Lock()
@@ -28,6 +30,7 @@ class RefreshTask:
         self.refresh_event = threading.Event()
         self.refresh_event.set()
         self.refresh_result = {}
+        self._scheduler_sleep_time = 60
 
     def start(self):
         """Starts the background thread for refreshing the display."""
@@ -73,7 +76,12 @@ class RefreshTask:
         while True:
             try:
                 with self.condition:
-                    sleep_time = self.device_config.get_config("plugin_cycle_interval_seconds", default=60*60)
+                    # Determine sleep time: scheduler or legacy
+                    if self.scheduler.is_enabled():
+                        sleep_time = self._scheduler_sleep_time
+                    else:
+                        sleep_time = self.device_config.get_config("plugin_cycle_interval_seconds", default=60*60)
+                    self._scheduler_sleep_time = sleep_time
 
                     # Wait for sleep_time or until notified
                     self.condition.wait(timeout=sleep_time)
@@ -99,11 +107,18 @@ class RefreshTask:
                         if self.device_config.get_config("log_system_stats"):
                             self.log_system_stats()
 
-                        # handle refresh based on playlists
-                        logger.info(f"Running interval refresh check. | current_time: {current_dt.strftime('%Y-%m-%d %H:%M:%S')}")
-                        playlist, plugin_instance = self._determine_next_plugin(playlist_manager, latest_refresh, current_dt)
-                        if plugin_instance:
-                            refresh_action = PlaylistRefresh(playlist, plugin_instance)
+                        if self.scheduler.is_enabled():
+                            # Use scheduler engine
+                            logger.info(f"Scheduler check. | current_time: {current_dt.strftime('%Y-%m-%d %H:%M:%S')} | mode: {self.scheduler._current_mode}")
+                            action, next_sleep = self.scheduler.next_action(current_dt, playlist_manager, latest_refresh)
+                            self._scheduler_sleep_time = next_sleep
+                            refresh_action = action
+                        else:
+                            # Legacy playlist-based refresh
+                            logger.info(f"Running interval refresh check. | current_time: {current_dt.strftime('%Y-%m-%d %H:%M:%S')}")
+                            playlist, plugin_instance = self._determine_next_plugin(playlist_manager, latest_refresh, current_dt)
+                            if plugin_instance:
+                                refresh_action = PlaylistRefresh(playlist, plugin_instance)
 
                     if refresh_action:
                         plugin_config = self.device_config.get_plugin(refresh_action.get_plugin_id())

@@ -1,0 +1,271 @@
+{
+  "version": 1,
+  "description": "二十四節気 (24 solar terms) + 七十二候 (72 micro-seasons) for Kansai Companion",
+  "solar_terms": [
+    {
+      "name": "立春",
+      "romaji": "Risshun",
+      "english": "Start of Spring",
+      "month": 2, "day_start": 4,
+      "palette": {"primary": "#8B7355", "secondary": "#D4C5A9", "accent": "#C9A9A6", "bg": "#FAF8F5"}
+    },
+    {
+      "name": "雨水",
+      "romaji": "Usui",
+      "english": "Rain Water",
+      "month": 2, "day_start": 19,
+      "palette": {"primary": "#6B8E8E", "secondary": "#B8D4D4", "accent": "#A8C4C4", "bg": "#F5F8F8"}
+    },
+    {
+      "name": "啓蟄",
+      "romaji": "Keichitsu",
+      "english": "Awakening of Insects",
+      "month": 3, "day_start": 6,
+      "palette": {"primary": "#7A8B6F", "secondary": "#C5D4B8", "accent": "#B8C9A8", "bg": "#F7F9F5"}
+    },
+    {
+      "name": "春分",
+      "romaji": "Shunbun",
+      "english": "Spring Equinox",
+      "month": 3, "day_start": 21,
+      "palette": {"primary": "#D4A0A0", "secondary": "#F0D4D4", "accent": "#E8C4C4", "bg": "#FDF8F8"}
+    },
+    {
+      "name": "清明",
+      "romaji": "Seimei",
+      "english": "Clear and Bright",
+      "month": 4, "day_start": 5,
+      "palette": {"primary": "#A8C4A0", "secondary": "#D8ECD4", "accent": "#C8E0C0", "bg": "#F8FBF7"}
+    },
+    {
+      "name": "穀雨",
+      "romaji": "Kokuu",
+      "english": "Grain Rain",
+      "month": 4, "day_start": 20,
+      "palette": {"primary": "#8BA88B", "secondary": "#C4D8C4", "accent": "#B4CCB4", "bg": "#F6F9F6"}
+    },
+    {
+      "name": "立夏",
+      "romaji": "Rikka",
+      "english": "Start of Summer",
+      "month": 5, "day_start": 6,
+      "palette": {"primary": "#6B9E6B", "secondary": "#B8D8B8", "accent": "#A0C8A0", "bg": "#F4F9F4"}
+    },
+    {
+      "name": "小満",
+      "domaji": "Shōman",
+      "english": "Grain Full",
+      "month": 5, "day_start": 21,
+      "palette": {"primary": "#8BA86B", "secondary": "#C8D8B4", "accent": "#B8CCA0", "bg": "#F6F9F4"}
+    },
+    {
+      "name": "芒種",
+      "romaji": "Bōshu",
+      "english": "Grain in Ear",
+      "month": 6, "day_start": 6,
+      "palette": {"primary": "#6B8E6B", "secondary": "#B4D0B4", "accent": "#A0C0A0", "bg": "#F4F8F4"}
+    },
+    {
+      "name": "夏至",
+      "romaji": "Geshi",
+      "english": "Summer Solstice",
+      "month": 6, "day_start": 21,
+      "palette": {"primary": "#5B8E7A", "secondary": "#A8D0C0", "accent": "#90C0B0", "bg": "#F2F8F6"}
+    },
+    {
+      "name": "小暑",
+      "romaji": "Shōsho",
+      "english": "Minor Heat",
+      "month": 7, "day_start": 7,
+      "palette": {"primary": "#8B8B5B", "secondary": "#D0D0A0", "accent": "#C0C090", "bg": "#F8F8F2"}
+    },
+    {
+      "name": "大暑",
+      "romaji": "Taisho",
+      "english": "Major Heat",
+      "month": 7, "day_start": 23,
+      "palette": {"primary": "#A0785B", "secondary": "#D8C0A0", "accent": "#C8B090", "bg": "#FAF6F2"}
+    },
+    {
+      "name": "立秋",
+      "romaji": "Risshū",
+      "english": "Start of Autumn",
+      "month": 8, "day_start": 7,
+      "palette": {"primary": "#B08860", "secondary": "#D8C4A0", "accent": "#C8B490", "bg": "#FAF7F2"}
+    },
+    {
+      "name": "処暑",
+      "romaji": "Shosho",
+      "english": "End of Heat",
+      "month": 8, "day_start": 23,
+      "palette": {"primary": "#A08060", "secondary": "#D0B898", "accent": "#C0A888", "bg": "#F9F5F0"}
+    },
+    {
+      "name": "白露",
+      "romaji": "Hakuro",
+      "english": "White Dew",
+      "month": 9, "day_start": 8,
+      "palette": {"primary": "#8888A0", "secondary": "#C8C8D8", "accent": "#B0B0C8", "bg": "#F6F6FA"}
+    },
+    {
+      "name": "秋分",
+      "romaji": "Shūbun",
+      "english": "Autumn Equinox",
+      "month": 9, "day_start": 23,
+      "palette": {"primary": "#C08060", "secondary": "#E0C0A0", "accent": "#D0B090", "bg": "#FBF6F2"}
+    },
+    {
+      "name": "寒露",
+      "romaji": "Kanro",
+      "english": "Cold Dew",
+      "month": 10, "day_start": 8,
+      "palette": {"primary": "#A07060", "secondary": "#D0B0A0", "accent": "#C0A090", "bg": "#F9F4F2"}
+    },
+    {
+      "name": "霜降",
+      "romaji": "Sōkō",
+      "english": "Frost Descent",
+      "month": 10, "day_start": 23,
+      "palette": {"primary": "#887070", "secondary": "#C8B0B0", "accent": "#B8A0A0", "bg": "#F8F4F4"}
+    },
+    {
+      "name": "立冬",
+      "romaji": "Rittō",
+      "english": "Start of Winter",
+      "month": 11, "day_start": 7,
+      "palette": {"primary": "#707888", "secondary": "#B0B8C8", "accent": "#A0A8B8", "bg": "#F4F5F8"}
+    },
+    {
+      "name": "小雪",
+      "romaji": "Shōsetsu",
+      "english": "Minor Snow",
+      "month": 11, "day_start": 22,
+      "palette": {"primary": "#808898", "secondary": "#C0C8D8", "accent": "#B0B8C8", "bg": "#F5F6FA"}
+    },
+    {
+      "name": "大雪",
+      "romaji": "Taisetsu",
+      "english": "Major Snow",
+      "month": 12, "day_start": 7,
+      "palette": {"primary": "#7880A0", "secondary": "#B8C0D8", "accent": "#A8B0C8", "bg": "#F4F5FA"}
+    },
+    {
+      "name": "冬至",
+      "romaji": "Tōji",
+      "english": "Winter Solstice",
+      "month": 12, "day_start": 22,
+      "palette": {"primary": "#687088", "secondary": "#A8B0C8", "accent": "#98A0B8", "bg": "#F2F4F8"}
+    },
+    {
+      "name": "小寒",
+      "romaji": "Shōkan",
+      "english": "Minor Cold",
+      "month": 1, "day_start": 6,
+      "palette": {"primary": "#707880", "secondary": "#B0B8C0", "accent": "#A0A8B0", "bg": "#F4F5F6"}
+    },
+    {
+      "name": "大寒",
+      "romaji": "Daikan",
+      "english": "Major Cold",
+      "month": 1, "day_start": 20,
+      "palette": {"primary": "#787888", "secondary": "#B8B8C8", "accent": "#A8A8B8", "bg": "#F5F5F8"}
+    }
+  ],
+  "micro_seasons": [
+    {"solar_term": "立春", "index": 1, "kanji": "東風解凍", "romaji": "Harukaze kōri o toku", "english": "East wind melts the ice", "month": 2, "day_start": 4, "day_end": 8},
+    {"solar_term": "立春", "index": 2, "kanji": "黄鶯睍睆", "romaji": "Kōō kenkan su", "english": "Bush warblers start singing", "month": 2, "day_start": 9, "day_end": 13},
+    {"solar_term": "立春", "index": 3, "kanji": "魚上氷", "romaji": "Uo kōri o izuru", "english": "Fish emerge from the ice", "month": 2, "day_start": 14, "day_end": 18},
+
+    {"solar_term": "雨水", "index": 4, "kanji": "土脉潤起", "romaji": "Tsuchi no shō uruoi okoru", "english": "Rain softens the soil", "month": 2, "day_start": 19, "day_end": 23},
+    {"solar_term": "雨水", "index": 5, "kanji": "霞始靆", "romaji": "Kasumi hajimete tanabiku", "english": "Mists start to linger", "month": 2, "day_start": 24, "day_end": 28},
+    {"solar_term": "雨水", "index": 6, "kanji": "草木萠動", "romaji": "Sōboku mebae izuru", "english": "Grass sprouts, trees bud", "month": 3, "day_start": 1, "day_end": 5},
+
+    {"solar_term": "啓蟄", "index": 7, "kanji": "蟄虫啓戸", "romaji": "Sugomori mushito o hiraku", "english": "Hibernating insects emerge", "month": 3, "day_start": 6, "day_end": 10},
+    {"solar_term": "啓蟄", "index": 8, "kanji": "桃始笑", "romaji": "Momo hajimete warau", "english": "Peach blossoms begin to open", "month": 3, "day_start": 11, "day_end": 15},
+    {"solar_term": "啓蟄", "index": 9, "kanji": "菜虫化蝶", "romaji": "Namushi chō to naru", "english": "Caterpillars become butterflies", "month": 3, "day_start": 16, "day_end": 20},
+
+    {"solar_term": "春分", "index": 10, "kanji": "雀始巣", "romaji": "Suzume hajimete sukuu", "english": "Sparrows begin to nest", "month": 3, "day_start": 21, "day_end": 25},
+    {"solar_term": "春分", "index": 11, "kanji": "桜始開", "romaji": "Sakura hajimete saku", "english": "Cherry blossoms begin to bloom", "month": 3, "day_start": 26, "day_end": 30},
+    {"solar_term": "春分", "index": 12, "kanji": "雷乃発声", "romaji": "Kaminari sunawachi koe o hassu", "english": "Thunder begins to rumble", "month": 3, "day_start": 31, "day_end": 4},
+
+    {"solar_term": "清明", "index": 13, "kanji": "玄鳥至", "romaji": "Tsubame itaru", "english": "Swallows return", "month": 4, "day_start": 5, "day_end": 9},
+    {"solar_term": "清明", "index": 14, "kanji": "鴻雁北", "romaji": "Kōgan kisu", "english": "Wild geese fly north", "month": 4, "day_start": 10, "day_end": 14},
+    {"solar_term": "清明", "index": 15, "kanji": "虹始見", "romaji": "Niji hajimete arawaru", "english": "Rainbows begin to appear", "month": 4, "day_start": 15, "day_end": 19},
+
+    {"solar_term": "穀雨", "index": 16, "kanji": "葭始生", "romaji": "Ashi hajimete shōzu", "english": "Reeds begin to grow", "month": 4, "day_start": 20, "day_end": 24},
+    {"solar_term": "穀雨", "index": 17, "kanji": "霜止出苗", "romaji": "Shimo yamite nae izuru", "english": "Frost ceases, rice seedlings sprout", "month": 4, "day_start": 25, "day_end": 29},
+    {"solar_term": "穀雨", "index": 18, "kanji": "牡丹華", "romaji": "Botan hana saku", "english": "Peonies bloom", "month": 4, "day_start": 30, "day_end": 5},
+
+    {"solar_term": "立夏", "index": 19, "kanji": "蛙始鳴", "romaji": "Kawazu hajimete naku", "english": "Frogs begin to sing", "month": 5, "day_start": 6, "day_end": 10},
+    {"solar_term": "立夏", "index": 20, "kanji": "蚯蚓出", "romaji": "Mimizu izuru", "english": "Earthworms emerge", "month": 5, "day_start": 11, "day_end": 15},
+    {"solar_term": "立夏", "index": 21, "kanji": "竹笋生", "romaji": "Takenoko shōzu", "english": "Bamboo shoots sprout", "month": 5, "day_start": 16, "day_end": 20},
+
+    {"solar_term": "小満", "index": 22, "kanji": "蚕起食桑", "romaji": "Kaiko okite kuwa o hamu", "english": "Silkworms begin feeding on mulberry", "month": 5, "day_start": 21, "day_end": 25},
+    {"solar_term": "小満", "index": 23, "kanji": "紅花栄", "romaji": "Benibana sakau", "english": "Safflowers bloom", "month": 5, "day_start": 26, "day_end": 30},
+    {"solar_term": "小満", "index": 24, "kanji": "麦秋至", "romaji": "Mugi no toki itaru", "english": "Wheat ripens", "month": 5, "day_start": 31, "day_end": 5},
+
+    {"solar_term": "芒種", "index": 25, "kanji": "螳螂生", "romaji": "Kamakiri shōzu", "english": "Praying mantises hatch", "month": 6, "day_start": 6, "day_end": 10},
+    {"solar_term": "芒種", "index": 26, "kanji": "腐草為蛍", "romaji": "Kusaretaru kusa hotaru to naru", "english": "Rotten grass becomes fireflies", "month": 6, "day_start": 11, "day_end": 15},
+    {"solar_term": "芒種", "index": 27, "kanji": "梅子黄", "romaji": "Ume no mi kibamu", "english": "Plums turn yellow", "month": 6, "day_start": 16, "day_end": 20},
+
+    {"solar_term": "夏至", "index": 28, "kanji": "乃東枯", "romaji": "Natsukarekusa karuru", "english": "Self-heal withers", "month": 6, "day_start": 21, "day_end": 25},
+    {"solar_term": "夏至", "index": 29, "kanji": "菖蒲華", "romaji": "Ayame hana saku", "english": "Irises bloom", "month": 6, "day_start": 26, "day_end": 30},
+    {"solar_term": "夏至", "index": 30, "kanji": "半夏生", "romaji": "Hange shōzu", "english": "Crowdipper sprouts", "month": 7, "day_start": 1, "day_end": 6},
+
+    {"solar_term": "小暑", "index": 31, "kanji": "温風至", "romaji": "Atsukaze itaru", "english": "Warm winds blow", "month": 7, "day_start": 7, "day_end": 11},
+    {"solar_term": "小暑", "index": 32, "kanji": "蓮始開", "romaji": "Hasu hajimete hiraku", "english": "Lotus blossoms begin to open", "month": 7, "day_start": 12, "day_end": 16},
+    {"solar_term": "小暑", "index": 33, "kanji": "鷹乃学習", "romaji": "Taka sunawachi waza o narau", "english": "Hawks learn to fly", "month": 7, "day_start": 17, "day_end": 22},
+
+    {"solar_term": "大暑", "index": 34, "kanji": "桐始結花", "romaji": "Kiri hajimete hana o musubu", "english": "Paulownia trees produce flowers", "month": 7, "day_start": 23, "day_end": 27},
+    {"solar_term": "大暑", "index": 35, "kanji": "土潤溽暑", "romaji": "Tsuchi uruōte mushi atsushi", "english": "Earth is hot and humid", "month": 7, "day_start": 28, "day_end": 1},
+    {"solar_term": "大暑", "index": 36, "kanji": "大雨時行", "romaji": "Ōame tokidoki furu", "english": "Heavy rains fall from time to time", "month": 8, "day_start": 2, "day_end": 6},
+
+    {"solar_term": "立秋", "index": 37, "kanji": "涼風至", "romaji": "Suzukaze itaru", "english": "Cool winds arrive", "month": 8, "day_start": 7, "day_end": 11},
+    {"solar_term": "立秋", "index": 38, "kanji": "寒蝉鳴", "romaji": "Higurashi naku", "english": "Evening cicadas sing", "month": 8, "day_start": 12, "day_end": 16},
+    {"solar_term": "立秋", "index": 39, "kanji": "蒙霧升降", "romaji": "Kiri fukaki nobori oriru", "english": "Thick fog descends", "month": 8, "day_start": 17, "day_end": 22},
+
+    {"solar_term": "処暑", "index": 40, "kanji": "綿査開", "romaji": "Wata hajimete hiraku", "english": "Cotton bolls open", "month": 8, "day_start": 23, "day_end": 27},
+    {"solar_term": "処暑", "index": 41, "kanji": "天地始粛", "romaji": "Tenchi hajimete samashi", "english": "Heat begins to subside", "month": 8, "day_start": 28, "day_end": 1},
+    {"solar_term": "処暑", "index": 42, "kanji": "禾乃登", "romaji": "Kokumono sunawachi minoru", "english": "Rice ripens", "month": 9, "day_start": 2, "day_end": 7},
+
+    {"solar_term": "白露", "index": 43, "kanji": "草露白", "romaji": "Kusa no tsuyu shiroshi", "english": "White dew on grass", "month": 9, "day_start": 8, "day_end": 12},
+    {"solar_term": "白露", "index": 44, "kanji": "鶺鴒鳴", "romaji": "Sekirei naku", "english": "Wagtails sing", "month": 9, "day_start": 13, "day_end": 17},
+    {"solar_term": "白露", "index": 45, "kanji": "玄鳥去", "romaji": "Tsubame saru", "english": "Swallows depart", "month": 9, "day_start": 18, "day_end": 22},
+
+    {"solar_term": "秋分", "index": 46, "kanji": "雷乃収声", "romaji": "Kaminari sunawachi koe o osamu", "english": "Thunder ceases", "month": 9, "day_start": 23, "day_end": 27},
+    {"solar_term": "秋分", "index": 47, "kanji": "蟄虫坯戸", "romaji": "Sugomori mushito o tojiru", "english": "Insects close their holes", "month": 9, "day_start": 28, "day_end": 2},
+    {"solar_term": "秋分", "index": 48, "kanji": "水始涸", "romaji": "Mizu hajimete karuru", "english": "Water begins to dry up", "month": 10, "day_start": 3, "day_end": 7},
+
+    {"solar_term": "寒露", "index": 49, "kanji": "鴻雁来", "romaji": "Kōgan kitaru", "english": "Wild geese arrive", "month": 10, "day_start": 8, "day_end": 12},
+    {"solar_term": "寒露", "index": 50, "kanji": "菊花開", "romaji": "Kiku hana saku", "english": "Chrysanthemums bloom", "month": 10, "day_start": 13, "day_end": 17},
+    {"solar_term": "寒露", "index": 51, "kanji": "蟋蟀在戸", "romaji": "Kōrogi to ni ari", "english": "Crickets chirp around the door", "month": 10, "day_start": 18, "day_end": 22},
+
+    {"solar_term": "霜降", "index": 52, "kanji": "霜始降", "romaji": "Shimo hajimete furu", "english": "First frost falls", "month": 10, "day_start": 23, "day_end": 27},
+    {"solar_term": "霜降", "index": 53, "kanji": "霎時施", "romaji": "Kosame tokidoki furu", "english": "Light rains fall", "month": 10, "day_start": 28, "day_end": 1},
+    {"solar_term": "霜降", "index": 54, "kanji": "楓蔦黄", "romaji": "Momiji tsuta kibamu", "english": "Maple and ivy turn yellow", "month": 11, "day_start": 2, "day_end": 6},
+
+    {"solar_term": "立冬", "index": 55, "kanji": "山茶始開", "romaji": "Tsubaki hajimete saku", "english": "Camellias begin to bloom", "month": 11, "day_start": 7, "day_end": 11},
+    {"solar_term": "立冬", "index": 56, "kanji": "地始凍", "romaji": "Chi hajimete kōru", "english": "Ground begins to freeze", "month": 11, "day_start": 12, "day_end": 16},
+    {"solar_term": "立冬", "index": 57, "kanji": "金盞香", "romaji": "Kinsenkō", "english": "Daffodils bloom", "month": 11, "day_start": 17, "day_end": 21},
+
+    {"solar_term": "小雪", "index": 58, "kanji": "虹藏不見", "romaji": "Niji kakurete miezu", "english": "Rainbows hide", "month": 11, "day_start": 22, "day_end": 26},
+    {"solar_term": "小雪", "index": 59, "kanji": "閉塞成冬", "romaji": "Sora fusagari fuyu to naru", "english": "Sky closes, winter arrives", "month": 11, "day_start": 27, "day_end": 1},
+    {"solar_term": "小雪", "index": 60, "kanji": "橙降下", "romaji": "Daidai ochiru", "english": "Bitter oranges fall", "month": 12, "day_start": 2, "day_end": 6},
+
+    {"solar_term": "大雪", "index": 61, "kanji": "閉塞成冬", "romaji": "Kita no kaze fuku", "english": "North wind blows", "month": 12, "day_start": 7, "day_end": 11},
+    {"solar_term": "大雪", "index": 62, "kanji": "熊蟄穴", "romaji": "Kuma ana ni komoru", "english": "Bears retreat to caves", "month": 12, "day_start": 12, "day_end": 16},
+    {"solar_term": "大雪", "index": 63, "kanji": "鱖魚群", "romaji": "Sake no mi muragaru", "english": "Salmon gather in schools", "month": 12, "day_start": 17, "day_end": 21},
+
+    {"solar_term": "冬至", "index": 64, "kanji": "乃東生", "romaji": "Natsukarekusa shōzu", "english": "Self-heal sprouts", "month": 12, "day_start": 22, "day_end": 26},
+    {"solar_term": "冬至", "index": 65, "kanji": "麋角解", "romaji": "Nawashika no tsuno otsuru", "english": "Deer shed antlers", "month": 12, "day_start": 27, "day_end": 31},
+    {"solar_term": "冬至", "index": 66, "kanji": "雪下出麦", "romaji": "Yuki no shita ni mugi izuru", "english": "Wheat sprouts under snow", "month": 1, "day_start": 1, "day_end": 5},
+
+    {"solar_term": "小寒", "index": 67, "kanji": "芹乃栄", "romaji": "Seri sunawachi sakau", "english": "Parsley flourishes", "month": 1, "day_start": 6, "day_end": 10},
+    {"solar_term": "小寒", "index": 68, "kanji": "水泉動", "romaji": "Izumi ugoku", "english": "Springs thaw", "month": 1, "day_start": 11, "day_end": 15},
+    {"solar_term": "小寒", "index": 69, "kanji": "雉始雊", "romaji": "Kiji hajimete naku", "english": "Pheasants begin to call", "month": 1, "day_start": 16, "day_end": 19},
+
+    {"solar_term": "大寒", "index": 70, "kanji": "款冬華", "romaji": "Fuki hana saku", "english": "Butterbur flowers bloom", "month": 1, "day_start": 20, "day_end": 24},
+    {"solar_term": "大寒", "index": 71, "kanji": "水沢腹堅", "romaji": "Sawamizu kori katashi", "english": "Ice thickens on streams", "month": 1, "day_start": 25, "day_end": 29},
+    {"solar_term": "大寒", "index": 72, "kanji": "鶏始乳", "romaji": "Niwatori hajimete toya ni tsuku", "english": "Hens begin to lay", "month": 1, "day_start": 30, "day_end": 3}
+  ]
+}

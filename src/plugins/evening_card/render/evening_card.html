@@ -1,0 +1,39 @@
+{% extends "plugin.html" %}
+
+{% block content %}
+<div class="evening">
+    <div class="evening-header">
+        <div class="title">今晩は</div>
+        <div class="subtitle">Good Evening</div>
+    </div>
+
+    {% if weather %}
+    <div class="tomorrow-section">
+        <div class="section-label">Tomorrow — {{ weather.date }}</div>
+        <div class="weather-row">
+            <span class="weather-desc">{{ weather.description }}</span>
+            <span class="weather-temps">{{ weather.high }}° / {{ weather.low }}°</span>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if events %}
+    <div class="events-section">
+        <div class="section-label">Tomorrow's Schedule</div>
+        {% for event in events %}
+        <div class="event-row">
+            <span class="event-time">{{ event.time }}</span>
+            <span class="event-title">{{ event.title }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if season_info %}
+    <div class="season-footer">
+        <span class="season-kanji">{{ season_info.micro_season.kanji }}</span>
+        <span class="season-english">{{ season_info.micro_season.english }}</span>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
