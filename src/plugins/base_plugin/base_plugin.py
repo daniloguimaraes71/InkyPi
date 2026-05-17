@@ -96,7 +96,10 @@ class BasePlugin:
 
     def render_image(self, dimensions, html_file, css_file=None, template_params={}):
         # load the base plugin and current plugin css files
-        css_files = [os.path.join(BASE_PLUGIN_RENDER_DIR, "plugin.css")]
+        css_files = [
+            os.path.join(BASE_PLUGIN_RENDER_DIR, "plugin.css"),
+            os.path.join(BASE_PLUGIN_RENDER_DIR, "design-system.css")
+        ]
         if css_file:
             plugin_css = os.path.join(self.render_dir, css_file)
             css_files.append(plugin_css)
@@ -106,6 +109,20 @@ class BasePlugin:
         template_params["height"] = dimensions[1]
         template_params["font_faces"] = get_fonts()
         template_params["static_dir"] = STATIC_DIR
+        
+        # Provide default plugin_settings if not present
+        if "plugin_settings" not in template_params:
+            template_params["plugin_settings"] = {
+                "selectedFrame": "None",
+                "backgroundOption": "color",
+                "backgroundColor": "#FAF8F5",
+                "textColor": "#2C2C2C",
+                "margin": 0,
+                "topMargin": 0,
+                "bottomMargin": 0,
+                "leftMargin": 0,
+                "rightMargin": 0,
+            }
 
         # load and render the given html template
         template = self.env.get_template(html_file)

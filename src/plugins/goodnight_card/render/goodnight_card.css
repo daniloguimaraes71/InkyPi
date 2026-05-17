@@ -14,27 +14,29 @@
 }
 
 .moon {
-    width: 48px;
-    height: 48px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
     background-color: var(--text-primary, #E0D8C0);
-    opacity: 0.7;
-    margin-bottom: 32px;
-    box-shadow: inset -10px -4px 0 0 var(--bg-dark, #1A1A2E);
+    opacity: 0.8;
+    margin-bottom: 40px;
+    box-shadow: inset -14px -6px 0 0 var(--bg-dark, #1A1A2E);
 }
 
 .greeting {
     font-family: var(--font-serif, 'Noto Serif JP', serif);
-    font-size: 32px;
+    font-size: 40px;
+    font-weight: 500;
     color: var(--text-primary, #E0D8C0);
-    margin-bottom: 28px;
-    letter-spacing: 0.1em;
+    margin-bottom: 36px;
+    letter-spacing: 0.12em;
 }
 
 .poem {
     font-family: var(--font-serif, 'Noto Serif JP', serif);
-    font-size: 20px;
+    font-size: 24px;
     line-height: 2;
     color: #B0B8C8;
     letter-spacing: 0.15em;
+    font-weight: 500;
 }

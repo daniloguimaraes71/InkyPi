@@ -3,24 +3,26 @@
     flex-direction: column;
     height: 100%;
     width: 100%;
-    padding: 20px 28px;
+    padding: 32px;
     box-sizing: border-box;
 }
 
 .header {
-    margin-bottom: 16px;
+    margin-bottom: 20px;
 }
 
 .weekend-label {
-    font-size: 11px;
+    font-size: 14px;
+    font-weight: 500;
     color: var(--text-light, #888888);
-    letter-spacing: 0.05em;
-    margin-bottom: 2px;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
 }
 
 .header-title {
     font-family: var(--font-serif, 'Noto Serif JP', serif);
-    font-size: 20px;
+    font-size: 24px;
+    font-weight: 500;
     color: var(--text-primary, #2C2C2C);
     margin: 0;
 }
@@ -29,15 +31,15 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 16px;
 }
 
 .event-row {
     display: flex;
     align-items: center;
-    gap: 14px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--divider, #E0D8C8);
+    gap: 20px;
+    padding-bottom: 16px;
+    border-bottom: 3px solid var(--divider, #D4CFC4);
 }
 
 .event-row:last-child {
@@ -46,11 +48,11 @@
 }
 
 .event-thumb {
-    flex: 0 0 100px;
-    height: 70px;
-    border-radius: 3px;
+    flex: 0 0 120px;
+    height: 80px;
+    border-radius: 4px;
     overflow: hidden;
-    border: 1px solid var(--divider, #E0D8C8);
+    border: 3px solid var(--divider, #D4CFC4);
 }
 
 .event-thumb img {
@@ -67,7 +69,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 11px;
+    font-size: 14px;
+    font-weight: 500;
     color: var(--text-light, #888888);
 }
 
@@ -78,18 +81,21 @@
 
 .event-tag {
     display: inline-block;
-    padding: 2px 8px;
-    border: 1px solid var(--accent-copper, #B87333);
+    padding: 4px 14px;
+    border: 3px solid var(--accent-copper, #B87333);
     color: var(--accent-copper, #B87333);
-    font-size: 10px;
-    letter-spacing: 0.05em;
-    margin-bottom: 4px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+    border-radius: 3px;
 }
 
 .event-name {
     font-family: var(--font-serif, 'Noto Serif JP', serif);
-    font-size: 15px;
-    margin: 0 0 3px 0;
+    font-size: 18px;
+    font-weight: 500;
+    margin: 0 0 4px 0;
     line-height: 1.35;
     display: -webkit-box;
     -webkit-line-clamp: 2;
