@@ -1,39 +1,122 @@
-{% extends "plugin.html" %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        :root {
+            --bg-base: {{ palette.bg or '#FAF8F5' }};
+            --text-primary: {{ palette.primary or '#2C2C2C' }};
+            --text-secondary: #666666;
+            --text-tertiary: #999999;
+            --border-subtle: #E0D8C8;
+            --season-primary: {{ palette.primary or '#8B7355' }};
+            --font-serif: 'Noto Serif JP', serif;
+            --font-sans: 'Noto Sans JP', sans-serif;
+        }
 
-{% block content %}
-<div class="evening">
-    <div class="evening-header">
-        <div class="title">今晩は</div>
-        <div class="subtitle">Good Evening</div>
-    </div>
+        body {
+            width: 800px;
+            height: 480px;
+            margin: 0;
+            padding: 40px 48px;
+            box-sizing: border-box;
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            overflow: hidden;
+            position: relative;
+        }
 
-    {% if weather %}
-    <div class="tomorrow-section">
-        <div class="section-label">Tomorrow — {{ weather.date }}</div>
-        <div class="weather-row">
-            <span class="weather-desc">{{ weather.description }}</span>
-            <span class="weather-temps">{{ weather.high }}° / {{ weather.low }}°</span>
-        </div>
-    </div>
-    {% endif %}
+        .micro-season-stamp {
+            position: absolute;
+            top: 40px;
+            right: 48px;
+            text-align: right;
+        }
+        .micro-season-kanji {
+            font-family: var(--font-serif);
+            font-size: 14px;
+            color: var(--season-primary);
+            letter-spacing: 0.1em;
+        }
 
-    {% if events %}
-    <div class="events-section">
-        <div class="section-label">Tomorrow's Schedule</div>
-        {% for event in events %}
-        <div class="event-row">
-            <span class="event-time">{{ event.time }}</span>
-            <span class="event-title">{{ event.title }}</span>
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
+        .evening-grid { display: flex; height: 100%; gap: 32px; }
+        .evening-left { flex: 0 0 55%; display: flex; flex-direction: column; justify-content: space-between; }
+        .evening-right { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+        
+        .evening-header h2 { font-family: var(--font-serif); font-size: 28px; font-weight: 400; margin: 0; }
+        .evening-header p { font-family: var(--font-sans); font-size: 14px; color: var(--text-secondary); margin-top: 8px; }
+        
+        .tomorrow-box { background: #FFFFFF; border: 1px solid var(--border-subtle); padding: 24px; border-radius: 4px; flex: 1; margin-top: 24px; }
+        
+        .schedule-item { display: flex; align-items: baseline; margin-bottom: 12px; }
+        .time { font-family: var(--font-sans); font-size: 14px; color: var(--text-secondary); width: 80px; }
+        .event { font-family: var(--font-serif); font-size: 16px; border-bottom: 1px dotted var(--border-subtle); flex: 1; padding-bottom: 4px; }
+        .divider { border-top: 1px solid var(--border-subtle); margin: 12px 0; }
 
+        .image-frame {
+            width: 100%;
+            height: 100%;
+            border: 1px solid var(--border-subtle);
+            padding: 6px;
+            background: white;
+            box-sizing: border-box;
+        }
+        .image-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: grayscale(15%) sepia(8%);
+        }
+        .image-label {
+            font-family: var(--font-sans);
+            font-size: 10px;
+            color: var(--text-tertiary);
+            text-align: center;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
     {% if season_info %}
-    <div class="season-footer">
-        <span class="season-kanji">{{ season_info.micro_season.kanji }}</span>
-        <span class="season-english">{{ season_info.micro_season.english }}</span>
+    <div class="micro-season-stamp">
+        <div class="micro-season-kanji">候: {{ season_info.micro_season.kanji }}</div>
     </div>
     {% endif %}
-</div>
-{% endblock %}
+
+    <div class="evening-grid">
+        <div class="evening-left">
+            <div class="evening-header">
+                <h2>今日もお疲れ様でした。</h2>
+                {% if weather %}
+                <p>明日の天気は{{ weather.description }}です。{% if '雨' in weather.description %}傘をお忘れなく。{% endif %}</p>
+                {% else %}
+                <p>明日も良い一日になりますように。</p>
+                {% endif %}
+            </div>
+            <div class="tomorrow-box">
+                {% if events %}
+                    {% for event in events[:3] %}
+                    <div class="schedule-item">
+                        <span class="time">明日 {{ event.time }}</span>
+                        <span class="event">{{ event.title }}</span>
+                    </div>
+                    {% if not loop.last %}<div class="divider"></div>{% endif %}
+                    {% endfor %}
+                {% else %}
+                    <div class="schedule-item">
+                        <span class="event" style="color: var(--text-tertiary);">明日の予定はありません</span>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        <div class="evening-right">
+            {% if evening_image %}
+            <div class="image-frame">
+                <img src="{{ evening_image }}" alt="Evening">
+            </div>
+            <div class="image-label">{{ image_label }}</div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

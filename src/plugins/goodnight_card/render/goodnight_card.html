@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        :root {
+            --bg-base: #1A1A2E;
+            --text-primary: #E0D8C0;
+            --text-secondary: #B0A890;
+            --text-tertiary: #807860;
+            --season-primary: {{ palette.primary or '#8B7355' }};
+            --font-serif: 'Noto Serif JP', serif;
+            --font-sans: 'Noto Sans JP', sans-serif;
+        }
+
+        body {
+            width: 800px;
+            height: 480px;
+            margin: 0;
+            padding: 40px 48px;
+            box-sizing: border-box;
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            overflow: hidden;
+        }
+
+        .night-grid { display: flex; height: 100%; gap: 40px; align-items: center; }
+        .night-left { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .night-right { flex: 0 0 40%; display: flex; flex-direction: column; justify-content: center; }
+
+        .moon-icon {
+            font-size: 48px;
+            color: var(--season-primary);
+            margin-bottom: 24px;
+            opacity: 0.8;
+        }
+
+        .poem {
+            font-family: var(--font-serif);
+            font-size: 22px;
+            line-height: 2;
+            letter-spacing: 0.15em;
+            color: var(--text-primary);
+        }
+
+        .greeting {
+            font-family: var(--font-serif);
+            font-size: 28px;
+            color: var(--text-secondary);
+            margin-top: 32px;
+            letter-spacing: 0.1em;
+        }
+
+        .image-frame {
+            width: 100%;
+            height: 320px;
+            border: 1px solid #3A3A4E;
+            padding: 6px;
+            background: #2A2A3E;
+            box-sizing: border-box;
+        }
+        .image-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: grayscale(20%) brightness(0.9);
+        }
+        .image-label {
+            font-family: var(--font-sans);
+            font-size: 10px;
+            color: var(--text-tertiary);
+            text-align: center;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="night-grid">
+        <div class="night-left">
+            <div class="moon-icon">☾</div>
+            <div class="poem">
+                {{ poem | replace('\n', '<br>') }}
+            </div>
+            <div class="greeting">おやすみなさい</div>
+        </div>
+        <div class="night-right">
+            {% if night_image %}
+            <div class="image-frame">
+                <img src="{{ night_image }}" alt="Night">
+            </div>
+            <div class="image-label">{{ season_info.micro_season.kanji if season_info else '' }}</div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

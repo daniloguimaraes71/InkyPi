@@ -9,13 +9,91 @@ from utils.image_utils import pad_image_blur
 
 logger = logging.getLogger(__name__)
 
-# Curated list of seasonal painting themes
-SEASONAL_KEYWORDS = {
-    "spring": ["cherry blossom", "flower", "garden", "landscape"],
-    "summer": ["beach", "sea", "summer", "garden", "landscape"],
-    "autumn": ["autumn", "fall", "maple", "harvest", "landscape"],
-    "winter": ["snow", "winter", "mountain", "landscape"],
+# Global art search keywords - diverse regions and cultures
+GLOBAL_ART_KEYWORDS = {
+    "spring": [
+        # East Asia
+        "cherry blossom", "plum blossom", "spring landscape",
+        # South Asia
+        "spring festival", "holi", "basant",
+        # Middle East
+        "persian garden", "spring garden",
+        # Europe
+        "spring flowers", "pastoral spring",
+        # Americas
+        "spring landscape", "flowers",
+        # Africa
+        "african landscape", "savanna",
+    ],
+    "summer": [
+        # East Asia
+        "summer landscape", "lotus", "bamboo",
+        # South Asia
+        "monsoon", "tropical garden",
+        # Middle East
+        "desert oasis", "caravan",
+        # Europe
+        "summer harvest", "seaside",
+        # Americas
+        "tropical landscape", "summer beach",
+        # Africa
+        "african summer", "market scene",
+    ],
+    "autumn": [
+        # East Asia
+        "autumn maple", "harvest moon", "chrysanthemum",
+        # South Asia
+        "autumn festival", "diwali",
+        # Middle East
+        "autumn garden", "vineyard",
+        # Europe
+        "autumn harvest", "wine harvest",
+        # Americas
+        "autumn forest", "fall colors",
+        # Africa
+        "african autumn", "harvest scene",
+    ],
+    "winter": [
+        # East Asia
+        "winter snow", "pine and snow", "winter plum",
+        # South Asia
+        "winter mountain", "himalaya",
+        # Middle East
+        "winter desert", "snow mountain",
+        # Europe
+        "winter landscape", "snow scene",
+        # Americas
+        "winter forest", "snowy mountain",
+        # Africa
+        "winter savanna", "mountain landscape",
+    ],
 }
+
+# Curated themes for variety
+CURATED_THEMES = [
+    # Japanese art
+    "japanese art", "ukiyo-e", "woodblock print",
+    # Chinese art
+    "chinese painting", "chinese landscape", "ink wash",
+    # Korean art
+    "korean art", "korean landscape",
+    # Indian art
+    "indian miniature", "mughal painting", "rajput painting",
+    # Persian art
+    "persian miniature", "persian art",
+    # Southeast Asian art
+    "thai art", "balinese art", "indonesian art",
+    # African art
+    "african art", "ethiopian art", "nigerian art",
+    # Latin American art
+    "mexican art", "peruvian art", "aztec art", "inca art",
+    # Middle Eastern art
+    "islamic art", "arabic calligraphy",
+    # European art
+    "impressionism", "post-impressionism", "art nouveau",
+    # Modern global
+    "contemporary art", "modern art",
+]
 
 MET_API = "https://collectionapi.metmuseum.org/public/collection/v1"
 
@@ -33,21 +111,21 @@ class Painting(BasePlugin):
         season_info = get_full_season_info(now)
         source = settings.get("artSource", "met")
 
-        painting = self._fetch_painting(source, season_info, settings)
+        painting = self._fetch_painting(source, season_info, settings, now)
         if not painting:
             raise RuntimeError("Failed to fetch painting. Please try again.")
 
         return self._render_painting_card(dimensions, painting, season_info, settings)
 
-    def _fetch_painting(self, source, season_info, settings):
+    def _fetch_painting(self, source, season_info, settings, now):
         if source == "met":
-            return self._fetch_from_met(season_info, settings)
-        return self._fetch_from_met(season_info, settings)
+            return self._fetch_from_met(season_info, settings, now)
+        return self._fetch_from_met(season_info, settings, now)
 
-    def _fetch_from_met(self, season_info, settings):
+    def _fetch_from_met(self, season_info, settings, now):
         try:
             # Determine seasonal search query
-            month = datetime.now().month
+            month = now.month
             if month in [3, 4, 5]:
                 season = "spring"
             elif month in [6, 7, 8]:
@@ -57,8 +135,24 @@ class Painting(BasePlugin):
             else:
                 season = "winter"
 
-            keywords = SEASONAL_KEYWORDS.get(season, ["landscape"])
-            keyword = settings.get("searchKeyword", random.choice(keywords))
+            # Use curated theme or seasonal keyword
+            seed = now.year * 10000 + now.month * 100 + now.day
+            random.seed(seed)
+            
+            # 50% chance of curated theme, 50% seasonal keyword
+            if random.random() < 0.5:
+                keyword = random.choice(CURATED_THEMES)
+            else:
+                keywords = GLOBAL_ART_KEYWORDS.get(season, ["landscape"])
+                keyword = random.choice(keywords)
+            
+            random.seed()  # Reset random state
+
+            # Allow user override
+            if settings.get("searchKeyword"):
+                keyword = settings["searchKeyword"]
+
+            logger.info(f"Searching Met for: {keyword}")
 
             # Search for objects with images
             search_url = f"{MET_API}/search?q={keyword}&hasImages=true"
@@ -71,9 +165,9 @@ class Painting(BasePlugin):
             if not object_ids:
                 return None
 
-            # Try up to 5 random objects to find one with a valid image
+            # Try up to 8 random objects to find one with a valid image
             random.shuffle(object_ids)
-            for obj_id in object_ids[:5]:
+            for obj_id in object_ids[:8]:
                 obj_url = f"{MET_API}/objects/{obj_id}"
                 obj_resp = requests.get(obj_url, timeout=10)
                 if obj_resp.status_code != 200:
@@ -82,12 +176,23 @@ class Painting(BasePlugin):
                 obj = obj_resp.json()
                 primary_image = obj.get("primaryImage")
                 if primary_image:
+                    # Get culture/region info if available
+                    culture = obj.get("culture", "")
+                    period = obj.get("period", "")
+                    dynasty = obj.get("dynasty", "")
+                    
+                    artist = obj.get("artistDisplayName", "Unknown")
+                    if culture:
+                        artist = f"{artist} ({culture})" if artist != "Unknown" else culture
+
                     return {
                         "title": obj.get("title", "Untitled"),
-                        "artist": obj.get("artistDisplayName", "Unknown"),
+                        "artist": artist,
                         "date": obj.get("objectDate", ""),
                         "image_url": primary_image,
                         "source": "Metropolitan Museum of Art",
+                        "culture": culture,
+                        "period": period,
                     }
 
             return None

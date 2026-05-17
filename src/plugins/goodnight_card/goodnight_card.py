@@ -1,14 +1,45 @@
 import logging
-import math
 import pytz
 from datetime import datetime
 from plugins.base_plugin.base_plugin import BasePlugin
 from utils.micro_season import get_full_season_info, get_seasonal_palette
-from utils.card_design import CardDesign
+from utils.wikipedia_images import get_wikipedia_image
 from utils.app_utils import get_font
 from PIL import Image, ImageDraw, ImageColor
 
 logger = logging.getLogger(__name__)
+
+# Night-related Wikipedia images
+NIGHT_IMAGES = {
+    "spring": "Moon",
+    "summer": "Milky_Way",
+    "autumn": "Moon",
+    "winter": "Aurora",
+}
+
+# Seasonal poems
+POEMS = {
+    "spring": [
+        "春の夜の\n夢ばかりなる\n手枕に",
+        "月影に\n包まれて\n眠る夜",
+        "花びらが\n風に舞い\n静寂の中",
+    ],
+    "summer": [
+        "星空の\n下で聞く\n虫の声",
+        "涼風に\n包まれて\n夏の夜",
+        "蛍火が\n暗闇を\n照らす時",
+    ],
+    "autumn": [
+        "秋の夜の\n月明かりに\n照らされて",
+        "紅葉の\n散る中で\n眠りにつく",
+        "虫の声\n遠く聞こえる\n秋の夜",
+    ],
+    "winter": [
+        "雪の夜の\n静寂に\n包まれて",
+        "冬の月\n冷たく光る\n夜空に",
+        "星の光\n導くままに\n安らかに",
+    ],
+}
 
 
 class GoodnightCard(BasePlugin):
@@ -23,77 +54,93 @@ class GoodnightCard(BasePlugin):
         season_info = get_full_season_info(now)
         palette = get_seasonal_palette(now)
 
-        return self._draw_card(dimensions, orientation, now, season_info, palette, settings)
+        # Determine season
+        month = now.month
+        if month in [3, 4, 5]:
+            season = "spring"
+        elif month in [6, 7, 8]:
+            season = "summer"
+        elif month in [9, 10, 11]:
+            season = "autumn"
+        else:
+            season = "winter"
 
-    def _draw_card(self, dimensions, orientation, now, season_info, palette, settings):
+        # Get night image
+        image_keyword = NIGHT_IMAGES.get(season, "Moon")
+        night_image = get_wikipedia_image(image_keyword, (300, 300))
+        
+        # Save image for HTML rendering
+        image_url = None
+        if night_image:
+            import tempfile
+            with tempfile.NamedTemporaryFile(suffix='.png', delete=False, dir='/tmp') as f:
+                night_image.save(f, 'PNG')
+                image_url = f'file://{f.name}'
+
+        # Pick poem based on date
+        seed = now.year * 10000 + now.month * 100 + now.day
+        poems = POEMS.get(season, POEMS["spring"])
+        poem = poems[seed % len(poems)]
+
+        # Try HTML render
+        try:
+            dimensions_for_render = device_config.get_resolution()
+            if orientation == "vertical":
+                dimensions_for_render = dimensions_for_render[::-1]
+            
+            template_params = {
+                "palette": palette,
+                "season_info": season_info,
+                "now": now,
+                "poem": poem,
+                "night_image": image_url,
+            }
+            
+            image = self.render_image(dimensions_for_render, "goodnight_card.html", "goodnight_card.css", template_params)
+            if image:
+                return image
+        except Exception as e:
+            logger.warning(f"HTML render failed, falling back to PIL: {e}")
+
+        # Fallback to PIL
+        return self._draw_card_pil(dimensions, orientation, now, season_info, palette, settings, poem, night_image)
+
+    def _draw_card_pil(self, dimensions, orientation, now, season_info, palette, settings, poem, night_image):
+        """Fallback PIL rendering."""
         w, h = dimensions
         if orientation == 'vertical':
             w, h = h, w
 
-        # Initialize design system
-        design = CardDesign((w, h), orientation)
-        
-        # Create base card with dark background
-        img = design.create_base_card(bg_color='#1A1A2E', palette=palette)
+        # Dark background for night
+        img = Image.new('RGB', (w, h), '#1A1A2E')
         draw = ImageDraw.Draw(img)
 
-        # Override colors for dark theme
-        primary_color = '#E0D8C0'
-        secondary_color = '#8B7355'
+        font_greeting = get_font("Noto Serif JP", int(w * 0.1))
+        font_poem = get_font("Noto Serif JP", int(w * 0.04))
+        font_small = get_font("Noto Sans JP", int(w * 0.025))
 
-        # Center - Moon
-        center_x = int(w * 0.35)
-        center_y = int(h * 0.35)
-        radius = int(min(w, h) * 0.12)
-        
-        # Draw moon - elegant crescent
-        self._draw_moon(draw, center_x, center_y, radius, now)
+        # Night image
+        if night_image:
+            img_x, img_y = int(w * 0.6), int(h * 0.15)
+            img_w, img_h = int(w * 0.35), int(h * 0.6)
+            photo_resized = night_image.resize((img_w, img_h), Image.Resampling.LANCZOS)
+            img.paste(photo_resized, (img_x, img_y))
+            draw = ImageDraw.Draw(img)
+            draw.rectangle([img_x-1, img_y-1, img_x+img_w+1, img_y+img_h+1], outline='#3A3A4E', width=1)
 
-        # Greeting - elegant Japanese
-        draw.text((center_x, int(h * 0.58)), "おやすみなさい", font=design.fonts['display'], 
-                 fill=primary_color, anchor="mm")
-        draw.text((center_x, int(h * 0.66)), "Good Night", font=design.fonts['body'], 
-                 fill=primary_color + 'B0', anchor="mm")
+        # Greeting
+        draw.text((int(w * 0.08), int(h * 0.35)), "おやすみなさい", font=font_greeting, fill='#E0D8C0', anchor="mm")
+        draw.text((int(w * 0.08), int(h * 0.45)), "Good Night", font=font_small, fill='#B0A890', anchor="mm")
 
-        # Right side - Poetic message
-        right_x = int(w * 0.62)
-        
-        # Seasonal poem or message
-        poems = [
-            "月影に 包まれて 眠る夜",
-            "静寂の 夜に溶けて ゆく夢",
-            "星の光 導くままに 安らかに",
-            "夜の帳 降りる中で 息を整え",
-        ]
-        
-        seed = now.year * 10000 + now.month * 100 + now.day
-        poem_idx = seed % len(poems)
-        draw.text((right_x, int(h * 0.35)), poems[poem_idx], font=design.fonts['caption'], 
-                 fill=primary_color + '99')
+        # Poem
+        poem_lines = poem.split('\n')
+        poem_y = int(h * 0.55)
+        for line in poem_lines:
+            draw.text((int(w * 0.08), poem_y), line, font=font_poem, fill='#B0A890')
+            poem_y += int(h * 0.06)
 
-        # Footer
-        design.draw_footer(draw, now.strftime("%Y年%m月%d日"), season_info)
+        # Micro-season
+        if season_info:
+            draw.text((int(w * 0.08), int(h * 0.9)), f"時候: {season_info['micro_season']['kanji']}", font=font_small, fill='#807860')
 
         return img
-
-    def _draw_moon(self, draw, cx, cy, radius, now):
-        # Elegant crescent moon
-        moon_color = (240, 230, 200, 255)
-        shadow_color = (30, 30, 50, 255)
-
-        # Full moon circle
-        draw.ellipse(
-            [cx - radius, cy - radius, cx + radius, cy + radius],
-            fill=moon_color
-        )
-
-        # Shadow overlay for crescent effect
-        phase = (now.day % 30) / 30.0
-        offset = int(radius * (1 - 2 * phase))
-        shadow_radius = int(radius * 1.05)
-
-        draw.ellipse(
-            [cx + offset - shadow_radius, cy - shadow_radius,
-             cx + offset + shadow_radius, cy + shadow_radius],
-            fill=shadow_color
-        )

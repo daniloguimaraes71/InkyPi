@@ -1,43 +1,132 @@
-{% extends "plugin.html" %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        :root {
+            --bg-base: {{ palette.bg or '#FAF8F5' }};
+            --text-primary: {{ palette.primary or '#2C2C2C' }};
+            --text-secondary: #666666;
+            --text-tertiary: #999999;
+            --border-subtle: #E0D8C8;
+            --season-primary: {{ palette.primary or '#8B7355' }};
+            --season-accent: {{ palette.accent or '#C9A9A6' }};
+            --font-serif: 'Noto Serif JP', serif;
+            --font-sans: 'Noto Sans JP', sans-serif;
+        }
 
-{% block content %}
-<div class="briefing">
-    <div class="briefing-header">
-        <div class="greeting">{{ greeting }}</div>
-        <div class="date-line">
-            <span class="date">{{ now.strftime("%A, %B %d") }}</span>
-            {% if season_info %}
-            <span class="season-dot">·</span>
-            <span class="season">{{ season_info.micro_season.kanji }}</span>
+        body {
+            width: 800px;
+            height: 480px;
+            margin: 0;
+            padding: 40px 48px;
+            box-sizing: border-box;
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .micro-season-stamp {
+            position: absolute;
+            top: 40px;
+            right: 48px;
+            text-align: right;
+        }
+        .micro-season-kanji {
+            font-family: var(--font-serif);
+            font-size: 14px;
+            color: var(--season-primary);
+            letter-spacing: 0.1em;
+        }
+        .micro-season-en {
+            font-family: var(--font-sans);
+            font-size: 10px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 2px;
+        }
+
+        .morning-grid { display: flex; height: 100%; gap: 32px; }
+        .morning-left { flex: 0 0 55%; display: flex; flex-direction: column; justify-content: center; }
+        .morning-right { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+        
+        h1.greeting { font-family: var(--font-serif); font-size: 42px; font-weight: 500; margin: 0 0 8px 0; }
+        .date-sub { font-family: var(--font-sans); font-size: 16px; color: var(--text-secondary); margin-bottom: 32px; }
+        
+        .weather-box { border-left: 3px solid var(--season-primary); padding-left: 16px; margin-bottom: 24px; }
+        .temp { font-family: var(--font-serif); font-size: 32px; color: var(--season-accent); margin: 0; }
+        .condition { font-family: var(--font-sans); font-size: 14px; color: var(--text-secondary); }
+
+        .schedule-item { display: flex; align-items: baseline; margin-bottom: 12px; }
+        .time { font-family: var(--font-sans); font-size: 14px; color: var(--text-secondary); width: 60px; }
+        .event { font-family: var(--font-serif); font-size: 16px; border-bottom: 1px dotted var(--border-subtle); flex: 1; padding-bottom: 4px; }
+
+        .image-frame {
+            width: 100%;
+            height: 100%;
+            border: 1px solid var(--border-subtle);
+            padding: 6px;
+            background: white;
+            box-sizing: border-box;
+        }
+        .image-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: grayscale(15%) sepia(8%);
+        }
+        .image-label {
+            font-family: var(--font-sans);
+            font-size: 10px;
+            color: var(--text-tertiary);
+            text-align: center;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    {% if season_info %}
+    <div class="micro-season-stamp">
+        <div class="micro-season-kanji">候: {{ season_info.micro_season.kanji }}</div>
+        <div class="micro-season-en">{{ season_info.micro_season.english }}</div>
+    </div>
+    {% endif %}
+
+    <div class="morning-grid">
+        <div class="morning-left">
+            <h1 class="greeting">おはよう</h1>
+            <div class="date-sub">{{ now.strftime('%m月%d日 %A') }}</div>
+            {% if weather %}
+            <div class="weather-box">
+                <p class="temp">{{ weather.temp }}°</p>
+                <p class="condition">{{ weather.description }} • 湿度 {{ weather.humidity }}%</p>
+            </div>
+            {% endif %}
+            {% if events %}
+            <div class="schedule-items">
+                {% for event in events[:3] %}
+                <div class="schedule-item">
+                    <span class="time">{{ event.time }}</span>
+                    <span class="event">{{ event.title }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="schedule-item">
+                <span class="event" style="color: var(--text-tertiary);">今日の予定はありません</span>
+            </div>
+            {% endif %}
+        </div>
+        <div class="morning-right">
+            {% if morning_image %}
+            <div class="image-frame">
+                <img src="{{ morning_image }}" alt="Morning">
+            </div>
+            <div class="image-label">{{ image_label }}</div>
             {% endif %}
         </div>
     </div>
-
-    {% if weather %}
-    <div class="weather-strip">
-        <span class="weather-temp">{{ weather.temp }}°C</span>
-        <span class="weather-desc">{{ weather.description }}</span>
-        <span class="weather-humidity">💧 {{ weather.humidity }}%</span>
-    </div>
-    {% endif %}
-
-    {% if events %}
-    <div class="events-section">
-        <div class="events-title">Today's Schedule</div>
-        {% for event in events %}
-        <div class="event-row">
-            <span class="event-time">{{ event.time }}</span>
-            <span class="event-title">{{ event.title }}</span>
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
-
-    {% if season_info %}
-    <div class="season-footer">
-        <span class="season-name">{{ season_info.solar_term.name }} {{ season_info.solar_term.english }}</span>
-        <span class="season-desc">{{ season_info.micro_season.english }}</span>
-    </div>
-    {% endif %}
-</div>
-{% endblock %}
+</body>
+</html>
