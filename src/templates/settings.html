@@ -274,6 +274,37 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Scheduler Configuration -->
+            <div class="settings-section">
+                <button type="button" class="form-input collapsible" onclick="toggleCollapsible(this)">
+                    <span>Scheduler</span>
+                    <span class="collapse-icon">▼</span>
+                </button>
+                <div class="settings-container collapsible-content">
+                    <div class="form-group">
+                        <label class="form-label">Scheduler Mode:</label>
+                        <select name="scheduler_enabled" class="form-input">
+                            <option value="false" {% if not device_settings.get('scheduler', {}).get('enabled', false) %}selected{% endif %}>Disabled (Legacy)</option>
+                            <option value="true" {% if device_settings.get('scheduler', {}).get('enabled', false) %}selected{% endif %}>Enabled</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Calendar Interrupts:</label>
+                        <select name="calendar_interrupts_enabled" class="form-input">
+                            <option value="false" {% if not device_settings.get('scheduler', {}).get('interrupts', {}).get('calendar', {}).get('enabled', false) %}selected{% endif %}>Disabled</option>
+                            <option value="true" {% if device_settings.get('scheduler', {}).get('interrupts', {}).get('calendar', {}).get('enabled', false) %}selected{% endif %}>Enabled</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Weather Alerts:</label>
+                        <select name="weather_alerts_enabled" class="form-input">
+                            <option value="false" {% if not device_settings.get('scheduler', {}).get('interrupts', {}).get('weather_alerts', {}).get('enabled', false) %}selected{% endif %}>Disabled</option>
+                            <option value="true" {% if device_settings.get('scheduler', {}).get('interrupts', {}).get('weather_alerts', {}).get('enabled', false) %}selected{% endif %}>Enabled</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
         </form>
  
         <!-- Buttons -->

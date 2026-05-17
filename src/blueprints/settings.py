@@ -69,6 +69,28 @@ def save_settings():
         }
         if "inky_saturation" in form_data:
             settings["image_settings"]["inky_saturation"] = float(form_data.get("inky_saturation", "0.5"))
+
+        # Scheduler settings
+        scheduler_enabled = form_data.get("scheduler_enabled") == "true"
+        calendar_interrupts = form_data.get("calendar_interrupts_enabled") == "true"
+        weather_alerts = form_data.get("weather_alerts_enabled") == "true"
+
+        settings["scheduler"] = {
+            "enabled": scheduler_enabled,
+            "modes": device_config.get_config("scheduler", {}).get("modes", []),
+            "interrupts": {
+                "calendar": {
+                    "enabled": calendar_interrupts,
+                    "urls": device_config.get_config("scheduler", {}).get("interrupts", {}).get("calendar", {}).get("urls", []),
+                    "threshold_minutes": 15,
+                    "check_interval_seconds": 300
+                },
+                "weather_alerts": {
+                    "enabled": weather_alerts
+                }
+            }
+        }
+
         device_config.update_config(settings)
 
         if plugin_cycle_interval_seconds != previous_interval_seconds:

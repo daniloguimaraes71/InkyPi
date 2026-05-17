@@ -20,6 +20,12 @@
   <input id="{{ prefix }}-scheduled" class="time-input" type="time" name="refreshTime" step="900">
 </div>
 
+<div class="form-group">
+    <label for="{{ prefix }}-dwell" class="form-label">Display Duration (minutes):</label>
+    <input type="number" id="{{ prefix }}-dwell" name="dwell_seconds" class="form-input" min="0" placeholder="Use default">
+    <span class="form-hint">How long to show this plugin before rotating. Leave empty for default.</span>
+</div>
+
 <script>
   document.addEventListener('DOMContentLoaded', () => {
     // Interval group

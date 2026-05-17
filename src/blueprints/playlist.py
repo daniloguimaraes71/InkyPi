@@ -90,6 +90,7 @@ def create_playlist():
     playlist_name = data.get("playlist_name")
     start_time = data.get("start_time")
     end_time = data.get("end_time")
+    mode = data.get("mode") or None
 
     if not playlist_name or not playlist_name.strip():
         return jsonify({"error": "Playlist name is required"}), 400
@@ -104,6 +105,12 @@ def create_playlist():
         result = playlist_manager.add_playlist(playlist_name, start_time, end_time)
         if not result:
             return jsonify({"error": "Failed to create playlist"}), 500
+
+        # Set mode if provided
+        if mode:
+            playlist = playlist_manager.get_playlist(playlist_name)
+            if playlist:
+                playlist.mode = mode
 
         # save changes to device config file
         device_config.write_config()
@@ -125,6 +132,7 @@ def update_playlist(playlist_name):
     new_name = data.get("new_name")
     start_time = data.get("start_time")
     end_time = data.get("end_time")
+    mode = data.get("mode")
     if not new_name or not start_time or not end_time:
         return jsonify({"success": False, "error": "Missing required fields"}), 400
 
@@ -135,6 +143,11 @@ def update_playlist(playlist_name):
     result = playlist_manager.update_playlist(playlist_name, new_name, start_time, end_time)
     if not result:
         return jsonify({"error": "Failed to delete playlist"}), 500
+
+    # Update mode if provided
+    if mode is not None:
+        playlist.mode = mode if mode else None
+
     device_config.write_config()
 
     return jsonify({"success": True, "message": f"Updated playlist '{playlist_name}'!"})
