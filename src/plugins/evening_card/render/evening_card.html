@@ -64,7 +64,12 @@
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+        }
+
+        .content-wrapper {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
         }
 
         .greeting {
@@ -150,7 +155,7 @@
         </div>
         
         <div class="content-side">
-            <div>
+            <div class="content-wrapper">
                 <h2 class="greeting">今日も一日、お疲れ様でした。</h2>
                 <p class="sub-msg">ゆっくりとお茶を淹れて、一息つきましょう。</p>
                 <div class="divider-h"></div>

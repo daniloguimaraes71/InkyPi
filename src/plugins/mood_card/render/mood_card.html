@@ -37,7 +37,7 @@
 
         .flex-row { display: flex; flex-direction: row; height: 100%; gap: 40px; }
         .flex-col { display: flex; flex-direction: column; }
-        .justify-center { justify-content: center; }
+        .align-top { justify-content: flex-start; padding-top: 16px; }
 
         .photo-frame {
             width: 220px;
@@ -139,7 +139,7 @@
                 {% endif %}
             </div>
             
-            <div class="mood-content flex-col justify-center">
+            <div class="mood-content flex-col align-top">
                 <h1 class="flower-name">{{ flower.ja }}</h1>
                 <p class="flower-en">{{ flower.en }}</p>
                 <p class="hanakotoba">花言葉: {{ flower.kotoba }}</p>

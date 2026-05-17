@@ -43,7 +43,7 @@
         }
 
         .flex-col { display: flex; flex-direction: column; }
-        .space-between { justify-content: space-between; }
+        .align-top { justify-content: flex-start; padding-top: 8px; }
 
         .date-line {
             font-family: var(--font-sans);
@@ -149,7 +149,7 @@
 <body>
     <div class="card-container">
         <div class="grid-60-40">
-            <div class="flex-col space-between">
+            <div class="flex-col align-top">
                 <div>
                     <p class="date-line">{{ now.strftime('%m月%d日') }} • {{ location or '姫路市' }}</p>
                     <h1 class="greeting">おはようございます。</h1>
