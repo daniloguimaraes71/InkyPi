@@ -1,50 +1,41 @@
 import logging
 import random
-import requests
 import pytz
 from datetime import datetime, timedelta
 from plugins.base_plugin.base_plugin import BasePlugin
 from utils.micro_season import get_full_season_info, get_seasonal_palette
-from utils.card_design import CardDesign, ImageLoader, wrap_text
+from utils.wikipedia_images import get_kansai_location_image
 from utils.app_utils import get_font
-from PIL import Image, ImageDraw, ImageColor, ImageOps
+from PIL import Image, ImageDraw, ImageColor
 
 logger = logging.getLogger(__name__)
 
-# Curated Kansai events with photo search queries
+# Curated Kansai events with Wikipedia search terms
 EVENTS = {
     "spring": [
-        {"name": "お花見ピクニック", "location": "大阪城公園", "type": "花見", "desc": "Cherry blossom viewing picnic", "photo_query": "osaka castle cherry blossom"},
-        {"name": "奈良公園の鹿と散歩", "location": "奈良", "type": "アウトドア", "desc": "Walk with deer in Nara Park", "photo_query": "nara park deer"},
-        {"name": "清水寺と祇園散策", "location": "京都", "type": "観光", "desc": "Kiyomizdera & Gion walk", "photo_query": "kiyomizdera temple kyoto"},
-        {"name": "箕面の滝ハイキング", "location": "箕面", "type": "ハイキング", "desc": "Minoh waterfall hike", "photo_query": "minoh waterfall"},
+        {"name": "お花見ピクニック", "location": "大阪城公園", "type": "花見", "desc": "Cherry blossom viewing picnic", "wiki": "大阪城"},
+        {"name": "奈良公園の鹿と散歩", "location": "奈良", "type": "アウトドア", "desc": "Walk with deer in Nara Park", "wiki": "奈良公園"},
+        {"name": "清水寺と祇園散策", "location": "京都", "type": "観光", "desc": "Kiyomizdera & Gion walk", "wiki": "清水寺"},
+        {"name": "箕面の滝ハイキング", "location": "箕面", "type": "ハイキング", "desc": "Minoh waterfall hike", "wiki": "箕面"},
     ],
     "summer": [
-        {"name": "天神祭りの花火", "location": "大阪", "type": "祭り", "desc": "Tenjin Matsuri fireworks", "photo_query": "tenjin matsuri fireworks"},
-        {"name": "須磨海水浴場", "location": "神戸", "type": "ビーチ", "desc": "Suma Beach day", "photo_query": "suma beach kobe"},
-        {"name": "有馬温泉でリフレッシュ", "location": "神戸", "type": "温泉", "desc": "Arima Onsen refresh", "photo_query": "arima onsen"},
-        {"name": "梅田スカイビルの夜景", "location": "大阪", "type": "観光", "desc": "Umeda Sky Building night view", "photo_query": "umeda sky building"},
+        {"name": "天神祭りの花火", "location": "大阪", "type": "祭り", "desc": "Tenjin Matsuri fireworks", "wiki": "天神祭"},
+        {"name": "須磨海水浴場", "location": "神戸", "type": "ビーチ", "desc": "Suma Beach day", "wiki": "須磨海水浴場"},
+        {"name": "有馬温泉でリフレッシュ", "location": "神戸", "type": "温泉", "desc": "Arima Onsen refresh", "wiki": "有馬温泉"},
+        {"name": "梅田スカイビルの夜景", "location": "大阪", "type": "観光", "desc": "Umeda Sky Building night view", "wiki": "梅田スカイビル"},
     ],
     "autumn": [
-        {"name": "紅葉狩り", "location": "京都", "type": "紅葉", "desc": "Autumn leaf viewing", "photo_query": "kyoto autumn leaves"},
-        {"name": "伏見稲荷大社", "location": "京都", "type": "観光", "desc": "Fushimi Inari shrine", "photo_query": "fushimi inari shrine"},
-        {"name": "神戸ルミナリー", "location": "神戸", "type": "イベント", "desc": "Kobe Luminarie", "photo_query": "kobe luminarie"},
-        {"name": "姫路城と日本庭園", "location": "姫路", "type": "観光", "desc": "Himeji Castle & garden", "photo_query": "himeji castle"},
+        {"name": "紅葉狩り", "location": "京都", "type": "紅葉", "desc": "Autumn leaf viewing", "wiki": "京都"},
+        {"name": "伏見稲荷大社", "location": "京都", "type": "観光", "desc": "Fushimi Inari shrine", "wiki": "伏見稲荷大社"},
+        {"name": "神戸ルミナリー", "location": "神戸", "type": "イベント", "desc": "Kobe Luminarie", "wiki": "神戸ルミナリー"},
+        {"name": "姫路城と日本庭園", "location": "姫路", "type": "観光", "desc": "Himeji Castle & garden", "wiki": "姫路城"},
     ],
     "winter": [
-        {"name": "奈良のイルミネーション", "location": "奈良", "type": "イルミネーション", "desc": "Nara illumination", "photo_query": "nara illumination"},
-        {"name": "大阪クリスマスマーケット", "location": "大阪", "type": "マーケット", "desc": "Osaka Christmas Market", "photo_query": "osaka christmas market"},
-        {"name": "神戸の光のルナリエ", "location": "神戸", "type": "イルミネーション", "desc": "Kobe Luminarie", "photo_query": "kobe luminarie lights"},
-        {"name": "有馬温泉日帰り旅行", "location": "有馬", "type": "温泉", "desc": "Arima Onsen day trip", "photo_query": "arima onsen winter"},
+        {"name": "奈良のイルミネーション", "location": "奈良", "type": "イルミネーション", "desc": "Nara illumination", "wiki": "奈良公園"},
+        {"name": "大阪クリスマスマーケット", "location": "大阪", "type": "マーケット", "desc": "Osaka Christmas Market", "wiki": "大阪"},
+        {"name": "神戸の光のルナリエ", "location": "神戸", "type": "イルミネーション", "desc": "Kobe Luminarie", "wiki": "神戸ルミナリー"},
+        {"name": "有馬温泉日帰り旅行", "location": "有馬", "type": "温泉", "desc": "Arima Onsen day trip", "wiki": "有馬温泉"},
     ],
-}
-
-# Fallback photo URLs (curated Kansai photos)
-FALLBACK_PHOTOS = {
-    "spring": "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800",
-    "summer": "https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=800",
-    "autumn": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800",
-    "winter": "https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=800",
 }
 
 
@@ -71,10 +62,11 @@ class KansaiEvents(BasePlugin):
         else:
             season = "winter"
 
-        # Pick events based on date
+        # Pick event based on date
         seed = now.year * 10000 + now.month * 100 + now.day
         random.seed(seed)
-        events = random.sample(EVENTS.get(season, []), min(3, len(EVENTS.get(season, []))))
+        events = EVENTS.get(season, EVENTS["spring"])
+        event = random.choice(events)
         random.seed()
 
         # Find next weekend
@@ -82,94 +74,92 @@ class KansaiEvents(BasePlugin):
         if days_until_saturday == 0 and now.weekday() == 5:
             days_until_saturday = 0
         weekend_start = now.date() + timedelta(days=days_until_saturday)
+        weekend_date = f"{weekend_start.strftime('%m月%d日')} Weekend"
 
-        # Try to load a photo for the first event
-        photo = self._load_event_photo(events[0] if events else None, season, dimensions)
+        # Get location image from Wikipedia
+        event_image = get_kansai_location_image(event.get("wiki", event["location"]), (350, 400))
+        
+        # Save image to temporary file for HTML rendering
+        event_image_url = None
+        if event_image:
+            import tempfile
+            import os
+            with tempfile.NamedTemporaryFile(suffix='.png', delete=False, dir='/tmp') as f:
+                event_image.save(f, 'PNG')
+                event_image_url = f'file://{f.name}'
 
-        return self._draw_card(dimensions, orientation, events, season_info, palette, 
-                              settings, now, weekend_start, season, photo)
-
-    def _load_event_photo(self, event, season, dimensions):
-        """Load a photo for the event."""
+        # Try HTML render first, fall back to PIL
         try:
-            # Try Unsplash API (if available)
-            query = event.get("photo_query", f"kansai {season}") if event else f"kansai {season}"
+            dimensions_for_render = device_config.get_resolution()
+            if orientation == "vertical":
+                dimensions_for_render = dimensions_for_render[::-1]
             
-            # Use a curated photo URL based on query
-            # For now, use fallback photos
-            photo_url = FALLBACK_PHOTOS.get(season, FALLBACK_PHOTOS["spring"])
+            template_params = {
+                "palette": palette,
+                "season_info": season_info,
+                "event": event,
+                "event_image": event_image_url,
+                "weekend_date": weekend_date,
+                "season_label": f"{season_info['micro_season']['kanji']} - {season_info['micro_season']['english']}" if season_info else "",
+            }
             
-            target_size = (int(dimensions[0] * 0.4), int(dimensions[1] * 0.6))
-            return ImageLoader.load_and_fit(photo_url, target_size)
-            
+            image = self.render_image(dimensions_for_render, "kansai_events.html", "kansai_events.css", template_params)
+            if image:
+                return image
         except Exception as e:
-            logger.warning(f"Failed to load event photo: {e}")
-            return None
+            logger.warning(f"HTML render failed, falling back to PIL: {e}")
 
-    def _draw_card(self, dimensions, orientation, events, season_info, palette, 
-                   settings, now, weekend_start, season, photo):
+        # Fallback to PIL rendering
+        return self._draw_card_pil(dimensions, orientation, event, season_info, palette, settings, now, weekend_date, event_image)
+
+    def _draw_card_pil(self, dimensions, orientation, event, season_info, palette, settings, now, weekend_date, event_image):
+        """Fallback PIL rendering."""
         w, h = dimensions
         if orientation == 'vertical':
             w, h = h, w
 
-        # Initialize design system
-        design = CardDesign((w, h), orientation)
-        
-        # Create base card
-        img = design.create_base_card(palette=palette)
+        # Create base image
+        bg_color = '#FAF8F5'
+        img = Image.new('RGB', (w, h), bg_color)
         draw = ImageDraw.Draw(img)
 
-        # Header
-        y_pos = design.draw_header(draw, "週末のおでかけ", 
-                                  f"{weekend_start.strftime('%m月%d日')} Weekend")
+        # Fonts
+        font_title = get_font("Noto Serif JP", int(w * 0.06))
+        font_desc = get_font("Noto Sans JP", int(w * 0.035))
+        font_info = get_font("Noto Sans JP", int(w * 0.03))
+        font_label = get_font("Noto Sans JP", int(w * 0.025))
 
-        # Photo section (if available)
-        if photo:
-            photo_x = design.margin
-            photo_y = y_pos
-            photo_w = int(w * 0.35)
-            photo_h = int(h * 0.45)
+        # Photo area
+        if event_image:
+            photo_x, photo_y = int(w * 0.04), int(h * 0.1)
+            photo_w, photo_h = int(w * 0.4), int(h * 0.8)
             
-            # Paste photo with elegant border
-            photo_resized = photo.resize((photo_w, photo_h), Image.Resampling.LANCZOS)
+            # Resize and paste
+            photo_resized = event_image.resize((photo_w, photo_h), Image.Resampling.LANCZOS)
             img.paste(photo_resized, (photo_x, photo_y))
             
-            # Add subtle border
+            # Add border
             draw = ImageDraw.Draw(img)
-            draw.rectangle([photo_x-1, photo_y-1, photo_x+photo_w+1, photo_y+photo_h+1], 
-                          outline=design.COLORS['divider'], width=1)
+            draw.rectangle([photo_x-2, photo_y-2, photo_x+photo_w+2, photo_y+photo_h+2], 
+                          outline='#E0D8C8', width=2)
             
-            # Events list on the right
-            events_x = photo_x + photo_w + int(w * 0.04)
-            events_w = w - events_x - design.margin
+            text_x = photo_x + photo_w + int(w * 0.06)
         else:
-            # Full width events
-            events_x = design.margin
-            events_w = w - 2 * design.margin
-            photo_w = 0
+            text_x = int(w * 0.08)
 
-        # Events list
-        event_y = y_pos + int(h * 0.05)
-        for i, event in enumerate(events):
-            # Event number
-            design.draw_card_number(draw, i + 1, events_x + int(w * 0.02), event_y + int(h * 0.02))
-            
-            # Event name
-            draw.text((events_x + int(w * 0.06), event_y), 
-                     event["name"], font=design.fonts['h3'], fill=design.COLORS['text_primary'])
-            
-            # Location and type
-            loc_text = f"{event['location']} · {event['type']}"
-            draw.text((events_x + int(w * 0.06), event_y + int(h * 0.04)), 
-                     loc_text, font=design.fonts['caption'], fill=design.COLORS['text_secondary'])
-            
-            # Description
-            draw.text((events_x + int(w * 0.06), event_y + int(h * 0.07)), 
-                     event["desc"], font=design.fonts['micro'], fill=design.COLORS['text_light'])
-            
-            event_y += int(h * 0.18)
-
-        # Footer - no micro-season
-        design.draw_footer(draw, now.strftime("%Y年%m月%d日"), season_info, show_season=False)
+        # Weekend label
+        draw.text((text_x, int(h * 0.15)), weekend_date, font=font_label, fill='#999999')
+        
+        # Event tag
+        draw.text((text_x, int(h * 0.22)), f"週末のおすすめ • {event['type']}", font=font_label, fill='#8B7355')
+        
+        # Event title
+        draw.text((text_x, int(h * 0.3)), event["name"], font=font_title, fill='#2C2C2C')
+        
+        # Description
+        draw.text((text_x, int(h * 0.45)), event["desc"], font=font_desc, fill='#666666')
+        
+        # Location
+        draw.text((text_x, int(h * 0.55)), f"場所: {event['location']}", font=font_info, fill='#666666')
 
         return img

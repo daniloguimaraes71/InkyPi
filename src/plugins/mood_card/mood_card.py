@@ -4,7 +4,7 @@ import pytz
 from datetime import datetime
 from plugins.base_plugin.base_plugin import BasePlugin
 from utils.micro_season import get_full_season_info, get_seasonal_palette
-from utils.card_design import CardDesign, ImageLoader
+from utils.wikipedia_images import get_seasonal_flower_image
 from utils.app_utils import get_font
 from PIL import Image, ImageDraw, ImageColor
 
@@ -35,26 +35,6 @@ FLOWERS = {
         {"ja": "水仙", "en": "Daffodil", "kotoba": "self-love", "poem": "水仙や 白き日の如く 瓶のなか"},
         {"ja": "梅", "en": "Winter Plum", "kotoba": "perseverance", "poem": "梅一輪 一輪ほどの 暖かさ"},
         {"ja": "山茶花", "en": "Camellia", "kotoba": "modesty", "poem": "山茶花の 落ちてโหลの 古りにけり"},
-    ],
-}
-
-# Flower photos for visual appeal
-FLOWER_PHOTOS = {
-    "spring": [
-        "https://images.unsplash.com/photo-1522383225653-ed111181a951?w=400",
-        "https://images.unsplash.com/photo-1490750967868-88aa4f44baee?w=400",
-    ],
-    "summer": [
-        "https://images.unsplash.com/photo-1490750967868-88aa4f44baee?w=400",
-        "https://images.unsplash.com/photo-1490750967868-88aa4f44baee?w=400",
-    ],
-    "autumn": [
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400",
-        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400",
-    ],
-    "winter": [
-        "https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=400",
-        "https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=400",
     ],
 }
 
@@ -98,98 +78,93 @@ class MoodCard(BasePlugin):
         seasonal_flowers = FLOWERS.get(season, FLOWERS["spring"])
         flower = random.choice(seasonal_flowers)
         mood = random.choice(MOODS)
-        photo_url = random.choice(FLOWER_PHOTOS.get(season, FLOWER_PHOTOS["spring"]))
         random.seed()
 
-        # Load flower photo
-        photo = self._load_flower_photo(photo_url, dimensions)
+        # Get flower image from Wikipedia
+        flower_image = get_seasonal_flower_image(flower["ja"], (224, 304))
+        
+        # Save image to temporary file for HTML rendering
+        flower_image_url = None
+        if flower_image:
+            import tempfile
+            import os
+            with tempfile.NamedTemporaryFile(suffix='.png', delete=False, dir='/tmp') as f:
+                flower_image.save(f, 'PNG')
+                flower_image_url = f'file://{f.name}'
 
-        return self._draw_card(dimensions, orientation, flower, mood, season_info, palette, settings, now, photo)
-
-    def _load_flower_photo(self, photo_url, dimensions):
-        """Load a flower photo for visual appeal."""
+        # Try HTML render first, fall back to PIL
         try:
-            target_size = (int(dimensions[0] * 0.3), int(dimensions[1] * 0.4))
-            return ImageLoader.load_and_fit(photo_url, target_size)
+            dimensions_for_render = device_config.get_resolution()
+            if orientation == "vertical":
+                dimensions_for_render = dimensions_for_render[::-1]
+            
+            template_params = {
+                "palette": palette,
+                "season_info": season_info,
+                "flower": flower,
+                "mood": mood,
+                "flower_image": flower_image_url,
+            }
+            
+            image = self.render_image(dimensions_for_render, "mood_card.html", "mood_card.css", template_params)
+            if image:
+                return image
         except Exception as e:
-            logger.warning(f"Failed to load flower photo: {e}")
-            return None
+            logger.warning(f"HTML render failed, falling back to PIL: {e}")
 
-    def _draw_card(self, dimensions, orientation, flower, mood, season_info, palette, settings, now, photo):
+        # Fallback to PIL rendering
+        return self._draw_card_pil(dimensions, orientation, flower, mood, season_info, palette, settings, now, flower_image)
+
+    def _draw_card_pil(self, dimensions, orientation, flower, mood, season_info, palette, settings, now, flower_image):
+        """Fallback PIL rendering."""
         w, h = dimensions
         if orientation == 'vertical':
             w, h = h, w
 
-        # Initialize design system
-        design = CardDesign((w, h), orientation)
-        
-        # Create base card
-        img = design.create_base_card(palette=palette)
+        # Create base image
+        bg_color = '#FAF8F5'
+        img = Image.new('RGB', (w, h), bg_color)
         draw = ImageDraw.Draw(img)
 
-        # Header
-        y_pos = design.draw_header(draw, "今日の花", 
-                                  "Flower & Mood")
+        # Fonts
+        font_flower = get_font("Noto Serif JP", int(w * 0.08))
+        font_name = get_font("Noto Sans JP", int(w * 0.04))
+        font_kotoba = get_font("Noto Serif JP", int(w * 0.035))
+        font_mood = get_font("Noto Sans JP", int(w * 0.03))
 
-        # Photo section (if available)
-        if photo:
-            photo_x = design.margin
-            photo_y = y_pos
-            photo_w = int(w * 0.25)
-            photo_h = int(h * 0.4)
+        # Photo frame area
+        if flower_image:
+            photo_x, photo_y = int(w * 0.06), int(h * 0.15)
+            photo_w, photo_h = int(w * 0.28), int(h * 0.65)
             
-            # Paste photo
-            photo_resized = photo.resize((photo_w, photo_h), Image.Resampling.LANCZOS)
+            # Resize and paste
+            photo_resized = flower_image.resize((photo_w, photo_h), Image.Resampling.LANCZOS)
             img.paste(photo_resized, (photo_x, photo_y))
             
             # Add border
             draw = ImageDraw.Draw(img)
-            draw.rectangle([photo_x-1, photo_y-1, photo_x+photo_w+1, photo_y+photo_h+1], 
-                          outline=design.COLORS['divider'], width=1)
+            draw.rectangle([photo_x-2, photo_y-2, photo_x+photo_w+2, photo_y+photo_h+2], 
+                          outline='#E0D8C8', width=2)
             
-            # Text on the right
-            text_x = photo_x + photo_w + int(w * 0.04)
-            text_w = w - text_x - design.margin
+            text_x = photo_x + photo_w + int(w * 0.06)
         else:
-            text_x = design.margin
-            text_w = w - 2 * design.margin
+            text_x = int(w * 0.1)
 
-        # Flower kanji - large and prominent
-        flower_y = y_pos + int(h * 0.05)
-        draw.text((text_x, flower_y), flower["ja"], font=design.fonts['display'], 
-                 fill=design.COLORS['text_primary'])
-        flower_y += int(h * 0.12)
+        # Flower kanji
+        draw.text((text_x, int(h * 0.2)), flower["ja"], font=font_flower, fill='#2C2C2C')
         
         # English name
-        draw.text((text_x, flower_y), flower["en"], font=design.fonts['h2'], 
-                 fill=design.COLORS['text_secondary'])
-        flower_y += int(h * 0.06)
+        draw.text((text_x, int(h * 0.35)), flower["en"], font=font_name, fill='#666666')
         
-        # 花言葉 (flower language)
-        kotoba_text = f"花言葉: {flower['kotoba']}"
-        draw.text((text_x, flower_y), kotoba_text, font=design.fonts['body'], 
-                 fill=design.COLORS['accent_gold'])
-        flower_y += int(h * 0.08)
-
-        # Poem
-        if flower.get("poem"):
-            draw.text((text_x, flower_y), flower["poem"], font=design.fonts['caption'], 
-                     fill=design.COLORS['text_light'])
-
-        # Mood section - below flower
-        mood_y = int(h * 0.65)
-        mood_y = design.draw_section(draw, "Mood", mood_y)
+        # 花言葉
+        draw.text((text_x, int(h * 0.45)), f"花言葉: {flower['kotoba']}", font=font_kotoba, fill='#8B7355')
         
         # Mood message
-        draw.text((design.margin, mood_y), mood["ja"], font=design.fonts['h3'], 
-                 fill=design.COLORS['text_primary'])
-        mood_y += int(h * 0.04)
+        draw.text((text_x, int(h * 0.6)), mood["ja"], font=font_mood, fill='#666666')
+        draw.text((text_x, int(h * 0.67)), mood["en"], font=font_mood, fill='#999999')
         
-        # English translation
-        draw.text((design.margin, mood_y), mood["en"], font=design.fonts['body'], 
-                 fill=design.COLORS['text_secondary'])
-
-        # Footer - no micro-season
-        design.draw_footer(draw, now.strftime("%Y年%m月%d日"), season_info, show_season=False)
+        # Poem
+        if flower.get("poem"):
+            draw.text((text_x, int(h * 0.8)), flower["poem"], font=get_font("Noto Serif JP", int(w * 0.025)), fill='#999999')
 
         return img

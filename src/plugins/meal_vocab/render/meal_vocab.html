@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        :root {
+            --bg-base: {{ palette.bg or '#FAF8F5' }};
+            --text-primary: {{ palette.primary or '#2C2C2C' }};
+            --text-secondary: #666666;
+            --text-tertiary: #999999;
+            --border-subtle: #E0D8C8;
+            --season-primary: {{ palette.primary or '#8B7355' }};
+            --season-green: #7A8B6F;
+            --font-serif: 'Noto Serif JP', serif;
+            --font-sans: 'Noto Sans JP', sans-serif;
+        }
+
+        body {
+            width: 800px;
+            height: 480px;
+            margin: 0;
+            padding: 40px 48px;
+            box-sizing: border-box;
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .micro-season-stamp {
+            position: absolute;
+            top: 40px;
+            right: 48px;
+            text-align: right;
+        }
+        .micro-season-kanji {
+            font-family: var(--font-serif);
+            font-size: 14px;
+            color: var(--season-primary);
+            letter-spacing: 0.1em;
+        }
+
+        .split-card { display: flex; height: 100%; align-items: center; }
+        .vocab-side { flex: 1; padding-right: 32px; }
+        .meal-side { flex: 1; padding-left: 32px; }
+        .divider-vertical { border-left: 1px solid var(--border-subtle); margin: 0 24px; height: 60%; }
+        
+        .section-label { 
+            font-family: var(--font-sans); 
+            font-size: 12px; 
+            color: var(--season-primary); 
+            text-transform: uppercase; 
+            letter-spacing: 0.1em; 
+            margin-bottom: 16px; 
+        }
+        
+        .pt-word { 
+            font-family: var(--font-sans); 
+            font-size: 36px; 
+            font-weight: 500; 
+            margin: 0; 
+        }
+        
+        .pt-pronunciation { 
+            font-family: var(--font-sans); 
+            font-size: 14px; 
+            color: var(--text-tertiary); 
+            margin-bottom: 16px; 
+            display: block; 
+        }
+        
+        .ja-meaning { 
+            font-family: var(--font-serif); 
+            font-size: 18px; 
+            color: var(--text-secondary); 
+            margin-bottom: 16px;
+        }
+        
+        .example {
+            font-family: var(--font-sans);
+            font-size: 14px;
+            color: var(--text-tertiary);
+            font-style: italic;
+        }
+        
+        .meal-title { 
+            font-family: var(--font-serif); 
+            font-size: 24px; 
+            margin: 0 0 12px 0; 
+        }
+        
+        .meal-desc { 
+            font-family: var(--font-sans); 
+            font-size: 14px; 
+            line-height: 1.6; 
+            color: var(--text-secondary); 
+        }
+
+        .meal-photo {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border: 1px solid var(--border-subtle);
+            border-radius: 4px;
+            margin-top: 16px;
+        }
+    </style>
+</head>
+<body>
+    {% if season_info %}
+    <div class="micro-season-stamp">
+        <div class="micro-season-kanji">候: {{ season_info.micro_season.kanji }}</div>
+    </div>
+    {% endif %}
+
+    <div class="split-card">
+        <div class="vocab-side">
+            <div class="section-label">Palavra do Dia</div>
+            <h2 class="pt-word">{{ vocab.pt }}</h2>
+            <span class="pt-pronunciation">{{ vocab.theme }}</span>
+            <p class="ja-meaning">{{ vocab.ja }}</p>
+            <p class="example">"{{ vocab.example }}"</p>
+        </div>
+        <div class="divider-vertical"></div>
+        <div class="meal-side">
+            <div class="section-label">今日のランチ</div>
+            <h3 class="meal-title">{{ meal.ja }}</h3>
+            <p class="meal-desc">{{ meal.en }}</p>
+            {% if food_image %}
+            <img src="{{ food_image }}" alt="Food" class="meal-photo">
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
