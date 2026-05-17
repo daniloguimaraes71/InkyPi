@@ -169,7 +169,7 @@ class KansaiEvents(BasePlugin):
             
             event_y += int(h * 0.18)
 
-        # Footer
-        design.draw_footer(draw, now.strftime("%Y年%m月%d日"), season_info)
+        # Footer - no micro-season
+        design.draw_footer(draw, now.strftime("%Y年%m月%d日"), season_info, show_season=False)
 
         return img

@@ -4,7 +4,7 @@ import pytz
 from datetime import datetime
 from plugins.base_plugin.base_plugin import BasePlugin
 from utils.micro_season import get_full_season_info, get_seasonal_palette
-from utils.card_design import CardDesign, wrap_text
+from utils.card_design import CardDesign, ImageLoader
 from utils.app_utils import get_font
 from PIL import Image, ImageDraw, ImageColor
 
@@ -45,6 +45,13 @@ MEALS = [
     {"ja": "お好み焼きと冷やし@update", "en": "Okonomiyaki with cold noodles"},
 ]
 
+# Food photos for visual appeal
+FOOD_PHOTOS = [
+    "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400",
+    "https://images.unsplash.com/photo-1512058564366-18510be2db19?w=400",
+    "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400",
+]
+
 
 class MealVocab(BasePlugin):
     def generate_image(self, settings, device_config):
@@ -63,11 +70,24 @@ class MealVocab(BasePlugin):
         random.seed(seed)
         vocab = random.choice(VOCABULARY)
         meal = random.choice(MEALS)
+        photo_url = random.choice(FOOD_PHOTOS)
         random.seed()
 
-        return self._draw_card(dimensions, orientation, vocab, meal, season_info, palette, settings, now)
+        # Load food photo
+        photo = self._load_food_photo(photo_url, dimensions)
 
-    def _draw_card(self, dimensions, orientation, vocab, meal, season_info, palette, settings, now):
+        return self._draw_card(dimensions, orientation, vocab, meal, season_info, palette, settings, now, photo)
+
+    def _load_food_photo(self, photo_url, dimensions):
+        """Load a food photo for visual appeal."""
+        try:
+            target_size = (int(dimensions[0] * 0.3), int(dimensions[1] * 0.4))
+            return ImageLoader.load_and_fit(photo_url, target_size)
+        except Exception as e:
+            logger.warning(f"Failed to load food photo: {e}")
+            return None
+
+    def _draw_card(self, dimensions, orientation, vocab, meal, season_info, palette, settings, now, photo):
         w, h = dimensions
         if orientation == 'vertical':
             w, h = h, w
@@ -83,54 +103,65 @@ class MealVocab(BasePlugin):
         y_pos = design.draw_header(draw, "今日の Português", 
                                   "Vocabulário & Almoço")
 
-        # Left side - Vocabulary
-        left_x = design.margin
+        # Photo section (if available)
+        if photo:
+            photo_x = design.margin
+            photo_y = y_pos
+            photo_w = int(w * 0.25)
+            photo_h = int(h * 0.4)
+            
+            # Paste photo
+            photo_resized = photo.resize((photo_w, photo_h), Image.Resampling.LANCZOS)
+            img.paste(photo_resized, (photo_x, photo_y))
+            
+            # Add border
+            draw = ImageDraw.Draw(img)
+            draw.rectangle([photo_x-1, photo_y-1, photo_x+photo_w+1, photo_y+photo_h+1], 
+                          outline=design.COLORS['divider'], width=1)
+            
+            # Text on the right
+            text_x = photo_x + photo_w + int(w * 0.04)
+            text_w = w - text_x - design.margin
+        else:
+            text_x = design.margin
+            text_w = w - 2 * design.margin
+
+        # Vocabulary section
+        vocab_y = y_pos + int(h * 0.05)
         
-        # Section header
-        y_pos = design.draw_section(draw, "Vocabulário", y_pos)
-        
-        # Portuguese word - large and prominent
-        draw.text((left_x, y_pos), vocab["pt"], font=design.fonts['display'], 
+        # Portuguese word - large
+        draw.text((text_x, vocab_y), vocab["pt"], font=design.fonts['display'], 
                  fill=design.COLORS['text_primary'])
-        y_pos += int(h * 0.12)
+        vocab_y += int(h * 0.12)
         
         # Japanese meaning
-        draw.text((left_x, y_pos), vocab["ja"], font=design.fonts['h2'], 
+        draw.text((text_x, vocab_y), vocab["ja"], font=design.fonts['h2'], 
                  fill=design.COLORS['text_primary'])
-        y_pos += int(h * 0.06)
+        vocab_y += int(h * 0.06)
         
         # English meaning
-        draw.text((left_x, y_pos), vocab["en"], font=design.fonts['body'], 
+        draw.text((text_x, vocab_y), vocab["en"], font=design.fonts['body'], 
                  fill=design.COLORS['text_secondary'])
-        y_pos += int(h * 0.05)
+        vocab_y += int(h * 0.05)
         
         # Example sentence
-        example_y = y_pos + int(h * 0.02)
-        draw.text((left_x, example_y), f'"{vocab["example"]}"', font=design.fonts['caption'], 
+        draw.text((text_x, vocab_y), f'"{vocab["example"]}"', font=design.fonts['caption'], 
                  fill=design.COLORS['text_light'])
 
-        # Vertical divider
-        div_x = int(w * 0.52)
-        draw.line([(div_x, int(h * 0.25)), (div_x, int(h * 0.75))], 
-                 fill=design.COLORS['divider'], width=1)
-
-        # Right side - Meal
-        right_x = int(w * 0.58)
-        meal_y = y_pos - int(h * 0.15)
-        
-        # Section header
+        # Meal section - below vocabulary
+        meal_y = int(h * 0.65)
         meal_y = design.draw_section(draw, "Almoço", meal_y)
         
         # Meal suggestion
-        draw.text((right_x, meal_y), meal["ja"], font=design.fonts['h2'], 
+        draw.text((design.margin, meal_y), meal["ja"], font=design.fonts['h3'], 
                  fill=design.COLORS['text_primary'])
-        meal_y += int(h * 0.06)
+        meal_y += int(h * 0.04)
         
         # English translation
-        draw.text((right_x, meal_y), meal["en"], font=design.fonts['body'], 
+        draw.text((design.margin, meal_y), meal["en"], font=design.fonts['body'], 
                  fill=design.COLORS['text_secondary'])
 
-        # Footer
-        design.draw_footer(draw, now.strftime("%Y年%m月%d日"), season_info)
+        # Footer - no micro-season
+        design.draw_footer(draw, now.strftime("%Y年%m月%d日"), season_info, show_season=False)
 
         return img

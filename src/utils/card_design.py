@@ -85,10 +85,15 @@ class CardDesign:
         """Add subtle gradient overlay for depth."""
         draw = ImageDraw.Draw(img)
         
-        # Very subtle top gradient
+        # Very subtle top gradient - opaque version
+        base_color = img.getpixel((0, 0))[:3]  # Get background color
         for y in range(int(self.h * 0.15)):
-            alpha = int(20 * (1 - y / (self.h * 0.15)))
-            draw.line([(0, y), (self.w, y)], fill=(255, 255, 255, alpha))
+            # Blend towards slightly lighter version
+            factor = 1 - (y / (self.h * 0.15))
+            r = min(255, int(base_color[0] + (255 - base_color[0]) * 0.05 * factor))
+            g = min(255, int(base_color[1] + (255 - base_color[1]) * 0.05 * factor))
+            b = min(255, int(base_color[2] + (255 - base_color[2]) * 0.05 * factor))
+            draw.line([(0, y), (self.w, y)], fill=(r, g, b, 255))
     
     def draw_header(self, draw, title, subtitle=None, y_start=None):
         """Draw elegant header with title and optional subtitle."""
@@ -161,7 +166,7 @@ class CardDesign:
         
         return y + len(lines) * line_height
     
-    def draw_footer(self, draw, date_str, season_info=None):
+    def draw_footer(self, draw, date_str, season_info=None, show_season=True):
         """Draw elegant footer with date and micro-season."""
         footer_y = int(self.h * 0.88)
         
@@ -173,8 +178,8 @@ class CardDesign:
         draw.text((self.margin, footer_y + int(self.h * 0.03)), 
                  date_str, font=self.fonts['micro'], fill=self.COLORS['text_secondary'])
         
-        # Micro-season
-        if season_info:
+        # Micro-season - only if requested
+        if season_info and show_season:
             season_label = f"時候: {season_info['micro_season']['kanji']}"
             season_meaning = season_info['micro_season']['english']
             
@@ -213,6 +218,7 @@ class ImageLoader:
     def load_and_fit(image_path_or_url, target_size, fallback_color='#E0D8C8'):
         """Load image and fit to target size with elegant fallback."""
         from PIL import ImageColor, ImageOps
+        import requests
         
         try:
             from utils.image_loader import AdaptiveImageLoader
