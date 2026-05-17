@@ -79,7 +79,9 @@
         <div class="night-left">
             <div class="moon-icon">☾</div>
             <div class="poem">
-                {{ poem | replace('\n', '<br>') }}
+                {% for line in poem.split('\n') %}
+                    {{ line }}{% if not loop.last %}<br>{% endif %}
+                {% endfor %}
             </div>
             <div class="greeting">おやすみなさい</div>
         </div>

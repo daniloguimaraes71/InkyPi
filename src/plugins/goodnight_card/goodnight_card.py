@@ -69,13 +69,15 @@ class GoodnightCard(BasePlugin):
         image_keyword = NIGHT_IMAGES.get(season, "Moon")
         night_image = get_wikipedia_image(image_keyword, (300, 300))
         
-        # Save image for HTML rendering
+        # Save image to static directory for HTML rendering
         image_url = None
         if night_image:
-            import tempfile
-            with tempfile.NamedTemporaryFile(suffix='.png', delete=False, dir='/tmp') as f:
-                night_image.save(f, 'PNG')
-                image_url = f'file://{f.name}'
+            import os
+            static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'static', 'images', 'cache')
+            os.makedirs(static_dir, exist_ok=True)
+            image_path = os.path.join(static_dir, 'night_image.png')
+            night_image.save(image_path, 'PNG')
+            image_url = f'/static/images/cache/night_image.png'
 
         # Pick poem based on date
         seed = now.year * 10000 + now.month * 100 + now.day

@@ -68,14 +68,15 @@ class MealVocab(BasePlugin):
         # Get food image from Wikipedia
         food_image = get_food_image(meal.get("food", "寿司"), (300, 200))
         
-        # Save image to temporary file for HTML rendering
+        # Save image to static directory for HTML rendering
         food_image_url = None
         if food_image:
-            import tempfile
             import os
-            with tempfile.NamedTemporaryFile(suffix='.png', delete=False, dir='/tmp') as f:
-                food_image.save(f, 'PNG')
-                food_image_url = f'file://{f.name}'
+            static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'static', 'images', 'cache')
+            os.makedirs(static_dir, exist_ok=True)
+            image_path = os.path.join(static_dir, 'meal_food.png')
+            food_image.save(image_path, 'PNG')
+            food_image_url = f'/static/images/cache/meal_food.png'
 
         # Try HTML render first, fall back to PIL
         try:

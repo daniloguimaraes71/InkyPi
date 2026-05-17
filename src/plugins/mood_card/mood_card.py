@@ -83,14 +83,15 @@ class MoodCard(BasePlugin):
         # Get flower image from Wikipedia
         flower_image = get_seasonal_flower_image(flower["ja"], (224, 304))
         
-        # Save image to temporary file for HTML rendering
+        # Save image to static directory for HTML rendering
         flower_image_url = None
         if flower_image:
-            import tempfile
             import os
-            with tempfile.NamedTemporaryFile(suffix='.png', delete=False, dir='/tmp') as f:
-                flower_image.save(f, 'PNG')
-                flower_image_url = f'file://{f.name}'
+            static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'static', 'images', 'cache')
+            os.makedirs(static_dir, exist_ok=True)
+            image_path = os.path.join(static_dir, 'mood_flower.png')
+            flower_image.save(image_path, 'PNG')
+            flower_image_url = f'/static/images/cache/mood_flower.png'
 
         # Try HTML render first, fall back to PIL
         try:

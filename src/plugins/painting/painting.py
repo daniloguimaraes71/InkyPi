@@ -204,8 +204,27 @@ class Painting(BasePlugin):
     def _render_painting_card(self, dimensions, painting, season_info, settings):
         w, h = dimensions
 
-        # Load and resize painting image
-        img = self.image_loader.from_url(painting["image_url"], dimensions, resize=False)
+        # Load and resize painting image with longer timeout
+        try:
+            img = self.image_loader.from_url(painting["image_url"], dimensions, resize=False, timeout_ms=30000)
+        except Exception as e:
+            logger.warning(f"Failed to load image with adaptive loader: {e}")
+            # Fallback to direct download
+            try:
+                from utils.http_client import get_http_session
+                from io import BytesIO
+                session = get_http_session()
+                headers = {'User-Agent': 'InkyPi/1.0'}
+                resp = session.get(painting["image_url"], headers=headers, timeout=20)
+                if resp.status_code == 200:
+                    from PIL import Image
+                    img = Image.open(BytesIO(resp.content))
+                else:
+                    img = None
+            except Exception as e2:
+                logger.error(f"Fallback download also failed: {e2}")
+                img = None
+        
         if not img:
             raise RuntimeError("Failed to load painting image.")
 

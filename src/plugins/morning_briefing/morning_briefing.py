@@ -48,13 +48,15 @@ class MorningBriefing(BasePlugin):
         image_keyword = MORNING_IMAGES.get(season, "Sunrise")
         morning_image = get_wikipedia_image(image_keyword, (280, 350))
         
-        # Save image for HTML rendering
+        # Save image to static directory for HTML rendering
         image_url = None
         if morning_image:
-            import tempfile
-            with tempfile.NamedTemporaryFile(suffix='.png', delete=False, dir='/tmp') as f:
-                morning_image.save(f, 'PNG')
-                image_url = f'file://{f.name}'
+            import os
+            static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'static', 'images', 'cache')
+            os.makedirs(static_dir, exist_ok=True)
+            image_path = os.path.join(static_dir, 'morning_image.png')
+            morning_image.save(image_path, 'PNG')
+            image_url = f'/static/images/cache/morning_image.png'
 
         # Try HTML render
         try:
