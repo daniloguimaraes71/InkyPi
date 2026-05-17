@@ -31,15 +31,14 @@
             width: 100%;
             height: 100%;
             box-sizing: border-box;
-            padding: 0;
+            padding: 24px 28px;
             position: relative;
             display: flex;
         }
 
         .vocab-side {
-            width: 50%;
-            padding: 32px 28px 32px 36px;
-            box-sizing: border-box;
+            flex: 1;
+            padding-right: 24px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -48,39 +47,38 @@
         .section-label {
             font-size: 11px;
             color: var(--accent-gold);
-            letter-spacing: 0.1em;
-            margin-bottom: 12px;
-            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            margin-bottom: 10px;
         }
 
         .vocab-word {
             font-family: var(--font-sans);
-            font-size: 44px;
+            font-size: 38px;
             font-weight: 500;
             color: var(--accent-copper);
-            margin: 0 0 6px 0;
-            line-height: 1.1;
+            margin: 0 0 4px 0;
+            line-height: 1.15;
         }
 
         .vocab-theme {
             font-size: 13px;
             color: var(--text-light);
-            margin-bottom: 16px;
+            margin-bottom: 14px;
         }
 
         .divider-h {
-            width: 60px;
-            height: 1px;
+            width: 48px;
+            height: 2px;
             background-color: var(--accent-copper);
-            margin: 0 0 16px 0;
+            margin: 0 0 14px 0;
         }
 
         .vocab-meaning {
             font-family: var(--font-serif);
-            font-size: 17px;
+            font-size: 16px;
             color: var(--text-secondary);
-            line-height: 1.6;
-            margin-bottom: 14px;
+            line-height: 1.5;
+            margin-bottom: 12px;
         }
 
         .vocab-example {
@@ -88,7 +86,7 @@
             color: var(--text-light);
             font-style: italic;
             line-height: 1.5;
-            padding-left: 12px;
+            padding-left: 10px;
             border-left: 2px solid var(--divider);
         }
 
@@ -96,19 +94,21 @@
             width: 1px;
             background-color: var(--divider);
             align-self: stretch;
+            margin: 20px 0;
         }
 
         .meal-side {
-            width: 50%;
+            flex: 0 0 42%;
             position: relative;
             overflow: hidden;
+            border-radius: 4px;
         }
 
         .meal-side img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            filter: grayscale(8%) sepia(5%) brightness(0.92);
+            filter: grayscale(8%) sepia(5%);
         }
 
         .meal-overlay {
@@ -116,36 +116,35 @@
             bottom: 0;
             left: 0;
             right: 0;
-            padding: 24px 28px;
-            background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.2) 60%, transparent 100%);
+            padding: 16px 18px;
+            background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.15) 70%, transparent 100%);
             color: #fff;
         }
 
         .meal-label {
-            font-size: 10px;
+            font-size: 9px;
             letter-spacing: 0.1em;
-            opacity: 0.8;
-            margin-bottom: 4px;
+            opacity: 0.75;
+            margin-bottom: 3px;
         }
 
         .meal-title {
             font-family: var(--font-serif);
-            font-size: 20px;
-            margin: 0 0 4px 0;
+            font-size: 17px;
+            margin: 0 0 3px 0;
             line-height: 1.3;
         }
 
         .meal-desc {
-            font-size: 13px;
-            opacity: 0.85;
+            font-size: 12px;
+            opacity: 0.8;
             margin: 0;
-            line-height: 1.4;
         }
 
         .micro-season {
             position: absolute;
-            bottom: 20px;
-            right: 36px;
+            bottom: 18px;
+            right: 28px;
             text-align: right;
         }
         .micro-season .kanji {
