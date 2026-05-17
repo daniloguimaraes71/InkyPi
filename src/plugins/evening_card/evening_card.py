@@ -46,14 +46,7 @@ class EveningCard(BasePlugin):
         image_keyword = EVENING_IMAGES.get(season, "Sunset")
         evening_image = get_wikipedia_image(image_keyword, (280, 350))
         
-        image_url = None
-        if evening_image:
-            import os
-            static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'static', 'images', 'cache')
-            os.makedirs(static_dir, exist_ok=True)
-            image_path = os.path.join(static_dir, 'evening_image.png')
-            evening_image.save(image_path, 'PNG')
-            image_url = f'/static/images/cache/evening_image.png'
+        image_data_uri = self.image_to_data_uri(evening_image)
 
         try:
             dimensions_for_render = device_config.get_resolution()
@@ -67,7 +60,7 @@ class EveningCard(BasePlugin):
                 "time_format": time_format,
                 "weather": tomorrow_weather,
                 "events": tomorrow_events,
-                "evening_image": image_url,
+                "evening_image": image_data_uri,
                 "image_label": season_info['micro_season']['kanji'] if season_info else "",
             }
             

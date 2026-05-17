@@ -66,14 +66,7 @@ class GoodnightCard(BasePlugin):
         image_keyword = NIGHT_IMAGES.get(season, "Moon")
         night_image = get_wikipedia_image(image_keyword, (300, 300))
         
-        image_url = None
-        if night_image:
-            import os
-            static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'static', 'images', 'cache')
-            os.makedirs(static_dir, exist_ok=True)
-            image_path = os.path.join(static_dir, 'night_image.png')
-            night_image.save(image_path, 'PNG')
-            image_url = f'/static/images/cache/night_image.png'
+        image_data_uri = self.image_to_data_uri(night_image)
 
         seed = now.year * 10000 + now.month * 100 + now.day
         poems = POEMS.get(season, POEMS["spring"])
@@ -89,7 +82,7 @@ class GoodnightCard(BasePlugin):
                 "season_info": season_info,
                 "now": now,
                 "poem": poem,
-                "night_image": image_url,
+                "night_image": image_data_uri,
             }
             
             image = self.render_image(dimensions_for_render, "goodnight_card.html", "goodnight_card.css", template_params)

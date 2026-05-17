@@ -46,14 +46,7 @@ class MorningBriefing(BasePlugin):
         image_keyword = MORNING_IMAGES.get(season, "Sunrise")
         morning_image = get_wikipedia_image(image_keyword, (280, 350))
         
-        image_url = None
-        if morning_image:
-            import os
-            static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'static', 'images', 'cache')
-            os.makedirs(static_dir, exist_ok=True)
-            image_path = os.path.join(static_dir, 'morning_image.png')
-            morning_image.save(image_path, 'PNG')
-            image_url = f'/static/images/cache/morning_image.png'
+        image_data_uri = self.image_to_data_uri(morning_image)
 
         try:
             dimensions_for_render = device_config.get_resolution()
@@ -67,7 +60,7 @@ class MorningBriefing(BasePlugin):
                 "time_format": time_format,
                 "weather": weather_data,
                 "events": calendar_events,
-                "morning_image": image_url,
+                "morning_image": image_data_uri,
                 "image_label": season_info['micro_season']['kanji'] if season_info else "",
             }
             

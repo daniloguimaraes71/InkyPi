@@ -52,17 +52,7 @@ class KansaiEvents(BasePlugin):
                 img = self._generate_location_placeholder(event.get("wiki", "関西"), event.get("type", "イベント"), (200, 150))
             event_images.append(img)
         
-        event_image_urls = []
-        for i, img in enumerate(event_images):
-            if img:
-                import os
-                static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'static', 'images', 'cache')
-                os.makedirs(static_dir, exist_ok=True)
-                image_path = os.path.join(static_dir, f'kansai_event_{i}.png')
-                img.save(image_path, 'PNG')
-                event_image_urls.append(f'/static/images/cache/kansai_event_{i}.png')
-            else:
-                event_image_urls.append(None)
+        event_image_uris = [self.image_to_data_uri(img) for img in event_images]
 
         try:
             dimensions_for_render = device_config.get_resolution()
@@ -73,7 +63,7 @@ class KansaiEvents(BasePlugin):
                 "palette": palette,
                 "season_info": season_info,
                 "events": events,
-                "event_images": event_image_urls,
+                "event_images": event_image_uris,
                 "weekend_date": weekend_date,
                 "season_label": f"{season_info['micro_season']['kanji']} - {season_info['micro_season']['english']}" if season_info else "",
             }

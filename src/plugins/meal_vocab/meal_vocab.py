@@ -68,15 +68,7 @@ class MealVocab(BasePlugin):
         # Get food image from Wikipedia
         food_image = get_food_image(meal.get("food", "寿司"), (300, 200))
         
-        # Save image to static directory for HTML rendering
-        food_image_url = None
-        if food_image:
-            import os
-            static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'static', 'images', 'cache')
-            os.makedirs(static_dir, exist_ok=True)
-            image_path = os.path.join(static_dir, 'meal_food.png')
-            food_image.save(image_path, 'PNG')
-            food_image_url = f'/static/images/cache/meal_food.png'
+        food_image_data_uri = self.image_to_data_uri(food_image)
 
         # Try HTML render first, fall back to PIL
         try:
@@ -89,7 +81,7 @@ class MealVocab(BasePlugin):
                 "season_info": season_info,
                 "vocab": vocab,
                 "meal": meal,
-                "food_image": food_image_url,
+                "food_image": food_image_data_uri,
             }
             
             image = self.render_image(dimensions_for_render, "meal_vocab.html", "meal_vocab.css", template_params)

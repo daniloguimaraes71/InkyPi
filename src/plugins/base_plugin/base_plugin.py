@@ -84,6 +84,16 @@ class BasePlugin:
         template_params['frame_styles'] = FRAME_STYLES
         return template_params
 
+    def image_to_data_uri(self, img):
+        """Convert a PIL Image to a base64 data URI for HTML embedding."""
+        if img is None:
+            return None
+        from io import BytesIO
+        buffered = BytesIO()
+        img.save(buffered, format="PNG")
+        b64 = base64.b64encode(buffered.getvalue()).decode()
+        return f"data:image/png;base64,{b64}"
+
     def render_image(self, dimensions, html_file, css_file=None, template_params={}):
         # load the base plugin and current plugin css files
         css_files = [os.path.join(BASE_PLUGIN_RENDER_DIR, "plugin.css")]
