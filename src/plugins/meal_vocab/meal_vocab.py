@@ -125,9 +125,9 @@ class MealVocab(BasePlugin):
         dimensions = device_config.get_resolution()
         orientation = device_config.get_config("orientation", "horizontal")
 
-        v = get_variant(settings.get("designStyle"))
         season_info = get_full_season_info(now)
-        palette = get_seasonal_palette(now)
+        seasonal_palette = get_seasonal_palette(now)
+        v = get_variant(device_config.get_config("design_style"), seasonal_palette)
 
         seed = now.year * 10000 + now.month * 100 + now.day
         random.seed(seed)
@@ -145,12 +145,19 @@ class MealVocab(BasePlugin):
                 dimensions_for_render = dimensions_for_render[::-1]
 
             template_params = {
-                "palette": palette,
+                "palette": seasonal_palette,
                 "season_info": season_info,
                 "vocab": vocab,
                 "meal": meal,
                 "food_image": food_image_data_uri,
                 "plugin_settings": settings,
+                "design_variant": {
+                    "name": v.name,
+                    "colors": v.colors,
+                    "heading_font": v.heading_font,
+                    "body_font": v.body_font,
+                    "divider_width": v.divider_width,
+                },
             }
 
             image = self.render_image(dimensions_for_render, "meal_vocab.html", "meal_vocab.css", template_params)
@@ -159,9 +166,9 @@ class MealVocab(BasePlugin):
         except Exception as e:
             logger.warning(f"HTML render failed, falling back to PIL: {e}")
 
-        return self._draw_card_pil(dimensions, orientation, vocab, meal, season_info, palette, settings, now, food_image, v)
+        return self._draw_card_pil(dimensions, orientation, vocab, meal, season_info, settings, now, food_image, v)
 
-    def _draw_card_pil(self, dimensions, orientation, vocab, meal, season_info, palette, settings, now, food_image, v):
+    def _draw_card_pil(self, dimensions, orientation, vocab, meal, season_info, settings, now, food_image, v):
         """Elegant 50/50 split with vocab and meal."""
         w, h = dimensions
         if orientation == 'vertical':

@@ -61,9 +61,9 @@ class MoodCard(BasePlugin):
         dimensions = device_config.get_resolution()
         orientation = device_config.get_config("orientation", "horizontal")
 
-        v = get_variant(settings.get("designStyle"))
         season_info = get_full_season_info(now)
-        palette = get_seasonal_palette(now)
+        seasonal_palette = get_seasonal_palette(now)
+        v = get_variant(device_config.get_config("design_style"), seasonal_palette)
 
         month = now.month
         if month in [3, 4, 5]:
@@ -92,12 +92,19 @@ class MoodCard(BasePlugin):
                 dimensions_for_render = dimensions_for_render[::-1]
 
             template_params = {
-                "palette": palette,
+                "palette": seasonal_palette,
                 "season_info": season_info,
                 "flower": flower,
                 "mood": mood,
                 "flower_image": flower_image_data_uri,
                 "plugin_settings": settings,
+                "design_variant": {
+                    "name": v.name,
+                    "colors": v.colors,
+                    "heading_font": v.heading_font,
+                    "body_font": v.body_font,
+                    "divider_width": v.divider_width,
+                },
             }
 
             image = self.render_image(dimensions_for_render, "mood_card.html", "mood_card.css", template_params)
@@ -106,9 +113,9 @@ class MoodCard(BasePlugin):
         except Exception as e:
             logger.warning(f"HTML render failed, falling back to PIL: {e}")
 
-        return self._draw_card_pil(dimensions, orientation, flower, mood, season_info, palette, settings, now, flower_image, v)
+        return self._draw_card_pil(dimensions, orientation, flower, mood, season_info, settings, now, flower_image, v)
 
-    def _draw_card_pil(self, dimensions, orientation, flower, mood, season_info, palette, settings, now, flower_image, v):
+    def _draw_card_pil(self, dimensions, orientation, flower, mood, season_info, settings, now, flower_image, v):
         """Elegant flower + mood card with photo frame."""
         w, h = dimensions
         if orientation == 'vertical':

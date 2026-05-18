@@ -4,7 +4,7 @@ import requests
 import pytz
 from datetime import datetime
 from plugins.base_plugin.base_plugin import BasePlugin
-from utils.micro_season import get_full_season_info
+from utils.micro_season import get_full_season_info, get_seasonal_palette
 from utils.image_utils import pad_image_blur
 from utils.design_variants import get_variant
 
@@ -72,8 +72,9 @@ class Painting(BasePlugin):
         if device_config.get_config("orientation") == "vertical":
             dimensions = dimensions[::-1]
 
-        v = get_variant(settings.get("designStyle"))
         season_info = get_full_season_info(now)
+        seasonal_palette = get_seasonal_palette(now)
+        v = get_variant(device_config.get_config("design_style"), seasonal_palette)
         source = settings.get("artSource", "met")
 
         painting = self._fetch_painting(source, season_info, settings, now)
@@ -163,7 +164,6 @@ class Painting(BasePlugin):
 
     def _render_painting_card(self, dimensions, painting, season_info, settings, v):
         w, h = dimensions
-        C = v.colors
 
         try:
             img = self.image_loader.from_url(painting["image_url"], dimensions, resize=False, timeout_ms=30000)

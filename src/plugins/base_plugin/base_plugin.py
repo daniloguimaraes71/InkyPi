@@ -114,20 +114,21 @@ class BasePlugin:
         template_params["height"] = dimensions[1]
         template_params["font_faces"] = get_fonts()
         template_params["static_dir"] = STATIC_DIR
-        
-        # Determine design variant
-        ps = template_params.get("plugin_settings", {})
-        if isinstance(ps, dict):
-            variant = get_variant(ps.get("designStyle"))
-        else:
-            variant = get_variant(None)
-        template_params["design_variant"] = {
-            "name": variant.name,
-            "colors": variant.colors,
-            "heading_font": variant.heading_font,
-            "body_font": variant.body_font,
-            "divider_width": variant.divider_width,
-        }
+
+        # Use design variant passed from plugin, or derive from settings
+        if "design_variant" not in template_params:
+            ps = template_params.get("plugin_settings", {})
+            if isinstance(ps, dict):
+                variant = get_variant(ps.get("designStyle"))
+            else:
+                variant = get_variant(None)
+            template_params["design_variant"] = {
+                "name": variant.name,
+                "colors": variant.colors,
+                "heading_font": variant.heading_font,
+                "body_font": variant.body_font,
+                "divider_width": variant.divider_width,
+            }
 
         # Provide default plugin_settings if not present
         if "plugin_settings" not in template_params:

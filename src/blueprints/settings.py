@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app, render_template, Response
 from utils.time_utils import calculate_seconds
+from utils.design_variants import DESIGN_STYLE_CHOICES
 from datetime import datetime, timedelta
 import os
 import pytz
@@ -29,7 +30,7 @@ settings_bp = Blueprint("settings", __name__)
 def settings_page():
     device_config = current_app.config['DEVICE_CONFIG']
     timezones = sorted(pytz.all_timezones_set)
-    return render_template('settings.html', device_settings=device_config.get_config(), timezones = timezones)
+    return render_template('settings.html', device_settings=device_config.get_config(), timezones=timezones, design_styles=DESIGN_STYLE_CHOICES)
 
 @settings_bp.route('/save_settings', methods=['POST'])
 def save_settings():
@@ -60,6 +61,7 @@ def save_settings():
             "timezone": form_data.get("timezoneName"),
             "time_format": form_data.get("timeFormat"),
             "plugin_cycle_interval_seconds": plugin_cycle_interval_seconds,
+            "design_style": form_data.get("designStyle", "wa"),
             "image_settings": {
                 "saturation": float(form_data.get("saturation", "1.0")),
                 "brightness": float(form_data.get("brightness", "1.0")),

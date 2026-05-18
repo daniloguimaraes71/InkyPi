@@ -38,6 +38,16 @@ IMAGE_SEARCH = {
     "冬": "Winter",
 }
 
+REGION_IMAGES = {
+    "大阪": "Osaka",
+    "京都": "Kyoto",
+    "神戸": "Kobe",
+    "奈良": "Nara,_Japan",
+    "滋賀": "Lake_Biwa",
+    "和歌山": "Wakayama_Castle",
+    "姫路": "Himeji_Castle",
+}
+
 
 class KansaiEvents(BasePlugin):
     def generate_image(self, settings, device_config):
@@ -48,9 +58,9 @@ class KansaiEvents(BasePlugin):
         dimensions = device_config.get_resolution()
         orientation = device_config.get_config("orientation", "horizontal")
 
-        v = get_variant(settings.get("designStyle"))
         season_info = get_full_season_info(now)
-        palette = get_seasonal_palette(now)
+        seasonal_palette = get_seasonal_palette(now)
+        v = get_variant(device_config.get_config("design_style"), seasonal_palette)
 
         month = now.month
         if month in [3, 4, 5]:
@@ -78,13 +88,20 @@ class KansaiEvents(BasePlugin):
                 dimensions_for_render = dimensions_for_render[::-1]
 
             template_params = {
-                "palette": palette,
+                "palette": seasonal_palette,
                 "season_info": season_info,
                 "events": events[:3],
                 "weekend_date": weekend_date,
                 "event_images": event_image_data_uris,
                 "season_label": f"{season_info['micro_season']['kanji']} - {season_info['micro_season']['english']}" if season_info else "",
                 "plugin_settings": settings,
+                "design_variant": {
+                    "name": v.name,
+                    "colors": v.colors,
+                    "heading_font": v.heading_font,
+                    "body_font": v.body_font,
+                    "divider_width": v.divider_width,
+                },
             }
 
             image = self.render_image(dimensions_for_render, "kansai_events.html", "kansai_events.css", template_params)
@@ -93,9 +110,9 @@ class KansaiEvents(BasePlugin):
         except Exception as e:
             logger.warning(f"HTML render failed, falling back to PIL: {e}")
 
-        return self._draw_card_pil(dimensions, orientation, events, season_info, palette, settings, now, weekend_date, event_images, v)
+        return self._draw_card_pil(dimensions, orientation, events, season_info, settings, now, weekend_date, event_images, v)
 
-    def _draw_card_pil(self, dimensions, orientation, events, season_info, palette, settings, now, weekend_date, event_images, v):
+    def _draw_card_pil(self, dimensions, orientation, events, season_info, settings, now, weekend_date, event_images, v):
         """Kansai events card with photo strip."""
         w, h = dimensions
         if orientation == 'vertical':
@@ -123,7 +140,6 @@ class KansaiEvents(BasePlugin):
         if weekend_date:
             draw.text((px, py + int(h * 0.06 * sm)), weekend_date, font=f_sub, fill=C['text_light'])
 
-        # Event list
         ev_start = py + int(h * 0.12 * sm)
         ev_h = int(h * 0.22)
         for i, event in enumerate(events[:3]):
@@ -132,7 +148,6 @@ class KansaiEvents(BasePlugin):
             desc = event.get("description", event.get("desc", ""))
             location = event.get("location", event.get("loc", ""))
 
-            # Small image thumbnail
             if i < len(event_images) and event_images[i]:
                 thumb_w = int(w * 0.08)
                 thumb_h = ev_h - int(h * 0.04)
@@ -159,7 +174,6 @@ class KansaiEvents(BasePlugin):
                 div_y = y + ev_h + int(h * 0.005)
                 draw.line([(px, div_y), (list_w - int(w * 0.02), div_y)], fill=C['divider'], width=v.divider_width)
 
-        # Micro-season
         if season_info:
             ms_x = list_w - int(w * 0.02)
             ms_y = h - int(h * 0.05 * sm)
@@ -182,32 +196,51 @@ class KansaiEvents(BasePlugin):
 
     def _fetch_kansai_events(self, settings, now):
         try:
-            from utils.kansai_news import fetch_kansai_events
+            from utils.kansai_news import fetch_kansai_events, get_kansai_events_list
             events = fetch_kansai_events()
             if events:
                 return events
+            return get_kansai_events_list(now, count=3)
         except Exception as e:
             logger.warning(f"Failed to fetch Kansai events: {e}")
-        return []
+            return []
 
     def _get_event_image(self, event):
         try:
             name = event.get("name", "")
+            location = event.get("location", "")
+            wiki_keyword = event.get("wiki", "")
+
+            # Priority 1: Try Wikipedia article from wiki field
+            if wiki_keyword and wiki_keyword in REGION_IMAGES:
+                return get_wikipedia_image(REGION_IMAGES[wiki_keyword], (200, 200))
+
+            # Priority 2: Try location-based image
+            for region, keyword in REGION_IMAGES.items():
+                if region in location or region in name:
+                    return get_wikipedia_image(keyword, (200, 200))
+
+            # Priority 3: Try keyword match from event name
             for keyword in IMAGE_SEARCH:
                 if keyword in name:
                     return get_wikipedia_image(IMAGE_SEARCH[keyword], (200, 200))
-            season = "spring"
-            for s, keywords in SEASONAL_KEYWORDS.items():
-                if any(kw in name for kw in keywords):
-                    season = s
-                    break
-            fallbacks = {
-                "spring": "Cherry_blossom",
-                "summer": "Tanabata",
-                "autumn": "Moon",
-                "winter": "Snow",
-            }
-            return get_wikipedia_image(fallbacks.get(season, "Cherry_blossom"), (200, 200))
+
+            # Priority 4: Try wiki field directly
+            if wiki_keyword:
+                img = get_wikipedia_image(wiki_keyword, (200, 200))
+                if img:
+                    return img
+
+            # Priority 5: Seasonal fallback
+            month = datetime.now().month
+            if month in [3, 4, 5]:
+                return get_wikipedia_image("Osaka", (200, 200))
+            elif month in [6, 7, 8]:
+                return get_wikipedia_image("Kyoto", (200, 200))
+            elif month in [9, 10, 11]:
+                return get_wikipedia_image("Nara,_Japan", (200, 200))
+            else:
+                return get_wikipedia_image("Kobe", (200, 200))
         except Exception as e:
             logger.warning(f"Failed to get event image: {e}")
             return None

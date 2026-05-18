@@ -51,9 +51,9 @@ class GoodnightCard(BasePlugin):
         dimensions = device_config.get_resolution()
         orientation = device_config.get_config("orientation", "horizontal")
 
-        v = get_variant(settings.get("designStyle"))
         season_info = get_full_season_info(now)
-        palette = get_seasonal_palette(now)
+        seasonal_palette = get_seasonal_palette(now)
+        v = get_variant(device_config.get_config("design_style"), seasonal_palette)
 
         month = now.month
         if month in [3, 4, 5]:
@@ -80,12 +80,19 @@ class GoodnightCard(BasePlugin):
                 dimensions_for_render = dimensions_for_render[::-1]
 
             template_params = {
-                "palette": palette,
+                "palette": seasonal_palette,
                 "season_info": season_info,
                 "now": now,
                 "poem": poem,
                 "night_image": image_data_uri,
                 "plugin_settings": settings,
+                "design_variant": {
+                    "name": v.name,
+                    "colors": v.colors,
+                    "heading_font": v.heading_font,
+                    "body_font": v.body_font,
+                    "divider_width": v.divider_width,
+                },
             }
 
             image = self.render_image(dimensions_for_render, "goodnight_card.html", "goodnight_card.css", template_params)
@@ -94,9 +101,9 @@ class GoodnightCard(BasePlugin):
         except Exception as e:
             logger.warning(f"HTML render failed, falling back to PIL: {e}")
 
-        return self._draw_card_pil(dimensions, orientation, now, season_info, palette, settings, poem, night_image, v)
+        return self._draw_card_pil(dimensions, orientation, now, season_info, settings, poem, night_image, v)
 
-    def _draw_card_pil(self, dimensions, orientation, now, season_info, palette, settings, poem, night_image, v):
+    def _draw_card_pil(self, dimensions, orientation, now, season_info, settings, poem, night_image, v):
         """Minimalist dark night card with centered poem."""
         w, h = dimensions
         if orientation == 'vertical':

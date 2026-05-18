@@ -94,7 +94,19 @@
             const valueDisplay = document.getElementById(`${slider.id}-value`);
             valueDisplay.textContent = parseFloat(slider.value).toFixed(1);
         }
-        document.addEventListener('DOMContentLoaded', populateIntervalFields);
+        document.addEventListener('DOMContentLoaded', () => {
+            populateIntervalFields();
+
+            const styleSelect = document.getElementById('designStyle');
+            const styleDesc = document.getElementById('designStyleDesc');
+            const styles = {{ design_styles | tojson }};
+            if (styleSelect && styleDesc) {
+                styleSelect.addEventListener('change', () => {
+                    const s = styles.find(st => st.name === styleSelect.value);
+                    if (s) styleDesc.textContent = s.description;
+                });
+            }
+        });
     </script>
 </head>
 <body>
@@ -145,6 +157,21 @@
                         <input type="checkbox" id="invertImage" name="invertImage" {% if device_settings.inverted_image %}checked{% endif %}>
                         </label>
                     </div>
+                </div>
+                <!-- Design Style -->
+                <div class="form-group nowrap">
+                    <label for="designStyle" class="form-label">Design Style:</label>
+                    <select id="designStyle" name="designStyle" class="form-input">
+                        {% for style in design_styles %}
+                        <option value="{{ style.name }}" {% if device_settings.design_style == style.name %}selected{% endif %}>
+                            {{ style.label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <p class="form-hint" id="designStyleDesc">
+                        {% set current_style = design_styles|selectattr('name', 'equalto', device_settings.design_style or 'wa')|list %}
+                        {{ current_style[0].description if current_style else 'Traditional Japanese elegance' }}
+                    </p>
                 </div>
                 <div class="form-group">
                     <!-- Timezone Dropdown -->

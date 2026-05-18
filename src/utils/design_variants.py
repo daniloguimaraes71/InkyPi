@@ -1,6 +1,7 @@
 """
 Design variant system for Kansai Companion cards.
-Defines multiple visual styles users can choose from in plugin settings.
+Defines multiple visual styles users can choose from in settings.
+Colors blend with micro-season solar term palettes when available.
 """
 import logging
 from dataclasses import dataclass, field
@@ -10,33 +11,28 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_VARIANT = "wa"
 
+# Which color roles the seasonal palette can fill
+SEASONAL_COLOR_MAP = {
+    "bg": "bg",
+    "accent": "accent",
+    "accent_sage": "accent",
+    "text_primary": "primary",
+    "text_secondary": "secondary",
+}
+
 
 @dataclass
 class DesignVariant:
     name: str
     label: str
     description: str
-
-    # Font families
     heading_font: str
     body_font: str
-
-    # Color palette
     colors: Dict[str, str]
-
-    # Divider
     divider_width: int = 1
-
-    # Spacing multiplier (1.0 = default)
     spacing_mult: float = 1.0
-
-    # Divider style: "line", "dots", "double"
     divider_style: str = "line"
-
-    # Border style for image frames: "thin", "thick", "rounded", "none"
     border_style: str = "thin"
-
-    # Whether to use small caps / decorative section labels
     section_style: str = "label"
 
 
@@ -62,7 +58,6 @@ VARIANTS: Dict[str, DesignVariant] = {
         },
         divider_width=1,
         spacing_mult=1.0,
-        divider_style="line",
     ),
     "zen": DesignVariant(
         name="zen",
@@ -85,7 +80,6 @@ VARIANTS: Dict[str, DesignVariant] = {
         },
         divider_width=1,
         spacing_mult=1.25,
-        divider_style="dots",
     ),
     "ryoku": DesignVariant(
         name="ryoku",
@@ -108,7 +102,6 @@ VARIANTS: Dict[str, DesignVariant] = {
         },
         divider_width=2,
         spacing_mult=0.9,
-        divider_style="line",
     ),
     "ima": DesignVariant(
         name="ima",
@@ -131,7 +124,6 @@ VARIANTS: Dict[str, DesignVariant] = {
         },
         divider_width=1,
         spacing_mult=1.1,
-        divider_style="line",
     ),
 }
 
@@ -141,15 +133,46 @@ DESIGN_STYLE_CHOICES = [
 ]
 
 
-def get_variant(name: Optional[str]) -> DesignVariant:
+def _blend_color(base_hex: str, seasonal_hex: str, weight: float = 0.5) -> str:
+    """Blend two hex colors by weight (0 = all base, 1 = all seasonal)."""
+    try:
+        r1, g1, b1 = int(base_hex[1:3], 16), int(base_hex[3:5], 16), int(base_hex[5:7], 16)
+        r2, g2, b2 = int(seasonal_hex[1:3], 16), int(seasonal_hex[3:5], 16), int(seasonal_hex[5:7], 16)
+        r = int(r1 + (r2 - r1) * weight)
+        g = int(g1 + (g2 - g1) * weight)
+        b = int(b1 + (b2 - b1) * weight)
+        return f"#{r:02x}{g:02x}{b:02x}"
+    except Exception:
+        return base_hex
+
+
+def get_variant(name: Optional[str], seasonal_palette: Optional[dict] = None) -> DesignVariant:
+    """
+    Get a design variant, optionally blended with a seasonal palette.
+    The seasonal palette colors overlay onto the variant's base colors
+    at a weight determined per color role.
+    """
     if not name:
         name = DEFAULT_VARIANT
     variant = VARIANTS.get(name)
     if not variant:
         logger.warning(f"Unknown design variant '{name}', falling back to '{DEFAULT_VARIANT}'")
         variant = VARIANTS[DEFAULT_VARIANT]
-    return variant
 
+    if not seasonal_palette:
+        return variant
 
-def get_setting_field(name: Optional[str]) -> str:
-    return f"designStyle"
+    # Blend seasonal colors into variant colors
+    blended = dict(variant.colors)
+    for role, palette_key in SEASONAL_COLOR_MAP.items():
+        seasonal_color = seasonal_palette.get(palette_key)
+        if seasonal_color and role in blended:
+            # Stronger blend for bg and accent, lighter for text
+            weight = 0.4 if role in ("bg", "bg_alt") else 0.3
+            blended[role] = _blend_color(blended[role], seasonal_color, weight)
+
+    # Create a copy of the variant with blended colors
+    import copy
+    result = copy.copy(variant)
+    result.colors = blended
+    return result

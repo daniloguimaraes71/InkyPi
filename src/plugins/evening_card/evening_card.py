@@ -36,9 +36,9 @@ class EveningCard(BasePlugin):
         dimensions = device_config.get_resolution()
         orientation = device_config.get_config("orientation", "horizontal")
 
-        v = get_variant(settings.get("designStyle"))
         season_info = get_full_season_info(now)
-        palette = get_seasonal_palette(now)
+        seasonal_palette = get_seasonal_palette(now)
+        v = get_variant(device_config.get_config("design_style"), seasonal_palette)
         tomorrow_weather = self._get_tomorrow_weather(device_config, tz, now)
         tomorrow_events = self._get_tomorrow_events(settings, device_config, tz, now)
 
@@ -76,7 +76,7 @@ class EveningCard(BasePlugin):
                 dimensions_for_render = dimensions_for_render[::-1]
 
             template_params = {
-                "palette": palette,
+                "palette": seasonal_palette,
                 "season_info": season_info,
                 "now": now,
                 "time_format": time_format,
@@ -85,6 +85,13 @@ class EveningCard(BasePlugin):
                 "evening_image": image_data_uri,
                 "image_label": season_info['micro_season']['kanji'] if season_info else "",
                 "plugin_settings": settings,
+                "design_variant": {
+                    "name": v.name,
+                    "colors": v.colors,
+                    "heading_font": v.heading_font,
+                    "body_font": v.body_font,
+                    "divider_width": v.divider_width,
+                },
             }
 
             image = self.render_image(dimensions_for_render, "evening_card.html", "evening_card.css", template_params)
@@ -93,10 +100,10 @@ class EveningCard(BasePlugin):
         except Exception as e:
             logger.warning(f"HTML render failed, falling back to PIL: {e}")
 
-        return self._draw_card_pil(dimensions, orientation, now, season_info, palette,
+        return self._draw_card_pil(dimensions, orientation, now, season_info,
                                    tomorrow_weather, tomorrow_events, time_format, evening_image, v)
 
-    def _draw_card_pil(self, dimensions, orientation, now, season_info, palette,
+    def _draw_card_pil(self, dimensions, orientation, now, season_info,
                        weather, events, time_format, evening_image, v):
         """Elegant evening reflection card."""
         w, h = dimensions
