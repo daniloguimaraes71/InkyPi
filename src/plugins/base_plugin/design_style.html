@@ -2,14 +2,16 @@
     <label for="designStyle">Design Style</label>
     <select id="designStyle" name="designStyle" class="design-style-select">
         {% for style in design_styles %}
-        <option value="{{ style.name }}" {% if pluginSettings.get('designStyle', 'wa') == style.name %}selected{% endif %}>
+        {% set selected_style = plugin_settings.get('designStyle', 'wa') if plugin_settings else 'wa' %}
+        <option value="{{ style.name }}" {% if selected_style == style.name %}selected{% endif %}>
             {{ style.label }}
         </option>
         {% endfor %}
     </select>
     <div class="design-style-preview" id="designStylePreview">
         <p class="design-style-desc" id="designStyleDesc">
-            {% set default_styles = design_styles|selectattr('name', 'equalto', pluginSettings.get('designStyle', 'wa'))|list %}
+            {% set selected_style = plugin_settings.get('designStyle', 'wa') if plugin_settings else 'wa' %}
+            {% set default_styles = design_styles|selectattr('name', 'equalto', selected_style)|list %}
             {{ default_styles[0].description if default_styles else 'Traditional Japanese elegance with serif headings and warm gold accents' }}
         </p>
     </div>
@@ -53,7 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const select = document.getElementById('designStyle');
     const desc = document.getElementById('designStyleDesc');
     const styles = {{ design_styles | tojson }};
-    
+
     if (select && desc) {
         select.addEventListener('change', () => {
             const selected = styles.find(s => s.name === select.value);
