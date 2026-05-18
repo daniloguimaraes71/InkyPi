@@ -49,10 +49,10 @@
         "active_playlist": "Default"
     },
     "refresh_info": {
-        "refresh_time": "2026-05-18T13:58:58.377039+09:00",
-        "image_hash": "b0e6c3d9c32856514030750c358841e3505f0f8dd2e7ba978955e3100b5e6c38",
+        "refresh_time": "2026-05-18T14:21:37.096334+09:00",
+        "image_hash": "d53ab072326225c053609c1e706da4fd6b4835323ed863255cb7ebf8167acfa7",
         "refresh_type": "Manual Update",
-        "plugin_id": "mood_card"
+        "plugin_id": "painting"
     },
     "inverted_image": null,
     "log_system_stats": null,

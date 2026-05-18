@@ -1,5 +1,6 @@
 import threading
 import time
+import random
 import os
 import logging
 import psutil
@@ -31,6 +32,7 @@ class RefreshTask:
         self.refresh_event.set()
         self.refresh_result = {}
         self._scheduler_sleep_time = 60
+        self._first_run = True
 
     def start(self):
         """Starts the background thread for refreshing the display."""
@@ -142,7 +144,8 @@ class RefreshTask:
 
                         refresh_info = refresh_action.get_refresh_info()
                         refresh_info.update({"refresh_time": current_dt.isoformat(), "image_hash": image_hash})
-                        if image_hash != latest_refresh.image_hash:
+                        if self._first_run or image_hash != latest_refresh.image_hash:
+                            self._first_run = False
                             logger.info(f"Updating display. | refresh_info: {refresh_info}")
                             self.display_manager.display_image(image, image_settings=image_settings)
                         else:
@@ -347,7 +350,6 @@ class PhotoRefresh(RefreshAction):
 
     def execute(self, plugin, device_config, current_dt):
         """Pick a random photo, resize for display, or fall back to clock."""
-        import random as rnd
         path = self.find_random_photo()
         if path:
             img = Image.open(path)
