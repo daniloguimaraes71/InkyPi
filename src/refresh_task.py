@@ -127,20 +127,24 @@ class RefreshTask:
                                 refresh_action = PlaylistRefresh(playlist, plugin_instance)
 
                     if refresh_action:
-                        plugin_config = self.device_config.get_plugin(refresh_action.get_plugin_id())
-                        if plugin_config is None:
-                            logger.error(f"Plugin config not found for '{refresh_action.get_plugin_id()}'.")
-                            continue
-                        plugin = get_plugin_instance(plugin_config)
-                        image = refresh_action.execute(plugin, self.device_config, current_dt)
+                        if isinstance(refresh_action, PhotoRefresh):
+                            image = refresh_action.execute(None, self.device_config, current_dt)
+                            image_settings = []
+                        else:
+                            plugin_config = self.device_config.get_plugin(refresh_action.get_plugin_id())
+                            if plugin_config is None:
+                                logger.error(f"Plugin config not found for '{refresh_action.get_plugin_id()}'.")
+                                continue
+                            plugin = get_plugin_instance(plugin_config)
+                            image = refresh_action.execute(plugin, self.device_config, current_dt)
+                            image_settings = plugin.config.get("image_settings", [])
                         image_hash = compute_image_hash(image)
 
                         refresh_info = refresh_action.get_refresh_info()
                         refresh_info.update({"refresh_time": current_dt.isoformat(), "image_hash": image_hash})
-                        # check if image is the same as current image
                         if image_hash != latest_refresh.image_hash:
                             logger.info(f"Updating display. | refresh_info: {refresh_info}")
-                            self.display_manager.display_image(image, image_settings=plugin.config.get("image_settings", []))
+                            self.display_manager.display_image(image, image_settings=image_settings)
                         else:
                             logger.info(f"Image already displayed, skipping refresh. | refresh_info: {refresh_info}")
 
@@ -309,10 +313,70 @@ class PlaylistRefresh(RefreshAction):
         return image
 
 
+class PhotoRefresh(RefreshAction):
+    """Refresh action that picks and displays a random photo from standard directories.
+
+    Falls back to clock display if no photos are found.
+    """
+
+    PHOTO_DIRS = [
+        os.path.expanduser("~/Pictures"),
+        os.path.expanduser("~/Photos"),
+        os.path.expanduser("~/写真"),
+        "/media",
+        "/mnt",
+    ]
+
+    def __init__(self):
+        self.plugin_id = "photo"
+
+    @staticmethod
+    def find_random_photo():
+        """Pick a random photo from common photo directories."""
+        exts = ('.jpg', '.jpeg', '.png', '.avif', '.webp', '.bmp', '.tiff', '.heif', '.heic')
+        candidates = []
+        for d in PhotoRefresh.PHOTO_DIRS:
+            if os.path.isdir(d):
+                for root, _, files in os.walk(d):
+                    for f in files:
+                        if f.lower().endswith(exts) and not f.startswith('.'):
+                            candidates.append(os.path.join(root, f))
+        if not candidates:
+            return None
+        return random.choice(candidates)
+
+    def execute(self, plugin, device_config, current_dt):
+        """Pick a random photo, resize for display, or fall back to clock."""
+        import random as rnd
+        path = self.find_random_photo()
+        if path:
+            img = Image.open(path)
+            target = device_config.get_resolution()
+            if device_config.get_config("orientation") == "vertical":
+                target = target[::-1]
+            img = img.resize(target, Image.Resampling.LANCZOS)
+            return img.convert("RGB")
+        # Fallback: clock
+        from plugins.plugin_registry import get_plugin_instance
+        plugin_config = device_config.get_plugin("clock")
+        if plugin_config:
+            clock = get_plugin_instance(plugin_config)
+            return clock.generate_image({}, device_config)
+        # Ultimate fallback: blank
+        w, h = device_config.get_resolution()
+        return Image.new('RGB', (w, h), 'white')
+
+    def get_refresh_info(self):
+        return {"refresh_type": "Photo", "plugin_id": self.plugin_id}
+
+    def get_plugin_id(self):
+        return self.plugin_id
+
+
 class CalendarInterrupt(RefreshAction):
     """Interrupt action for upcoming calendar events.
 
-    Generates a simple notification card showing the upcoming event.
+    Generates an elegant notification card in Japanese style.
     """
 
     def __init__(self, event_data):
@@ -323,32 +387,58 @@ class CalendarInterrupt(RefreshAction):
         """Generate a calendar notification card."""
         from PIL import Image, ImageDraw
         from utils.app_utils import get_font
+        from utils.design_variants import get_variant
 
         w, h = device_config.get_resolution()
         if device_config.get_config("orientation") == "vertical":
             w, h = h, w
 
-        img = Image.new("RGBA", (w, h), (250, 248, 245, 255))
+        v = get_variant(device_config.get_config("design_style"), None)
+        C = v.colors
+        sm = v.spacing_mult
+
+        img = Image.new('RGB', (w, h), C['bg'])
         draw = ImageDraw.Draw(img)
 
-        font_large = get_font("Noto Serif JP", int(w * 0.07))
-        font_medium = get_font("Noto Sans JP", int(w * 0.04))
-        font_small = get_font("Noto Sans JP", int(w * 0.03))
+        font_label = get_font(v.body_font, int(w * 0.028))
+        font_title = get_font(v.heading_font, int(w * 0.055))
+        font_time = get_font(v.body_font, int(w * 0.028))
+        font_date = get_font(v.body_font, int(w * 0.018))
 
-        title = self.event_data.get("title", "Event")
+        title = self.event_data.get("title", "予定")
         minutes = self.event_data.get("minutes_until", 0)
 
         if minutes <= 0:
-            time_str = "Starting now"
+            time_str = "まもなく開始"
         elif minutes == 1:
-            time_str = "In 1 minute"
+            time_str = "1分後"
         else:
-            time_str = f"In {minutes} minutes"
+            time_str = f"{minutes}分後"
 
-        # Draw notification card
-        draw.text((w * 0.08, h * 0.25), "📅 Upcoming", font=font_medium, fill=(120, 120, 120, 255))
-        draw.text((w * 0.08, h * 0.35), title, font=font_large, fill=(40, 40, 40, 255))
-        draw.text((w * 0.08, h * 0.50), time_str, font=font_medium, fill=(100, 100, 100, 255))
+        cx = w // 2
+
+        label = "次の予定"
+        bbox = draw.textbbox((0, 0), label, font=font_label)
+        draw.text((cx - (bbox[2] - bbox[0]) // 2, int(h * 0.28 * sm)), label, font=font_label, fill=C['accent'])
+
+        bbox = draw.textbbox((0, 0), title, font=font_title)
+        tw = bbox[2] - bbox[0]
+        if tw > w * 0.8:
+            font_title = get_font(v.heading_font, int(w * 0.04))
+            bbox = draw.textbbox((0, 0), title, font=font_title)
+            tw = bbox[2] - bbox[0]
+        draw.text((cx - tw // 2, int(h * 0.36 * sm)), title, font=font_title, fill=C['text_primary'])
+
+        dy = int(h * 0.47 * sm)
+        dw = int(w * 0.12)
+        draw.line([(cx - dw, dy), (cx + dw, dy)], fill=C['divider'], width=v.divider_width * 2)
+
+        bbox = draw.textbbox((0, 0), time_str, font=font_time)
+        draw.text((cx - (bbox[2] - bbox[0]) // 2, int(h * 0.52 * sm)), time_str, font=font_time, fill=C['text_secondary'])
+
+        date_str = current_dt.strftime('%m月%d日')
+        bbox = draw.textbbox((0, 0), date_str, font=font_date)
+        draw.text((w - int(w * 0.05) - (bbox[2] - bbox[0]), h - int(h * 0.06 * sm)), date_str, font=font_date, fill=C['text_light'])
 
         return img
 
@@ -370,26 +460,68 @@ class WeatherAlertInterrupt(RefreshAction):
         """Generate a weather alert card."""
         from PIL import Image, ImageDraw
         from utils.app_utils import get_font
+        from utils.design_variants import get_variant
 
         w, h = device_config.get_resolution()
         if device_config.get_config("orientation") == "vertical":
             w, h = h, w
 
-        img = Image.new("RGBA", (w, h), (255, 248, 240, 255))
+        v = get_variant(device_config.get_config("design_style"), None)
+        C = v.colors
+        sm = v.spacing_mult
+
+        img = Image.new('RGB', (w, h), C['bg_alt'])
         draw = ImageDraw.Draw(img)
 
-        font_large = get_font("Noto Serif JP", int(w * 0.06))
-        font_medium = get_font("Noto Sans JP", int(w * 0.04))
-        font_small = get_font("Noto Sans JP", int(w * 0.03))
+        font_label = get_font(v.body_font, int(w * 0.028))
+        font_title = get_font(v.heading_font, int(w * 0.05))
+        font_desc = get_font(v.body_font, int(w * 0.024))
+        font_date = get_font(v.body_font, int(w * 0.018))
 
-        event = self.alert_data.get("event", "Weather Alert")
-        description = self.alert_data.get("description", "")[:100]
+        event = self.alert_data.get("event", "気象警報")
+        description = self.alert_data.get("description", "")[:120]
 
-        # Draw alert card
-        draw.text((w * 0.08, h * 0.20), "⚠️ Weather Alert", font=font_medium, fill=(180, 100, 60, 255))
-        draw.text((w * 0.08, h * 0.32), event, font=font_large, fill=(60, 40, 20, 255))
+        cx = w // 2
+
+        label = "気象警報"
+        bbox = draw.textbbox((0, 0), label, font=font_label)
+        draw.text((cx - (bbox[2] - bbox[0]) // 2, int(h * 0.26 * sm)), label, font=font_label, fill=C['accent_alt'])
+
+        bbox = draw.textbbox((0, 0), event, font=font_title)
+        tw = bbox[2] - bbox[0]
+        if tw > w * 0.8:
+            font_title = get_font(v.heading_font, int(w * 0.038))
+            bbox = draw.textbbox((0, 0), event, font=font_title)
+            tw = bbox[2] - bbox[0]
+        draw.text((cx - tw // 2, int(h * 0.35 * sm)), event, font=font_title, fill=C['text_primary'])
+
+        dy = int(h * 0.46 * sm)
+        dw = int(w * 0.12)
+        draw.line([(cx - dw, dy), (cx + dw, dy)], fill=C['divider'], width=v.divider_width * 2)
+
         if description:
-            draw.text((w * 0.08, h * 0.48), description, font=font_small, fill=(100, 80, 60, 255))
+            desc_lines = []
+            words = description.split()
+            current_line = ""
+            for word in words:
+                test_line = f"{current_line} {word}".strip()
+                bbox = draw.textbbox((0, 0), test_line, font=font_desc)
+                if bbox[2] - bbox[0] > w * 0.8:
+                    desc_lines.append(current_line)
+                    current_line = word
+                else:
+                    current_line = test_line
+            desc_lines.append(current_line)
+
+            line_y = int(h * 0.50 * sm)
+            for line in desc_lines:
+                bbox = draw.textbbox((0, 0), line, font=font_desc)
+                draw.text((cx - (bbox[2] - bbox[0]) // 2, line_y), line, font=font_desc, fill=C['text_secondary'])
+                line_y += int(h * 0.045 * sm)
+
+        date_str = current_dt.strftime('%m月%d日')
+        bbox = draw.textbbox((0, 0), date_str, font=font_date)
+        draw.text((w - int(w * 0.05) - (bbox[2] - bbox[0]), h - int(h * 0.06 * sm)), date_str, font=font_date, fill=C['text_light'])
 
         return img
 

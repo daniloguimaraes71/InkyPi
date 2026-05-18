@@ -1,43 +1,44 @@
 import logging
-import random
+import hashlib
 import pytz
-import json
-import requests
 from datetime import datetime, timedelta
 from plugins.base_plugin.base_plugin import BasePlugin
 from utils.micro_season import get_full_season_info, get_seasonal_palette
 from utils.wikipedia_images import get_wikipedia_image
 from utils.app_utils import get_font
 from utils.design_variants import get_variant
-from PIL import Image, ImageDraw, ImageColor
+from PIL import Image, ImageDraw
 
 logger = logging.getLogger(__name__)
 
-SEASONAL_KEYWORDS = {
-    "spring": ["桜", "花見", "春", "梅"],
-    "summer": ["祭", "花火", "夏", "七夕"],
-    "autumn": ["紅葉", "月", "秋", "収穫"],
-    "winter": ["雪", "冬", "灯", "イルミネーション"],
-}
+# Diverse, non-obvious Kansai attractions cycled deterministically per event+week
+KANSAI_ATTRACTIONS = [
+    "Byōdō-in", "Tōdai-ji", "Kinkaku-ji", "Ginkaku-ji", "Ryōan-ji",
+    "Kiyomizu-dera", "Sanjūsangen-dō", "Fushimi_Inari-taisha", "Ninna-ji",
+    "Tō-ji", "Daigo-ji", "Nijō_Castle", "Katsura_Imperial_Villa",
+    "Shugakuin_Imperial_Villa", "Arashiyama", "Bamboo_forest_(Kyoto)",
+    "Kibune_Shrine", "Kamigamo_Shrine", "Shimogamo_Shrine",
+    "Osaka_Castle", "Sumiyoshi-taisha", "Shitennō-ji", "Dōtonbori",
+    "Tsūtenkaku", "Osaka_Aquarium_Kaiyūkan", "Universal_Studios_Japan",
+    "Abeno_Harukas", "Namba", "Umeda_Sky_Building",
+    "Himeji_Castle", "Kōko-en", "Engyō-ji", "Mount_Shosha",
+    "Nara_Park", "Kōfuku-ji", "Kasuga-taisha", "Yakushi-ji",
+    "Tōshōdai-ji", "Mountain_Wu-tai", "Mount_Miwa",
+    "Kobe_Port_Tower", "Kobe_Chinatown", "Arima_Onsen",
+    "Mount_Rokkō", "Kobe_Luminarie", "Harborland",
+    "Lake_Biwa", "Hikone_Castle", "Enryaku-ji", "Mii-dera",
+    "Ishiyama-dera", "Chion-ji_(Kusatsu)",
+    "Mount_Kōya", "Koyasan_Okunoin", "Kongōbu-ji",
+    "Nachi_Falls", "Kumano_Nachi_Taisha", "Kumano_Hongū_Taisha",
+    "Shirahama_Beach", "Wakayama_Castle",
+    "Iga_Ueno_Castle", "Ise_Grand_Shrine", "Meiji_Shrine",
+    "Amanohashidate", "Tottori_Sand_Dunes", "Izumo_Taisha",
+    "Matsue_Castle", "Kurashiki", "Naoshima",
+    "Takeda_Castle", "Yoshino,_Nara", "Mount_Yoshino",
+    "Ōhara,_Okayama", "Koraku-en", "Okayama_Castle",
+]
 
-IMAGE_SEARCH = {
-    "桜": "Cherry_blossom",
-    "花見": "Hanami",
-    "祭": "Matsuri",
-    "花火": "Fireworks",
-    "紅葉": "Momiji",
-    "灯": "Lantern",
-    "梅": "Plum_blossom",
-    "月": "Moon",
-    "七夕": "Tanabata",
-    "雪": "Snow",
-    "収穫": "Harvest",
-    "秋": "Autumn_leaves",
-    "夏": "Summer_festival",
-    "春": "Cherry_blossom",
-    "冬": "Winter",
-}
-
+# Expanded region → location image mapping
 REGION_IMAGES = {
     "大阪": "Osaka",
     "京都": "Kyoto",
@@ -46,6 +47,79 @@ REGION_IMAGES = {
     "滋賀": "Lake_Biwa",
     "和歌山": "Wakayama_Castle",
     "姫路": "Himeji_Castle",
+    "兵庫": "Hyōgo_Prefecture",
+    "奈良公園": "Nara_Park",
+    "大阪城": "Osaka_Castle",
+    "姫路城": "Himeji_Castle",
+    "清水寺": "Kiyomizu-dera",
+    "伏見稲荷": "Fushimi_Inari-taisha",
+    "金閣寺": "Kinkaku-ji",
+    "銀閣寺": "Ginkaku-ji",
+    "東寺": "Tō-ji",
+    "平等院": "Byōdō-in",
+    "嵐山": "Arashiyama",
+    "道頓堀": "Dōtonbori",
+    "通天閣": "Tsūtenkaku",
+    "有馬温泉": "Arima_Onsen",
+    "六甲山": "Mount_Rokkō",
+    "神戸港": "Kobe_Port_Tower",
+    "琵琶湖": "Lake_Biwa",
+    "彦根城": "Hikone_Castle",
+    "高野山": "Mount_Kōya",
+    "那智": "Nachi_Falls",
+    "熊野": "Kumano_Nachi_Taisha",
+    "白浜": "Shirahama_Beach",
+    "梅田": "Umeda_Sky_Building",
+    "天保山": "Osaka_Aquarium_Kaiyūkan",
+}
+
+IMAGE_SEARCH = {
+    "桜": "Cherry_blossom",
+    "花見": "Hanami",
+    "祭": "Matsuri",
+    "花火": "Fireworks",
+    "紅葉": "Maple",
+    "灯": "Lantern",
+    "梅": "Prunus_mume",
+    "月": "Moon",
+    "七夕": "Tanabata",
+    "雪": "Snow",
+    "収穫": "Harvest",
+    "展示": "Exhibition",
+    "コンサート": "Concert",
+    "ライブ": "Concert",
+    "展覧会": "Exhibition",
+    "フェス": "Music_festival",
+    "マルシェ": "Farmers'_market",
+    "花": "Flower",
+    "灯り": "Illumination",
+    "イルミ": "Illumination",
+    "花火大会": "Fireworks",
+    "縁日": "Matsuri",
+    "神輿": "Mikoshi",
+    "太鼓": "Taiko",
+    "茶会": "Japanese_tea_ceremony",
+    "着物": "Kimono",
+    "能": "Noh",
+    "狂言": "Kyōgen",
+    "歌舞伎": "Kabuki",
+    "陶器": "Japanese_pottery",
+    "工芸": "Japanese_craft",
+    "美術": "Art_museum",
+    "写経": "Shakyo",
+    "座禅": "Zazen",
+    "寺": "Buddhist_temple_in_Japan",
+    "神社": "Shinto_shrine",
+    "城": "Japanese_castle",
+    "園": "Japanese_garden",
+    "温泉": "Onsen",
+    "ビール": "Beer",
+    "ワイン": "Wine",
+    "食": "Japanese_cuisine",
+    "海": "Sea",
+    "山": "Mountain",
+    "川": "River",
+    "湖": "Lake",
 }
 
 
@@ -206,41 +280,58 @@ class KansaiEvents(BasePlugin):
             return []
 
     def _get_event_image(self, event):
+        """Fetch a relevant, non-obvious image for an event.
+        Uses deterministic selection per event+week for natural variety.
+        """
         try:
             name = event.get("name", "")
             location = event.get("location", "")
             wiki_keyword = event.get("wiki", "")
 
-            # Priority 1: Try Wikipedia article from wiki field
-            if wiki_keyword and wiki_keyword in REGION_IMAGES:
-                return get_wikipedia_image(REGION_IMAGES[wiki_keyword], (200, 200))
-
-            # Priority 2: Try location-based image
+            # Priority 1: Exact location mapping from event name or location
             for region, keyword in REGION_IMAGES.items():
                 if region in location or region in name:
-                    return get_wikipedia_image(keyword, (200, 200))
+                    img = get_wikipedia_image(keyword, (200, 200))
+                    if img:
+                        return img
 
-            # Priority 3: Try keyword match from event name
-            for keyword in IMAGE_SEARCH:
-                if keyword in name:
-                    return get_wikipedia_image(IMAGE_SEARCH[keyword], (200, 200))
+            # Priority 2: Keyword match from event name
+            sorted_keywords = sorted(IMAGE_SEARCH.items(), key=lambda x: -len(x[0]))
+            for kword, title in sorted_keywords:
+                if kword in name:
+                    img = get_wikipedia_image(title, (200, 200))
+                    if img:
+                        return img
 
-            # Priority 4: Try wiki field directly
+            # Priority 3: Try wiki field directly
             if wiki_keyword:
                 img = get_wikipedia_image(wiki_keyword, (200, 200))
                 if img:
                     return img
 
-            # Priority 5: Seasonal fallback
-            month = datetime.now().month
-            if month in [3, 4, 5]:
-                return get_wikipedia_image("Osaka", (200, 200))
-            elif month in [6, 7, 8]:
-                return get_wikipedia_image("Kyoto", (200, 200))
-            elif month in [9, 10, 11]:
-                return get_wikipedia_image("Nara,_Japan", (200, 200))
-            else:
-                return get_wikipedia_image("Kobe", (200, 200))
+            # Priority 4: Deterministic selection from Kansai attractions pool
+            # Uses event name + ISO week number so same event gets different
+            # images on different weeks, and different events get different images
+            now = datetime.now()
+            week_seed = now.isocalendar()[1]
+            seed_str = f"{name}_{week_seed}"
+            hash_val = int(hashlib.md5(seed_str.encode()).hexdigest(), 16)
+            idx = hash_val % len(KANSAI_ATTRACTIONS)
+            candidate = KANSAI_ATTRACTIONS[idx]
+
+            img = get_wikipedia_image(candidate, (200, 200))
+            if img:
+                return img
+
+            # Priority 5: Try 3 more candidates from the pool around the hash
+            for offset in range(1, 4):
+                alt_idx = (idx + offset * 37) % len(KANSAI_ATTRACTIONS)
+                img = get_wikipedia_image(KANSAI_ATTRACTIONS[alt_idx], (200, 200))
+                if img:
+                    return img
+
+            return None
+
         except Exception as e:
             logger.warning(f"Failed to get event image: {e}")
             return None

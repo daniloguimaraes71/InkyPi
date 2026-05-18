@@ -2,41 +2,39 @@
 
 {% block content %}
 <div class="evening-container">
+    <div class="content-side">
+        <p class="date-line">{{ now.strftime('%m月%d日') }} • {{ location or '姫路市' }}</p>
+        <h1 class="greeting">今日も一日、お疲れ様でした。</h1>
+        <p class="sub-msg">ゆっくりとお茶を淹れて、一息つきましょう。</p>
+        <div class="divider-h"></div>
+        <p class="section-label">明日の天気</p>
+        {% if weather %}
+        <h3 class="tomorrow-weather">{{ weather.description }}</h3>
+        <p class="tomorrow-note">最高{{ weather.high }}°C / 最低{{ weather.low }}°C{% if '雨' in weather.description %} • 傘をお持ちください{% endif %}</p>
+        {% else %}
+        <h3 class="tomorrow-weather">晴れのち曇り</h3>
+        <p class="tomorrow-note">明日も良い一日になりますように。</p>
+        {% endif %}
+        {% if events %}
+        <div class="schedule-box">
+            <p class="section-label">明日の予定</p>
+            {% for event in events[:3] %}
+            <div class="schedule-item">
+                <span class="schedule-time">{{ event.time }}</span>
+                <span class="schedule-event">{{ event.title }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    <div class="divider-v"></div>
     <div class="image-side">
         {% if evening_image %}
-        <img src="{{ evening_image }}" alt="Evening">
-        {% endif %}
-        <div class="image-overlay"></div>
-    </div>
-    <div class="content-side">
-        <div class="content-wrapper">
-            <h2 class="greeting">今日も一日、お疲れ様でした。</h2>
-            <p class="sub-msg">ゆっくりとお茶を淹れて、一息つきましょう。</p>
-            <div class="divider-h"></div>
-            
-            <div class="tomorrow-section">
-                <p class="section-label">明日の天気</p>
-                {% if weather %}
-                <h3 class="tomorrow-weather">{{ weather.description }}</h3>
-                <p class="tomorrow-note">最高{{ weather.high }}°C / 最低{{ weather.low }}°C{% if '雨' in weather.description %} • 傘をお持ちください{% endif %}</p>
-                {% else %}
-                <h3 class="tomorrow-weather">晴れのち曇り</h3>
-                <p class="tomorrow-note">明日も良い一日になりますように。</p>
-                {% endif %}
-                
-                {% if events %}
-                <div class="schedule-box">
-                    <p class="section-label">明日の予定</p>
-                    {% for event in events[:3] %}
-                    <div class="schedule-item">
-                        <span class="schedule-time">{{ event.time }}</span>
-                        <span class="schedule-event">{{ event.title }}</span>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% endif %}
-            </div>
+        <div class="image-frame">
+            <img src="{{ evening_image }}" alt="Evening">
         </div>
+        <div class="image-label">{{ image_label }}</div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

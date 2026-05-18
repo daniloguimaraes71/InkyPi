@@ -302,6 +302,21 @@
                 </div>
             </div>
 
+            <!-- Calendar Configuration -->
+            <div class="settings-section">
+                <button type="button" class="form-input collapsible" onclick="toggleCollapsible(this)">
+                    <span>Calendar</span>
+                    <span class="collapse-icon">▼</span>
+                </button>
+                <div class="settings-container collapsible-content">
+                    <div class="form-group">
+                        <label for="calendarURL" class="form-label">Calendar URL (iCal):</label>
+                        <input type="text" id="calendarURL" name="calendarURL" class="form-input" placeholder="https://calendar.google.com/calendar/ical/..." value="{{ device_settings.get('calendarURL', '') }}">
+                        <p class="form-hint">Used by Morning Briefing, Evening Card, and as default for the Calendar plugin.</p>
+                    </div>
+                </div>
+            </div>
+
             <!-- Scheduler Configuration -->
             <div class="settings-section">
                 <button type="button" class="form-input collapsible" onclick="toggleCollapsible(this)">

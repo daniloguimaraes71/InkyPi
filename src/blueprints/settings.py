@@ -62,6 +62,7 @@ def save_settings():
             "time_format": form_data.get("timeFormat"),
             "plugin_cycle_interval_seconds": plugin_cycle_interval_seconds,
             "design_style": form_data.get("designStyle", "wa"),
+            "calendarURL": form_data.get("calendarURL", ""),
             "image_settings": {
                 "saturation": float(form_data.get("saturation", "1.0")),
                 "brightness": float(form_data.get("brightness", "1.0")),

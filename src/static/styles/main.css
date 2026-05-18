@@ -1223,3 +1223,33 @@ html[data-theme="dark"] .settings-button.dark-mode-toggle::before {
 .sort-hint.visible {
     display: block;
 }
+
+.preview-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin: 12px 0 4px;
+    flex-wrap: wrap;
+}
+
+.preview-btn {
+    background: var(--button-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-primary);
+    transition: all 0.2s;
+}
+
+.preview-btn:hover {
+    background: var(--button-hover);
+    border-color: var(--accent-primary);
+}
+
+.preview-btn.active {
+    background: #e74c3c;
+    color: #fff;
+    border-color: #e74c3c;
+}

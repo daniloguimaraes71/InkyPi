@@ -206,14 +206,22 @@ class MealVocab(BasePlugin):
         draw.text((rx, py + int(h * 0.05 * sm)), meal["ja"], font=f_meal, fill=C['text_primary'])
         draw.text((rx, py + int(h * 0.12 * sm)), meal["en"], font=f_meal_desc, fill=C['text_secondary'])
 
+        ix = rx
+        iy = py + int(h * 0.22 * sm)
+        iw = int(w * 0.18)
+        ih = int(w * 0.18)
+
         if food_image:
-            ix = rx
-            iy = py + int(h * 0.22 * sm)
-            iw = int(w * 0.18)
-            ih = int(w * 0.18)
             img.paste(food_image.resize((iw, ih), Image.Resampling.LANCZOS), (ix, iy))
             draw = ImageDraw.Draw(img)
             draw.rectangle([ix-2, iy-2, ix+iw+2, iy+ih+2], outline=C['border'], width=v.divider_width)
+        else:
+            draw.rectangle([ix-2, iy-2, ix+iw+2, iy+ih+2], outline=C['border'], width=1)
+            f_placeholder = get_font(v.body_font, 24)
+            bbox_p = draw.textbbox((0, 0), "🍽", font=f_placeholder)
+            draw.text((ix + iw//2 - (bbox_p[2]-bbox_p[0])//2,
+                       iy + ih//2 - (bbox_p[3]-bbox_p[1])//2),
+                      "🍽", font=f_placeholder, fill=C['text_light'])
 
         if season_info:
             ms_x = w - px

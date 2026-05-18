@@ -26,7 +26,14 @@
         "unsplash",
         "weather",
         "wpotd",
-        "year_progress"
+        "year_progress",
+        "evening_card",
+        "goodnight_card",
+        "kansai_events",
+        "meal_vocab",
+        "mood_card",
+        "morning_briefing",
+        "painting"
     ],
     "playlist_config": {
         "playlists": [
@@ -39,12 +46,352 @@
                 "mode": null
             }
         ],
-        "active_playlist": null
+        "active_playlist": "Default"
     },
     "refresh_info": {
-        "refresh_time": "2026-05-17T10:46:16.098058+00:00",
-        "image_hash": "978f822f0792e69f2cad1550d59375f219aacdd50ab45810492733db9429ff62",
+        "refresh_time": "2026-05-18T13:58:58.377039+09:00",
+        "image_hash": "b0e6c3d9c32856514030750c358841e3505f0f8dd2e7ba978955e3100b5e6c38",
         "refresh_type": "Manual Update",
-        "plugin_id": "meal_vocab"
-    }
+        "plugin_id": "mood_card"
+    },
+    "inverted_image": null,
+    "log_system_stats": null,
+    "timezone": "Japan",
+    "time_format": "12h",
+    "plugin_cycle_interval_seconds": 3600,
+    "design_style": "zen",
+    "image_settings": {
+        "saturation": 1.0,
+        "brightness": 1.0,
+        "sharpness": 1.0,
+        "contrast": 1.0
+    },
+    "scheduler": {
+        "enabled": true,
+        "modes": [
+            {
+                "name": "morning_briefing",
+                "days": [
+                    "mon",
+                    "tue",
+                    "wed",
+                    "thu",
+                    "fri",
+                    "sat",
+                    "sun"
+                ],
+                "start_time": "06:30",
+                "end_time": "07:30",
+                "plugin_id": "morning_briefing",
+                "dwell_seconds": 3600
+            },
+            {
+                "name": "morning_photos",
+                "days": [
+                    "mon",
+                    "tue",
+                    "wed",
+                    "thu",
+                    "fri"
+                ],
+                "start_time": "07:30",
+                "end_time": "08:15",
+                "dwell_seconds": 300,
+                "interstitial_pool": [
+                    "mood_card",
+                    "painting"
+                ],
+                "interstitial_interval_seconds": 900,
+                "interstitial_dwell_seconds": 120
+            },
+            {
+                "name": "weather",
+                "days": [
+                    "mon",
+                    "tue",
+                    "wed",
+                    "thu",
+                    "fri",
+                    "sat",
+                    "sun"
+                ],
+                "start_time": "08:15",
+                "end_time": "08:30",
+                "plugin_id": "weather",
+                "dwell_seconds": 900
+            },
+            {
+                "name": "late_morning_photos",
+                "days": [
+                    "mon",
+                    "tue",
+                    "wed",
+                    "thu",
+                    "fri"
+                ],
+                "start_time": "08:30",
+                "end_time": "12:00",
+                "dwell_seconds": 300,
+                "interstitial_pool": [
+                    "mood_card",
+                    "painting"
+                ],
+                "interstitial_interval_seconds": 1800,
+                "interstitial_dwell_seconds": 120
+            },
+            {
+                "name": "meal_vocab",
+                "days": [
+                    "mon",
+                    "tue",
+                    "wed",
+                    "thu",
+                    "fri",
+                    "sat",
+                    "sun"
+                ],
+                "start_time": "12:00",
+                "end_time": "12:20",
+                "plugin_id": "meal_vocab",
+                "dwell_seconds": 1200
+            },
+            {
+                "name": "afternoon_photos",
+                "days": [
+                    "mon",
+                    "tue",
+                    "wed",
+                    "thu",
+                    "fri"
+                ],
+                "start_time": "12:20",
+                "end_time": "14:30",
+                "dwell_seconds": 300,
+                "interstitial_pool": [
+                    "mood_card",
+                    "painting"
+                ],
+                "interstitial_interval_seconds": 1800,
+                "interstitial_dwell_seconds": 120
+            },
+            {
+                "name": "painting",
+                "days": [
+                    "mon",
+                    "tue",
+                    "wed",
+                    "thu",
+                    "fri",
+                    "sat",
+                    "sun"
+                ],
+                "start_time": "14:30",
+                "end_time": "14:45",
+                "plugin_id": "painting",
+                "dwell_seconds": 900
+            },
+            {
+                "name": "late_afternoon_photos",
+                "days": [
+                    "mon",
+                    "tue",
+                    "wed",
+                    "thu",
+                    "fri"
+                ],
+                "start_time": "14:45",
+                "end_time": "16:00",
+                "dwell_seconds": 300,
+                "interstitial_pool": [
+                    "mood_card",
+                    "painting"
+                ],
+                "interstitial_interval_seconds": 1800,
+                "interstitial_dwell_seconds": 120
+            },
+            {
+                "name": "mood_card",
+                "days": [
+                    "mon",
+                    "tue",
+                    "wed",
+                    "thu",
+                    "fri",
+                    "sat",
+                    "sun"
+                ],
+                "start_time": "16:00",
+                "end_time": "16:10",
+                "plugin_id": "mood_card",
+                "dwell_seconds": 600
+            },
+            {
+                "name": "evening_photos",
+                "days": [
+                    "mon",
+                    "tue",
+                    "wed",
+                    "thu",
+                    "fri"
+                ],
+                "start_time": "16:10",
+                "end_time": "18:00",
+                "dwell_seconds": 300,
+                "interstitial_pool": [
+                    "mood_card",
+                    "painting"
+                ],
+                "interstitial_interval_seconds": 1800,
+                "interstitial_dwell_seconds": 120
+            },
+            {
+                "name": "evening_card",
+                "days": [
+                    "mon",
+                    "tue",
+                    "wed",
+                    "thu",
+                    "fri",
+                    "sat",
+                    "sun"
+                ],
+                "start_time": "18:00",
+                "end_time": "18:20",
+                "plugin_id": "evening_card",
+                "dwell_seconds": 1200
+            },
+            {
+                "name": "night_photos",
+                "days": [
+                    "mon",
+                    "tue",
+                    "wed",
+                    "thu",
+                    "fri"
+                ],
+                "start_time": "18:20",
+                "end_time": "21:00",
+                "dwell_seconds": 300,
+                "interstitial_pool": [
+                    "mood_card",
+                    "painting"
+                ],
+                "interstitial_interval_seconds": 1800,
+                "interstitial_dwell_seconds": 120
+            },
+            {
+                "name": "goodnight_card",
+                "days": [
+                    "mon",
+                    "tue",
+                    "wed",
+                    "thu",
+                    "fri",
+                    "sat",
+                    "sun"
+                ],
+                "start_time": "21:00",
+                "end_time": "21:10",
+                "plugin_id": "goodnight_card",
+                "dwell_seconds": 600
+            },
+            {
+                "name": "overnight_photos",
+                "days": [
+                    "mon",
+                    "tue",
+                    "wed",
+                    "thu",
+                    "fri"
+                ],
+                "start_time": "21:10",
+                "end_time": "06:30",
+                "dwell_seconds": 600,
+                "interstitial_pool": [
+                    "mood_card",
+                    "painting"
+                ],
+                "interstitial_interval_seconds": 3600,
+                "interstitial_dwell_seconds": 120
+            },
+            {
+                "name": "weekend_morning_photos",
+                "days": [
+                    "sat",
+                    "sun"
+                ],
+                "start_time": "07:30",
+                "end_time": "12:00",
+                "dwell_seconds": 300,
+                "interstitial_pool": [
+                    "mood_card",
+                    "painting",
+                    "kansai_events"
+                ],
+                "interstitial_interval_seconds": 1200,
+                "interstitial_dwell_seconds": 120
+            },
+            {
+                "name": "weekend_afternoon_photos",
+                "days": [
+                    "sat",
+                    "sun"
+                ],
+                "start_time": "12:20",
+                "end_time": "18:00",
+                "dwell_seconds": 300,
+                "interstitial_pool": [
+                    "mood_card",
+                    "painting",
+                    "kansai_events"
+                ],
+                "interstitial_interval_seconds": 1200,
+                "interstitial_dwell_seconds": 120
+            },
+            {
+                "name": "weekend_night_photos",
+                "days": [
+                    "sat",
+                    "sun"
+                ],
+                "start_time": "18:20",
+                "end_time": "21:00",
+                "dwell_seconds": 300,
+                "interstitial_pool": [
+                    "mood_card",
+                    "painting"
+                ],
+                "interstitial_interval_seconds": 1800,
+                "interstitial_dwell_seconds": 120
+            },
+            {
+                "name": "weekend_overnight",
+                "days": [
+                    "sat",
+                    "sun"
+                ],
+                "start_time": "21:10",
+                "end_time": "06:30",
+                "dwell_seconds": 600,
+                "interstitial_pool": [
+                    "mood_card",
+                    "painting"
+                ],
+                "interstitial_interval_seconds": 3600,
+                "interstitial_dwell_seconds": 120
+            }
+        ],
+        "interrupts": {
+            "calendar": {
+                "enabled": true,
+                "urls": [],
+                "threshold_minutes": 15,
+                "check_interval_seconds": 300
+            },
+            "weather_alerts": {
+                "enabled": true
+            }
+        }
+    },
+    "calendarURL": "https://calendar.google.com/calendar/ical/daniloguimaraes71%40gmail.com/private-de8f46faecf5cc6ad107e2515c51dad7/basic.ics"
 }

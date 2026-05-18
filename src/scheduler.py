@@ -1,31 +1,29 @@
 import logging
+import random
 import requests
 from datetime import datetime, timedelta
 from model import PlaylistManager
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_PHOTO_DWELL = 1800    # 30 minutes for photo frame
-DEFAULT_CARD_DWELL = 300      # 5 minutes for info cards
-DEFAULT_CARD_ROTATE = 60      # 1 minute between card rotations
-DEFAULT_INTERRUPT_CHECK = 300 # Check for interrupts every 5 minutes
+DEFAULT_PHOTO_DWELL = 300            # 5 minutes per photo
+DEFAULT_CARD_DWELL = 300             # 5 minutes per info card
+DEFAULT_INTERSTITIAL_INTERVAL = 1800  # 30 min between random cards
+DEFAULT_INTERSTITIAL_DWELL = 120      # 2 min showing random card
+DEFAULT_INTERRUPT_CHECK = 300         # Check interrupts every 5 min
+
+ALL_DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
 
 class SchedulerEngine:
     """Mode-based scheduler that rotates between photo frame and info cards.
 
-    Reads a 'scheduler' config block from device.json:
-    {
-        "scheduler": {
-            "enabled": true,
-            "modes": [
-                {"name": "...", "start_time": "HH:MM", "end_time": "HH:MM",
-                 "playlists": ["..."], "dwell_seconds": 1800, "rotate": false}
-            ]
-        }
-    }
-
-    Falls back to the legacy PlaylistManager when scheduler is disabled.
+    Reads a 'scheduler' config block from device.json.
+    Modes support three patterns:
+      - plugin_id: single fixed card shown for dwell_seconds
+      - interstitial_pool: photos with occasional random cards
+      - playlists: multi-plugin rotation
+    Plus day-of-week targeting on every mode.
     """
 
     def __init__(self, config):
@@ -34,270 +32,271 @@ class SchedulerEngine:
         self.enabled = self.scheduler_config.get("enabled", False)
         self.modes = self.scheduler_config.get("modes", [])
         self._current_mode = None
-        self._current_playlist_name = None
         self._interrupt_queue = []
         self._last_interrupt_check = None
+        self._last_interstitial_time = None
 
     def is_enabled(self):
         return self.enabled and len(self.modes) > 0
 
+    # ------------------------------------------------------------------
+    # Active mode detection
+    # ------------------------------------------------------------------
+
     def get_active_mode(self, current_dt):
-        """Determine which scheduler mode is active based on current time."""
+        """Return the mode whose time window and day-of-week match now."""
         current_time = current_dt.strftime("%H:%M")
+        day_key = current_dt.strftime("%a").lower()
 
         active = []
         for mode in self.modes:
-            start = mode.get("start_time", "00:00")
-            end = mode.get("end_time", "24:00")
-            if self._is_in_window(current_time, start, end):
+            if day_key not in mode.get("days", ALL_DAYS):
+                continue
+            if self._is_in_window(current_time, mode.get("start_time", "00:00"), mode.get("end_time", "24:00")):
                 active.append(mode)
 
         if not active:
             return None
-
-        # Narrowest window wins (highest priority)
         active.sort(key=lambda m: self._window_minutes(m))
         return active[0]
 
-    def next_action(self, current_dt, playlist_manager, latest_refresh_info):
-        """Determine the next refresh action. Returns (action, sleep_seconds) or (None, sleep_seconds).
+    # ------------------------------------------------------------------
+    # Main entry point
+    # ------------------------------------------------------------------
 
-        This is the main entry point called by RefreshTask.
-        """
-        # Check for interrupts first (calendar, weather alerts)
+    def next_action(self, current_dt, playlist_manager, latest_refresh_info):
+        """Determine the next display action. Returns (action | None, sleep_seconds)."""
         if self._interrupt_queue:
-            interrupt = self._interrupt_queue.pop(0)
-            logger.info(f"Processing interrupt: {interrupt}")
-            return interrupt, 0
+            return self._interrupt_queue.pop(0), 0
 
         if not self.is_enabled():
             return None, self._get_default_sleep()
 
         active_mode = self.get_active_mode(current_dt)
         if not active_mode:
-            logger.debug("No active scheduler mode")
-            return self._fallback_sleep(current_dt)
+            return None, self._fallback_sleep()
 
-        # Check if we need to switch modes
         if active_mode.get("name") != self._current_mode:
-            logger.info(f"Switching to mode: {active_mode.get('name')}")
+            logger.info("Switched to mode: %s", active_mode.get("name"))
             self._current_mode = active_mode.get("name")
-            self._current_playlist_name = None
+            self._last_interstitial_time = None
 
-        # Get dwell time for this mode
-        dwell_seconds = active_mode.get("dwell_seconds", DEFAULT_PHOTO_DWELL)
+        interstitial_pool = active_mode.get("interstitial_pool", [])
+        if interstitial_pool:
+            return self._handle_interstitial_mode(active_mode, current_dt, latest_refresh_info)
 
-        # Check if enough time has passed since last refresh
+        plugin_id = active_mode.get("plugin_id")
+        if plugin_id:
+            return self._handle_plugin_mode(active_mode, current_dt, latest_refresh_info)
+
+        return self._handle_playlist_mode(active_mode, current_dt, playlist_manager, latest_refresh_info)
+
+    # ------------------------------------------------------------------
+    # Mode handlers
+    # ------------------------------------------------------------------
+
+    def _handle_plugin_mode(self, mode, current_dt, latest_refresh_info):
+        """Show a single fixed plugin for its entire dwell duration."""
+        dwell = mode.get("dwell_seconds", DEFAULT_CARD_DWELL)
+        plugin_id = mode.get("plugin_id")
+
         latest_dt = latest_refresh_info.get_refresh_datetime()
         if latest_dt:
             elapsed = (current_dt - latest_dt).total_seconds()
-            if elapsed < dwell_seconds:
-                remaining = dwell_seconds - elapsed
-                logger.debug(f"Mode '{self._current_mode}' dwell not elapsed, {remaining:.0f}s remaining")
-                return None, min(remaining, 60)
+            if elapsed < dwell:
+                return None, min(dwell - elapsed, 60)
 
-        # Get playlists for this mode
-        mode_playlists = active_mode.get("playlists", [])
+        from refresh_task import ManualRefresh
+        logger.info("Fixed plugin mode: showing %s", plugin_id)
+        return ManualRefresh(plugin_id, {}), dwell
+
+    def _handle_interstitial_mode(self, mode, current_dt, latest_refresh_info):
+        """Photos as resting state with occasional random interstitial cards."""
+        dwell = mode.get("dwell_seconds", DEFAULT_PHOTO_DWELL)
+        interstitial_interval = mode.get("interstitial_interval_seconds", DEFAULT_INTERSTITIAL_INTERVAL)
+        interstitial_dwell = mode.get("interstitial_dwell_seconds", DEFAULT_INTERSTITIAL_DWELL)
+        interstitial_pool = mode.get("interstitial_pool", [])
+
+        # Check if it's time for an interstitial card
+        if self._last_interstitial_time:
+            time_since = (current_dt - self._last_interstitial_time).total_seconds()
+        else:
+            time_since = float("inf")
+
+        if time_since >= interstitial_interval and interstitial_pool:
+            plugin_id = random.choice(interstitial_pool)
+            self._last_interstitial_time = current_dt
+            from refresh_task import ManualRefresh
+            logger.info("Interstitial: showing %s", plugin_id)
+            return ManualRefresh(plugin_id, {}), interstitial_dwell
+
+        # Time for the next photo?
+        latest_dt = latest_refresh_info.get_refresh_datetime()
+        elapsed = (current_dt - latest_dt).total_seconds() if latest_dt else float("inf")
+
+        if elapsed >= dwell:
+            from refresh_task import PhotoRefresh
+            logger.debug("Interstitial mode: next photo")
+            return PhotoRefresh(), dwell
+
+        return None, min(dwell - elapsed, 60)
+
+    def _handle_playlist_mode(self, mode, current_dt, playlist_manager, latest_refresh_info):
+        """Rotate through plugins in playlists."""
+        dwell = mode.get("dwell_seconds", DEFAULT_CARD_DWELL)
+
+        latest_dt = latest_refresh_info.get_refresh_datetime()
+        if latest_dt:
+            elapsed = (current_dt - latest_dt).total_seconds()
+            if elapsed < dwell:
+                return None, min(dwell - elapsed, 60)
+
+        mode_playlists = mode.get("playlists", [])
         if not mode_playlists:
-            logger.warning(f"Mode '{self._current_mode}' has no playlists")
-            return None, dwell_seconds
+            return None, dwell
 
-        # Find the next plugin from the mode's playlists
-        plugin_instance, playlist_name = self._get_next_plugin(
-            mode_playlists, playlist_manager, active_mode
-        )
+        plugin_instance, playlist_name = self._pick_from_playlists(mode_playlists, mode, playlist_manager)
 
         if not plugin_instance:
-            logger.info(f"No plugins found in mode '{self._current_mode}'")
-            return None, dwell_seconds
+            return None, dwell
 
-        self._current_playlist_name = playlist_name
-
-        # Create the refresh action
         from refresh_task import PlaylistRefresh
-        playlist = playlist_manager.get_playlist(playlist_name)
+        playlist = playlist_manager.get_playlist(playlist_name) if playlist_manager else None
         action = PlaylistRefresh(playlist, plugin_instance)
 
-        # For rotating modes (info cards), use shorter sleep
-        if active_mode.get("rotate", False):
-            rotate_interval = active_mode.get("rotate_interval_seconds", DEFAULT_CARD_ROTATE)
-            return action, rotate_interval
+        rotate = mode.get("rotate", False)
+        sleep = mode.get("rotate_interval_seconds", DEFAULT_CARD_DWELL) if rotate else dwell
+        return action, sleep
 
-        return action, dwell_seconds
+    # ------------------------------------------------------------------
+    # Interrupt management
+    # ------------------------------------------------------------------
 
     def queue_interrupt(self, refresh_action):
-        """Queue a high-priority interrupt (e.g., calendar event, weather alert)."""
+        """Queue a high-priority interrupt (calendar event, weather alert)."""
         self._interrupt_queue.append(refresh_action)
-        logger.info(f"Interrupt queued: {refresh_action}")
+        logger.info("Interrupt queued: %s", refresh_action)
 
     def check_calendar_interrupts(self, current_dt, tz):
-        """Check for upcoming calendar events and queue interrupts if needed.
-
-        Called periodically by RefreshTask. Checks calendar URLs configured
-        in scheduler.interrupts.calendar for events starting within the
-        configured threshold (default 15 minutes).
-        """
-        interrupt_config = self.scheduler_config.get("interrupts", {})
-        calendar_config = interrupt_config.get("calendar", {})
-
-        if not calendar_config.get("enabled", False):
+        """Check for upcoming calendar events and queue interrupts."""
+        cal_cfg = self.scheduler_config.get("interrupts", {}).get("calendar", {})
+        if not cal_cfg.get("enabled", False):
             return
 
-        # Rate limit checks
-        check_interval = calendar_config.get("check_interval_seconds", DEFAULT_INTERRUPT_CHECK)
+        check_interval = cal_cfg.get("check_interval_seconds", DEFAULT_INTERRUPT_CHECK)
         if self._last_interrupt_check:
-            elapsed = (current_dt - self._last_interrupt_check).total_seconds()
-            if elapsed < check_interval:
+            if (current_dt - self._last_interrupt_check).total_seconds() < check_interval:
                 return
-
         self._last_interrupt_check = current_dt
 
-        calendar_urls = calendar_config.get("urls", [])
-        threshold_minutes = calendar_config.get("threshold_minutes", 15)
-
-        for url in calendar_urls:
+        for url in cal_cfg.get("urls", []):
             try:
-                events = self._fetch_upcoming_events(url, current_dt, tz, threshold_minutes)
-                for event in events:
-                    # Create a calendar notification card action
+                events = self._fetch_upcoming_events(url, current_dt, tz, cal_cfg.get("threshold_minutes", 15))
+                for ev in events:
                     from refresh_task import CalendarInterrupt
-                    interrupt = CalendarInterrupt(event)
-                    self.queue_interrupt(interrupt)
+                    self.queue_interrupt(CalendarInterrupt(ev))
             except Exception as e:
-                logger.warning(f"Failed to check calendar interrupts for {url}: {e}")
+                logger.warning("Calendar interrupt check failed for %s: %s", url, e)
 
     def check_weather_alerts(self, current_dt, device_config):
-        """Check for weather alerts and queue interrupts if needed."""
-        interrupt_config = self.scheduler_config.get("interrupts", {})
-        weather_config = interrupt_config.get("weather_alerts", {})
-
-        if not weather_config.get("enabled", False):
+        """Check for weather alerts and queue interrupts."""
+        wx_cfg = self.scheduler_config.get("interrupts", {}).get("weather_alerts", {})
+        if not wx_cfg.get("enabled", False):
             return
 
         try:
             api_key = device_config.load_env_key("OPEN_WEATHER_MAP_SECRET")
-            if not api_key:
+            lat = device_config.get_config("latitude")
+            lon = device_config.get_config("longitude")
+            if not all([api_key, lat, lon]):
                 return
 
-            lat = device_config.get_config("latitude", default=None)
-            lon = device_config.get_config("longitude", default=None)
-            if not lat or not lon:
-                return
-
-            url = f"https://api.openweathermap.org/data/2.5/alerts?lat={lat}&lon={lon}&appid={api_key}"
-            resp = requests.get(url, timeout=10)
-            if resp.status_code != 200:
-                return
-
-            data = resp.json()
-            alerts = data.get("alerts", [])
-
-            if alerts:
-                from refresh_task import WeatherAlertInterrupt
-                for alert in alerts[:1]:  # Only queue one alert at a time
-                    interrupt = WeatherAlertInterrupt(alert)
-                    self.queue_interrupt(interrupt)
-
+            resp = requests.get(
+                f"https://api.openweathermap.org/data/2.5/alerts?lat={lat}&lon={lon}&appid={api_key}",
+                timeout=10,
+            )
+            if resp.status_code == 200:
+                alerts = resp.json().get("alerts", [])
+                for alert in alerts[:1]:
+                    from refresh_task import WeatherAlertInterrupt
+                    self.queue_interrupt(WeatherAlertInterrupt(alert))
         except Exception as e:
-            logger.warning(f"Failed to check weather alerts: {e}")
+            logger.warning("Weather alert check failed: %s", e)
 
-    def _fetch_upcoming_events(self, calendar_url, current_dt, tz, threshold_minutes):
-        """Fetch events starting within the next threshold_minutes."""
-        try:
-            import icalendar
-            import recurring_ical_events
+    # ------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------
 
-            if calendar_url.startswith("webcal://"):
-                calendar_url = calendar_url.replace("webcal://", "https://")
-
-            resp = requests.get(calendar_url, timeout=15)
-            resp.raise_for_status()
-            cal = icalendar.Calendar.from_ical(resp.text)
-
-            # Look for events in the next threshold_minutes
-            start = current_dt
-            end = current_dt + timedelta(minutes=threshold_minutes)
-            events = recurring_ical_events.of(cal).between(start, end)
-
-            upcoming = []
-            for event in events:
-                dtstart = event.decoded("dtstart")
-                if isinstance(dtstart, datetime):
-                    dtstart = dtstart.astimezone(tz)
-
-                upcoming.append({
-                    "title": str(event.get("summary", "")),
-                    "start": dtstart,
-                    "minutes_until": int((dtstart - current_dt).total_seconds() / 60),
-                })
-
-            return upcoming
-
-        except Exception as e:
-            logger.warning(f"Failed to fetch calendar for interrupts: {e}")
-            return []
-
-    def _get_next_plugin(self, mode_playlists, playlist_manager, mode):
-        """Get the next plugin from the mode's playlist list."""
-        rotate = mode.get("rotate", False)
-
-        # Find the first playlist that has plugins
-        for pl_name in mode_playlists:
-            playlist = playlist_manager.get_playlist(pl_name)
+    def _pick_from_playlists(self, playlist_names, mode, playlist_manager=None):
+        for pl_name in playlist_names:
+            pm = playlist_manager or self.config.get_playlist_manager()
+            playlist = pm.get_playlist(pl_name) if pm else None
             if not playlist or not playlist.plugins:
                 continue
-
-            if rotate:
-                # Round-robin through plugins
-                plugin = playlist.get_next_plugin()
-                return plugin, pl_name
+            if mode.get("random", False):
+                return random.choice(playlist.plugins), pl_name
+            if playlist.current_plugin_index is not None:
+                idx = playlist.current_plugin_index % len(playlist.plugins)
             else:
-                # For photo frame, just get the current/first plugin
-                if playlist.current_plugin_index is not None:
-                    idx = playlist.current_plugin_index % len(playlist.plugins)
-                else:
-                    idx = 0
-                    playlist.current_plugin_index = 0
-                return playlist.plugins[idx], pl_name
-
+                idx = 0
+                playlist.current_plugin_index = 0
+            return playlist.plugins[idx], pl_name
         return None, None
 
+    def _fetch_upcoming_events(self, calendar_url, current_dt, tz, threshold_minutes):
+        import icalendar
+        import recurring_ical_events
+
+        if calendar_url.startswith("webcal://"):
+            calendar_url = calendar_url.replace("webcal://", "https://")
+
+        resp = requests.get(calendar_url, timeout=15)
+        resp.raise_for_status()
+        cal = icalendar.Calendar.from_ical(resp.text)
+
+        end = current_dt + timedelta(minutes=threshold_minutes)
+        events = recurring_ical_events.of(cal).between(current_dt, end)
+
+        upcoming = []
+        for ev in events:
+            dtstart = ev.decoded("dtstart")
+            if isinstance(dtstart, datetime):
+                dtstart = dtstart.astimezone(tz)
+            upcoming.append({
+                "title": str(ev.get("summary", "")),
+                "start": dtstart,
+                "minutes_until": int((dtstart - current_dt).total_seconds() / 60),
+            })
+        return upcoming
+
     def _is_in_window(self, current_time, start, end):
-        """Check if current_time falls within the start-end window."""
         if start <= end:
             return start <= current_time < end
-        else:
-            # Wraps past midnight
-            return current_time >= start or current_time < end
+        return current_time >= start or current_time < end
 
     def _window_minutes(self, mode):
-        """Calculate window duration in minutes for priority sorting."""
-        start = mode.get("start_time", "00:00")
-        end = mode.get("end_time", "24:00")
         try:
-            s_h, s_m = map(int, start.split(":"))
-            e_h, e_m = map(int, end.split(":"))
-            s_total = s_h * 60 + s_m
-            e_total = e_h * 60 + e_m
-            if e_total <= s_total:
-                e_total += 24 * 60
-            return e_total - s_total
+            s_h, s_m = map(int, mode.get("start_time", "00:00").split(":"))
+            e_h, e_m = map(int, mode.get("end_time", "24:00").split(":"))
+            total = e_h * 60 + e_m - (s_h * 60 + s_m)
+            return total if total > 0 else total + 1440
         except (ValueError, AttributeError):
             return 1440
 
-    def _fallback_sleep(self, current_dt):
-        """When no mode is active, use default cycle interval."""
-        default_sleep = self.config.get_config("plugin_cycle_interval_seconds", default=3600)
-        return None, default_sleep
+    def _fallback_sleep(self):
+        return self.config.get_config("plugin_cycle_interval_seconds", default=3600)
 
     def _get_default_sleep(self):
         return self.config.get_config("plugin_cycle_interval_seconds", default=3600)
 
+    # ------------------------------------------------------------------
+    # Status (for web UI)
+    # ------------------------------------------------------------------
+
     def get_status(self):
-        """Return current scheduler status for the web UI."""
         return {
             "enabled": self.is_enabled(),
             "current_mode": self._current_mode,
             "modes_count": len(self.modes),
-            "interrupts_queued": len(self._interrupt_queue)
+            "interrupts_queued": len(self._interrupt_queue),
         }

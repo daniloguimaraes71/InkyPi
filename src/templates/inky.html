@@ -5,6 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ config.name }}</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/main.css') }}">
+    <style>
+        .scheduler-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            font-size: 13px;
+            color: var(--text-secondary, #666);
+            justify-content: center;
+        }
+        .scheduler-label {
+            font-weight: 600;
+            color: var(--text-primary, #333);
+        }
+        .scheduler-mode {
+            color: var(--text-secondary, #666);
+        }
+        .scheduler-mode.active {
+            color: var(--accent-primary, #1abc9c);
+            font-weight: 600;
+        }
+        .scheduler-time {
+            color: var(--text-light, #999);
+            font-size: 12px;
+        }
+    </style>
     <script>
         (function() {
             const theme = localStorage.getItem('inkypi-theme') || 
@@ -14,7 +40,9 @@
             }
         })();
         let lastModified = null;
-        const refreshIntervalMs = 3 * 1000;
+        let imageCacheBuster = 0;
+
+        let anyDemoRunning = false;
 
         async function refreshImage() {
             const img = document.querySelector('.image-container img');
@@ -22,11 +50,12 @@
 
             try {
                 const headers = {};
-                if (lastModified) {
+                if (lastModified && !anyDemoRunning) {
                     headers['If-Modified-Since'] = lastModified;
                 }
 
-                const response = await fetch('{{ url_for("main.get_current_image") }}', { headers });
+                const ts = anyDemoRunning ? Date.now() : imageCacheBuster;
+                const response = await fetch('{{ url_for("main.get_current_image") }}?t=' + ts, { headers });
                 
                 if (response.status === 304) {
                     return;
@@ -49,7 +78,7 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             refreshImage();
-            setInterval(refreshImage, refreshIntervalMs);
+            setInterval(refreshImage, 2000);
         });
     </script>
     <script src="{{ url_for('static', filename='scripts/image_modal.js') }}"></script>
@@ -76,6 +105,21 @@
         <!-- Display the current image -->
         <div class="image-container">
             <img src="{{ url_for('static', filename='images/current_image.png') }}" alt="Current Image">
+        </div>
+
+        <!-- Preview buttons -->
+        <div class="preview-buttons">
+            <button class="preview-btn" onclick="previewInterrupt('calendar')">Calendar Alert</button>
+            <button class="preview-btn" onclick="previewInterrupt('weather_alert')">Weather Alert</button>
+            <button class="preview-btn" id="demoBtn" onclick="toggleDemo()">Demo Cycle</button>
+            <button class="preview-btn" id="schedSimBtn" onclick="toggleSchedSim()">Scheduler Sim</button>
+        </div>
+
+        <!-- Scheduler Status -->
+        <div id="schedulerStatus" class="scheduler-status">
+            <span class="scheduler-label">Scheduler:</span>
+            <span id="schedulerMode" class="scheduler-mode">—</span>
+            <span id="schedulerTime" class="scheduler-time"></span>
         </div>
 
         <!-- Separator -->
@@ -129,6 +173,71 @@
             });
 
             updateView();
+
+            async function previewInterrupt(type) {
+                try {
+                    const response = await fetch(`/api/preview/${type}_interrupt`);
+                    if (response.ok) {
+                        lastModified = null;
+                        refreshImage();
+                    }
+                } catch (error) {
+                    console.error('Preview error:', error);
+                }
+            }
+
+            async function toggleSchedSim() {
+                const btn = document.getElementById('schedSimBtn');
+                try {
+                    if (anyDemoRunning) {
+                        await fetch('/api/demo/stop');
+                        anyDemoRunning = false;
+                        btn.textContent = 'Scheduler Sim';
+                        btn.classList.remove('active');
+                        document.getElementById('demoBtn').textContent = 'Demo Cycle';
+                        document.getElementById('demoBtn').classList.remove('active');
+                    } else {
+                        const res = await fetch('/api/demo/scheduler/start');
+                        const data = await res.json();
+                        if (data.success) {
+                            anyDemoRunning = true;
+                            btn.textContent = 'Stop SchedSim';
+                            btn.classList.add('active');
+                            imageCacheBuster = Date.now();
+                            lastModified = null;
+                            refreshImage();
+                        }
+                    }
+                } catch (e) {
+                    console.error('SchedSim error:', e);
+                }
+            }
+            async function toggleDemo() {
+                const btn = document.getElementById('demoBtn');
+                try {
+                    if (anyDemoRunning) {
+                        await fetch('/api/demo/stop');
+                        anyDemoRunning = false;
+                        btn.textContent = 'Demo Cycle';
+                        btn.classList.remove('active');
+                        document.getElementById('schedSimBtn').textContent = 'Scheduler Sim';
+                        document.getElementById('schedSimBtn').classList.remove('active');
+                    } else {
+                        const res = await fetch('/api/demo/start');
+                        const data = await res.json();
+                        if (data.success) {
+                            anyDemoRunning = true;
+                            btn.textContent = 'Stop Demo';
+                            btn.classList.add('active');
+                            imageCacheBuster = Date.now();
+                            lastModified = null;
+                            refreshImage();
+                        }
+                    }
+                } catch (error) {
+                    console.error('Demo error:', error);
+                }
+            }
 
             // Sort mode
             const sortToggle = document.getElementById('sortToggle');
@@ -246,6 +355,35 @@
                     enableSorting();
                 }
             });
+
+            // Scheduler status polling
+            async function updateSchedulerStatus() {
+                try {
+                    const res = await fetch('/api/scheduler/status');
+                    if (res.ok) {
+                        const data = await res.json();
+                        const modeEl = document.getElementById('schedulerMode');
+                        const timeEl = document.getElementById('schedulerTime');
+                        if (data.active_mode) {
+                            modeEl.textContent = data.active_mode.replace(/_/g, ' ');
+                            modeEl.className = 'scheduler-mode active';
+                        } else {
+                            modeEl.textContent = 'idle';
+                            modeEl.className = 'scheduler-mode';
+                        }
+                        if (data.current_time) {
+                            timeEl.textContent = data.current_time;
+                        }
+                        if (data.interrupts_queued > 0) {
+                            modeEl.textContent += ' 🔔' + data.interrupts_queued;
+                        }
+                    }
+                } catch (e) {
+                    // ignore
+                }
+            }
+            setInterval(updateSchedulerStatus, 5000);
+            updateSchedulerStatus();
         </script>
     </div>
 </body>

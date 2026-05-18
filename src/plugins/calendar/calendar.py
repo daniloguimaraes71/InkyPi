@@ -31,6 +31,11 @@ class Calendar(BasePlugin):
             raise RuntimeError("Invalid view")
 
         if not calendar_urls:
+            global_url = device_config.get_config("calendarURL")
+            if global_url:
+                calendar_urls = [global_url]
+                calendar_colors = ["#007BFF"]
+        if not calendar_urls:
             raise RuntimeError("At least one calendar URL is required")
         for url in calendar_urls:
             if not url.strip():

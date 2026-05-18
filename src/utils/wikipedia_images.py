@@ -62,7 +62,7 @@ ARTICLE_MAPPINGS = {
     "須磨海水浴場": "Suma_Beach",
     "大阪": "Osaka",
     
-    # Food
+    # Food - Japanese dishes
     "おにぎり": "Onigiri",
     "味噌汁": "Miso_soup",
     "寿司": "Sushi",
@@ -78,6 +78,33 @@ ARTICLE_MAPPINGS = {
     "ナン": "Naan",
     "お寿司": "Sushi",
     "おでん": "Oden",
+    "天ぷら": "Tempura",
+    "うな丼": "Unadon",
+    "親子丼": "Oyakodon",
+    "カレーライス": "Japanese_curry",
+    "とんかつ": "Tonkatsu",
+    "納豆": "Natto",
+    "茶碗蒸し": "Chawanmushi",
+    "サンドイッチ": "Sandwich",
+    "ピザ": "Pizza",
+    "ハンバーグ": "Hamburg_steak",
+    "グラタン": "Gratin",
+    "オムライス": "Omurice",
+    "リゾット": "Risotto",
+    "タコス": "Taco",
+    "フォー": "Pho",
+    "豆腐": "Tofu",
+    "ヨーグルト": "Yogurt",
+    "雑炊": "Zōsui",
+    "枝豆": "Edamame",
+    "すき焼き": "Sukiyaki",
+    "しゃぶしゃぶ": "Shabu-shabu",
+    "鍋": "Hot_pot",
+    "焼き芋": "Roasted_sweet_potato",
+    "かぼちゃ": "Kabocha",
+    "大根": "Daikon",
+    "お汁粉": "Shiruko",
+    "ぜんざい": "Zenzai",
     
     # General
     "月": "Moon",
@@ -113,8 +140,24 @@ def get_wikipedia_image(keyword, target_size=(400, 300)):
         return None
 
 
+JA_WIKIPEDIA_API = "https://ja.wikipedia.org/w/api.php"
+
 def _get_article_image_url(article_title):
-    """Get the main image URL from a Wikipedia article."""
+    """Get the main image URL from a Wikipedia article.
+    Tries English Wikipedia first, then Japanese Wikipedia as fallback.
+    """
+    result = _query_wikipedia(article_title, WIKIPEDIA_API)
+    if result:
+        return result
+    # Fallback: try Japanese Wikipedia
+    result = _query_wikipedia(article_title, JA_WIKIPEDIA_API)
+    if result:
+        return result
+    return None
+
+
+def _query_wikipedia(article_title, api_url):
+    """Query a Wikipedia API for article images."""
     global _last_request_time
     
     try:
@@ -125,7 +168,6 @@ def _get_article_image_url(article_title):
         
         session = get_http_session()
         
-        # First, get the page images
         params = {
             "action": "query",
             "format": "json",
@@ -135,11 +177,10 @@ def _get_article_image_url(article_title):
         }
         
         _last_request_time = time.time()
-        response = session.get(WIKIPEDIA_API, params=params, headers=HEADERS, timeout=10)
+        response = session.get(api_url, params=params, headers=HEADERS, timeout=10)
         response.raise_for_status()
         data = response.json()
         
-        # Extract image URL
         pages = data.get("query", {}).get("pages", {})
         for page_id, page in pages.items():
             thumbnail = page.get("thumbnail", {})
@@ -149,7 +190,7 @@ def _get_article_image_url(article_title):
         return None
         
     except Exception as e:
-        logger.warning(f"Failed to get article image for {article_title}: {e}")
+        logger.warning(f"Failed to get article image for {article_title} from {api_url}: {e}")
         return None
 
 

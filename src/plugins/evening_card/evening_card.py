@@ -7,7 +7,7 @@ from utils.micro_season import get_full_season_info, get_seasonal_palette
 from utils.wikipedia_images import get_wikipedia_image
 from utils.app_utils import get_font
 from utils.design_variants import get_variant
-from PIL import Image, ImageDraw, ImageColor
+from PIL import Image, ImageDraw
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +66,7 @@ class EveningCard(BasePlugin):
         seed = now.year * 10000 + now.month * 100 + now.day
         image_keyword = candidates[seed % len(candidates)]
 
-        evening_image = get_wikipedia_image(image_keyword, (320, 240))
+        evening_image = get_wikipedia_image(image_keyword, (260, 320))
 
         image_data_uri = self.image_to_data_uri(evening_image)
 
@@ -105,7 +105,6 @@ class EveningCard(BasePlugin):
 
     def _draw_card_pil(self, dimensions, orientation, now, season_info,
                        weather, events, time_format, evening_image, v):
-        """Elegant evening reflection card."""
         w, h = dimensions
         if orientation == 'vertical':
             w, h = h, w
@@ -113,11 +112,14 @@ class EveningCard(BasePlugin):
         C = v.colors
         sm = v.spacing_mult
 
-        img = Image.new('RGB', (w, h), C['bg_alt'])
+        img = Image.new('RGB', (w, h), C['bg'])
         draw = ImageDraw.Draw(img)
 
         px = int(w * 0.05 * sm)
         py = int(h * 0.07 * sm)
+        right_col_x = int(w * 0.58)
+        col_gap = int(w * 0.04)
+        left_max = right_col_x - col_gap
 
         f_greeting = get_font(v.heading_font, int(w * 0.04))
         f_sub = get_font(v.body_font, int(w * 0.02))
@@ -129,11 +131,16 @@ class EveningCard(BasePlugin):
         f_ms = get_font(v.heading_font, int(w * 0.016))
         f_ms_en = get_font(v.body_font, int(w * 0.012))
 
-        draw.text((px, py), "今日も一日、お疲れ様でした。", font=f_greeting, fill=C['text_primary'])
-        draw.text((px, py + int(h * 0.06 * sm)), "ゆっくりとお茶を淹れて、一息つきましょう。", font=f_sub, fill=C['text_secondary'])
+        draw.text((px, py), now.strftime('%m月%d日') + ' • 姫路市', font=f_label, fill=C['text_light'])
 
-        dy = py + int(h * 0.14 * sm)
-        draw.line([(px, dy), (w - px, dy)], fill=C['divider'], width=v.divider_width)
+        gy = py + int(h * 0.05 * sm)
+        draw.text((px, gy), "今日も一日、お疲れ様でした。", font=f_greeting, fill=C['text_primary'])
+
+        sg = gy + int(h * 0.065 * sm)
+        draw.text((px, sg), "ゆっくりとお茶を淹れて、一息つきましょう。", font=f_sub, fill=C['text_secondary'])
+
+        dy = sg + int(h * 0.06 * sm)
+        draw.line([(px, dy), (left_max, dy)], fill=C['divider'], width=v.divider_width)
 
         ty = dy + int(h * 0.05 * sm)
         draw.text((px, ty), "明日の天気", font=f_label, fill=C['accent'])
@@ -149,7 +156,7 @@ class EveningCard(BasePlugin):
 
         if events:
             sy = ty + int(h * 0.18 * sm)
-            draw.line([(px, sy), (w - px, sy)], fill=C['divider'], width=v.divider_width)
+            draw.line([(px, sy), (left_max, sy)], fill=C['divider'], width=v.divider_width)
             sy += int(h * 0.04 * sm)
             draw.text((px, sy), "明日の予定", font=f_label, fill=C['accent'])
             item_y = sy + int(h * 0.045 * sm)
@@ -163,10 +170,10 @@ class EveningCard(BasePlugin):
                 item_y += int(h * 0.05 * sm)
 
         if evening_image:
-            ix = w - px - int(w * 0.22)
+            ix = right_col_x
             iy = py
-            iw = int(w * 0.22)
-            ih = int(h * 0.22)
+            iw = w - right_col_x - px
+            ih = h - py * 2
             img.paste(evening_image.resize((iw, ih), Image.Resampling.LANCZOS), (ix, iy))
             draw = ImageDraw.Draw(img)
             draw.rectangle([ix-2, iy-2, ix+iw+2, iy+ih+2], outline=C['border'], width=v.divider_width)
@@ -217,7 +224,7 @@ class EveningCard(BasePlugin):
             return None
 
     def _get_tomorrow_events(self, settings, device_config, tz, now):
-        calendar_url = settings.get("calendarURL")
+        calendar_url = device_config.get_config("calendarURL")
         if not calendar_url:
             return []
         try:

@@ -9,13 +9,13 @@
             font-family: "{{font.font_family}}";
             font-weight: {{font.font_weight}};
             font-style:  {{font.font_style}};
-            src: url({{font.url}}) format("truetype");
+            src: local("{{font.font_family}}"), url("{{font.url}}") format("truetype");
         }
         {% endfor %}
         {% if design_variant %}
         :root {
-            --font-serif: "{{ design_variant.heading_font }}", serif;
-            --font-sans: "{{ design_variant.body_font }}", sans-serif;
+            --font-serif: "{{ design_variant.heading_font }}", "Noto Serif CJK JP", "IPAexMincho", "TakaoMincho", serif;
+            --font-sans: "{{ design_variant.body_font }}", "Noto Sans CJK JP", "IPAexGothic", "TakaoGothic", "VL Gothic", sans-serif;
             --bg-base: {{ design_variant.colors.bg }};
             --bg-dark: {{ design_variant.colors.bg_dark }};
             --text-primary: {{ design_variant.colors.text_primary }};

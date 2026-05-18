@@ -194,7 +194,7 @@ class MorningBriefing(BasePlugin):
             return None
 
     def _get_calendar_events(self, settings, device_config, tz, now):
-        calendar_url = settings.get("calendarURL")
+        calendar_url = device_config.get_config("calendarURL")
         if not calendar_url:
             return []
         try:
