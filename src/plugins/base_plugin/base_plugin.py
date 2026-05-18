@@ -3,6 +3,7 @@ import os
 from utils.app_utils import resolve_path, get_fonts
 from utils.image_utils import take_screenshot_html
 from utils.image_loader import AdaptiveImageLoader
+from utils.design_variants import DESIGN_STYLE_CHOICES, get_variant
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pathlib import Path
 import asyncio
@@ -65,6 +66,9 @@ class BasePlugin:
         """
         pass  # Default implementation does nothing
 
+    def get_design_variant(self, settings):
+        return get_variant(settings.get("designStyle"))
+
     def get_plugin_id(self):
         return self.config.get("id")
 
@@ -82,6 +86,7 @@ class BasePlugin:
             template_params["settings_template"] = f"{self.get_plugin_id()}/settings.html"
 
         template_params['frame_styles'] = FRAME_STYLES
+        template_params['design_styles'] = DESIGN_STYLE_CHOICES
         return template_params
 
     def image_to_data_uri(self, img):
@@ -110,6 +115,20 @@ class BasePlugin:
         template_params["font_faces"] = get_fonts()
         template_params["static_dir"] = STATIC_DIR
         
+        # Determine design variant
+        ps = template_params.get("plugin_settings", {})
+        if isinstance(ps, dict):
+            variant = get_variant(ps.get("designStyle"))
+        else:
+            variant = get_variant(None)
+        template_params["design_variant"] = {
+            "name": variant.name,
+            "colors": variant.colors,
+            "heading_font": variant.heading_font,
+            "body_font": variant.body_font,
+            "divider_width": variant.divider_width,
+        }
+
         # Provide default plugin_settings if not present
         if "plugin_settings" not in template_params:
             template_params["plugin_settings"] = {

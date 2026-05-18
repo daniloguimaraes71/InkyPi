@@ -12,6 +12,22 @@
             src: url({{font.url}}) format("truetype");
         }
         {% endfor %}
+        {% if design_variant %}
+        :root {
+            --font-serif: "{{ design_variant.heading_font }}", serif;
+            --font-sans: "{{ design_variant.body_font }}", sans-serif;
+            --bg-base: {{ design_variant.colors.bg }};
+            --bg-dark: {{ design_variant.colors.bg_dark }};
+            --text-primary: {{ design_variant.colors.text_primary }};
+            --text-secondary: {{ design_variant.colors.text_secondary }};
+            --text-light: {{ design_variant.colors.text_light }};
+            --accent-gold: {{ design_variant.colors.accent }};
+            --accent-copper: {{ design_variant.colors.accent_alt }};
+            --accent-sage: {{ design_variant.colors.accent_sage }};
+            --divider: {{ design_variant.colors.divider }};
+            --divider-thick: {{ design_variant.colors.border }};
+        }
+        {% endif %}
     </style>
     </head>
     <body 

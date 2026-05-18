@@ -1,0 +1,66 @@
+<div class="design-style-group">
+    <label for="designStyle">Design Style</label>
+    <select id="designStyle" name="designStyle" class="design-style-select">
+        {% for style in design_styles %}
+        <option value="{{ style.name }}" {% if pluginSettings.get('designStyle', 'wa') == style.name %}selected{% endif %}>
+            {{ style.label }}
+        </option>
+        {% endfor %}
+    </select>
+    <div class="design-style-preview" id="designStylePreview">
+        <p class="design-style-desc" id="designStyleDesc">
+            {% set default_styles = design_styles|selectattr('name', 'equalto', pluginSettings.get('designStyle', 'wa'))|list %}
+            {{ default_styles[0].description if default_styles else 'Traditional Japanese elegance with serif headings and warm gold accents' }}
+        </p>
+    </div>
+</div>
+
+<style>
+.design-style-group {
+    margin-bottom: 16px;
+}
+.design-style-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: #333;
+}
+.design-style-select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    background: #fff;
+}
+.design-style-preview {
+    margin-top: 6px;
+    padding: 8px 12px;
+    background: #f9f9f9;
+    border-radius: 4px;
+    border-left: 3px solid #8B7355;
+}
+.design-style-desc {
+    margin: 0;
+    font-size: 13px;
+    color: #666;
+    line-height: 1.4;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const select = document.getElementById('designStyle');
+    const desc = document.getElementById('designStyleDesc');
+    const styles = {{ design_styles | tojson }};
+    
+    if (select && desc) {
+        select.addEventListener('change', () => {
+            const selected = styles.find(s => s.name === select.value);
+            if (selected) {
+                desc.textContent = selected.description;
+            }
+        });
+    }
+});
+</script>
