@@ -49,8 +49,8 @@
         "active_playlist": "Default"
     },
     "refresh_info": {
-        "refresh_time": "2026-05-18T14:21:37.096334+09:00",
-        "image_hash": "d53ab072326225c053609c1e706da4fd6b4835323ed863255cb7ebf8167acfa7",
+        "refresh_time": "2026-05-18T14:36:42.518953+09:00",
+        "image_hash": "66dd0f4a66bfc97316a3404f8396cf04a6db43870d524e734acbd6c825695b1d",
         "refresh_type": "Manual Update",
         "plugin_id": "painting"
     },
@@ -98,8 +98,12 @@
                 "end_time": "08:15",
                 "dwell_seconds": 300,
                 "interstitial_pool": [
-                    "mood_card",
-                    "painting"
+                    "calendar",
+                    "clock",
+                    "weather",
+                    "wpotd",
+                    "year_progress",
+                    "kansai_events"
                 ],
                 "interstitial_interval_seconds": 900,
                 "interstitial_dwell_seconds": 120
@@ -133,8 +137,12 @@
                 "end_time": "12:00",
                 "dwell_seconds": 300,
                 "interstitial_pool": [
-                    "mood_card",
-                    "painting"
+                    "calendar",
+                    "clock",
+                    "weather",
+                    "wpotd",
+                    "year_progress",
+                    "kansai_events"
                 ],
                 "interstitial_interval_seconds": 1800,
                 "interstitial_dwell_seconds": 120
@@ -168,8 +176,12 @@
                 "end_time": "14:30",
                 "dwell_seconds": 300,
                 "interstitial_pool": [
-                    "mood_card",
-                    "painting"
+                    "calendar",
+                    "clock",
+                    "weather",
+                    "wpotd",
+                    "year_progress",
+                    "kansai_events"
                 ],
                 "interstitial_interval_seconds": 1800,
                 "interstitial_dwell_seconds": 120
@@ -203,8 +215,12 @@
                 "end_time": "16:00",
                 "dwell_seconds": 300,
                 "interstitial_pool": [
-                    "mood_card",
-                    "painting"
+                    "calendar",
+                    "clock",
+                    "weather",
+                    "wpotd",
+                    "year_progress",
+                    "kansai_events"
                 ],
                 "interstitial_interval_seconds": 1800,
                 "interstitial_dwell_seconds": 120
@@ -238,8 +254,12 @@
                 "end_time": "18:00",
                 "dwell_seconds": 300,
                 "interstitial_pool": [
-                    "mood_card",
-                    "painting"
+                    "calendar",
+                    "clock",
+                    "weather",
+                    "wpotd",
+                    "year_progress",
+                    "kansai_events"
                 ],
                 "interstitial_interval_seconds": 1800,
                 "interstitial_dwell_seconds": 120
@@ -273,8 +293,12 @@
                 "end_time": "21:00",
                 "dwell_seconds": 300,
                 "interstitial_pool": [
-                    "mood_card",
-                    "painting"
+                    "calendar",
+                    "clock",
+                    "weather",
+                    "wpotd",
+                    "year_progress",
+                    "kansai_events"
                 ],
                 "interstitial_interval_seconds": 1800,
                 "interstitial_dwell_seconds": 120
@@ -308,8 +332,12 @@
                 "end_time": "06:30",
                 "dwell_seconds": 600,
                 "interstitial_pool": [
-                    "mood_card",
-                    "painting"
+                    "calendar",
+                    "clock",
+                    "weather",
+                    "wpotd",
+                    "year_progress",
+                    "kansai_events"
                 ],
                 "interstitial_interval_seconds": 3600,
                 "interstitial_dwell_seconds": 120
@@ -324,8 +352,11 @@
                 "end_time": "12:00",
                 "dwell_seconds": 300,
                 "interstitial_pool": [
-                    "mood_card",
-                    "painting",
+                    "calendar",
+                    "clock",
+                    "weather",
+                    "wpotd",
+                    "year_progress",
                     "kansai_events"
                 ],
                 "interstitial_interval_seconds": 1200,
@@ -341,8 +372,11 @@
                 "end_time": "18:00",
                 "dwell_seconds": 300,
                 "interstitial_pool": [
-                    "mood_card",
-                    "painting",
+                    "calendar",
+                    "clock",
+                    "weather",
+                    "wpotd",
+                    "year_progress",
                     "kansai_events"
                 ],
                 "interstitial_interval_seconds": 1200,
@@ -358,8 +392,12 @@
                 "end_time": "21:00",
                 "dwell_seconds": 300,
                 "interstitial_pool": [
-                    "mood_card",
-                    "painting"
+                    "calendar",
+                    "clock",
+                    "weather",
+                    "wpotd",
+                    "year_progress",
+                    "kansai_events"
                 ],
                 "interstitial_interval_seconds": 1800,
                 "interstitial_dwell_seconds": 120
@@ -374,8 +412,12 @@
                 "end_time": "06:30",
                 "dwell_seconds": 600,
                 "interstitial_pool": [
-                    "mood_card",
-                    "painting"
+                    "calendar",
+                    "clock",
+                    "weather",
+                    "wpotd",
+                    "year_progress",
+                    "kansai_events"
                 ],
                 "interstitial_interval_seconds": 3600,
                 "interstitial_dwell_seconds": 120

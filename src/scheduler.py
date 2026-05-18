@@ -35,6 +35,7 @@ class SchedulerEngine:
         self._interrupt_queue = []
         self._last_interrupt_check = None
         self._last_interstitial_time = None
+        self._mode_switch_time = None
 
     def is_enabled(self):
         return self.enabled and len(self.modes) > 0
@@ -76,10 +77,12 @@ class SchedulerEngine:
         if not active_mode:
             return None, self._fallback_sleep()
 
-        if active_mode.get("name") != self._current_mode:
+        mode_switched = active_mode.get("name") != self._current_mode
+        if mode_switched:
             logger.info("Switched to mode: %s", active_mode.get("name"))
             self._current_mode = active_mode.get("name")
             self._last_interstitial_time = None
+            self._mode_switch_time = current_dt
 
         interstitial_pool = active_mode.get("interstitial_pool", [])
         if interstitial_pool:
@@ -100,12 +103,6 @@ class SchedulerEngine:
         dwell = mode.get("dwell_seconds", DEFAULT_CARD_DWELL)
         plugin_id = mode.get("plugin_id")
 
-        latest_dt = latest_refresh_info.get_refresh_datetime()
-        if latest_dt:
-            elapsed = (current_dt - latest_dt).total_seconds()
-            if elapsed < dwell:
-                return None, min(dwell - elapsed, 60)
-
         from refresh_task import ManualRefresh
         logger.info("Fixed plugin mode: showing %s", plugin_id)
         return ManualRefresh(plugin_id, {}), dwell
@@ -117,12 +114,16 @@ class SchedulerEngine:
         interstitial_dwell = mode.get("interstitial_dwell_seconds", DEFAULT_INTERSTITIAL_DWELL)
         interstitial_pool = mode.get("interstitial_pool", [])
 
-        # Check if it's time for an interstitial card
         if self._last_interstitial_time:
             time_since = (current_dt - self._last_interstitial_time).total_seconds()
         else:
-            time_since = float("inf")
+            # Show a photo immediately on mode switch; set timer so next check acts properly
+            self._last_interstitial_time = current_dt
+            from refresh_task import PhotoRefresh
+            logger.debug("Interstitial mode: first photo")
+            return PhotoRefresh(), dwell
 
+        # Check for interstitial card
         if time_since >= interstitial_interval and interstitial_pool:
             plugin_id = random.choice(interstitial_pool)
             self._last_interstitial_time = current_dt
@@ -130,16 +131,10 @@ class SchedulerEngine:
             logger.info("Interstitial: showing %s", plugin_id)
             return ManualRefresh(plugin_id, {}), interstitial_dwell
 
-        # Time for the next photo?
-        latest_dt = latest_refresh_info.get_refresh_datetime()
-        elapsed = (current_dt - latest_dt).total_seconds() if latest_dt else float("inf")
-
-        if elapsed >= dwell:
-            from refresh_task import PhotoRefresh
-            logger.debug("Interstitial mode: next photo")
-            return PhotoRefresh(), dwell
-
-        return None, min(dwell - elapsed, 60)
+        # Next photo
+        from refresh_task import PhotoRefresh
+        logger.debug("Interstitial mode: next photo")
+        return PhotoRefresh(), dwell
 
     def _handle_playlist_mode(self, mode, current_dt, playlist_manager, latest_refresh_info):
         """Rotate through plugins in playlists."""

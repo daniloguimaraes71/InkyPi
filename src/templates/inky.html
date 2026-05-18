@@ -49,12 +49,7 @@
             if (!img) return;
 
             try {
-                const headers = {};
-                if (lastModified && !anyDemoRunning) {
-                    headers['If-Modified-Since'] = lastModified;
-                }
-
-                const ts = anyDemoRunning ? Date.now() : imageCacheBuster;
+                const ts = Date.now();
                 const response = await fetch('{{ url_for("main.get_current_image") }}?t=' + ts, { headers });
                 
                 if (response.status === 304) {

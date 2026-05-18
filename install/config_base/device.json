@@ -33,7 +33,7 @@
                 "start_time": "07:30",
                 "end_time": "08:15",
                 "dwell_seconds": 300,
-                "interstitial_pool": ["mood_card", "painting"],
+                "interstitial_pool": ["calendar", "clock", "weather", "wpotd", "year_progress", "kansai_events"],
                 "interstitial_interval_seconds": 900,
                 "interstitial_dwell_seconds": 120
             },
@@ -51,7 +51,7 @@
                 "start_time": "08:30",
                 "end_time": "12:00",
                 "dwell_seconds": 300,
-                "interstitial_pool": ["mood_card", "painting"],
+                "interstitial_pool": ["calendar", "clock", "weather", "wpotd", "year_progress", "kansai_events"],
                 "interstitial_interval_seconds": 1800,
                 "interstitial_dwell_seconds": 120
             },
@@ -69,7 +69,7 @@
                 "start_time": "12:20",
                 "end_time": "14:30",
                 "dwell_seconds": 300,
-                "interstitial_pool": ["mood_card", "painting"],
+                "interstitial_pool": ["calendar", "clock", "weather", "wpotd", "year_progress", "kansai_events"],
                 "interstitial_interval_seconds": 1800,
                 "interstitial_dwell_seconds": 120
             },
@@ -87,7 +87,7 @@
                 "start_time": "14:45",
                 "end_time": "16:00",
                 "dwell_seconds": 300,
-                "interstitial_pool": ["mood_card", "painting"],
+                "interstitial_pool": ["calendar", "clock", "weather", "wpotd", "year_progress", "kansai_events"],
                 "interstitial_interval_seconds": 1800,
                 "interstitial_dwell_seconds": 120
             },
@@ -105,7 +105,7 @@
                 "start_time": "16:10",
                 "end_time": "18:00",
                 "dwell_seconds": 300,
-                "interstitial_pool": ["mood_card", "painting"],
+                "interstitial_pool": ["calendar", "clock", "weather", "wpotd", "year_progress", "kansai_events"],
                 "interstitial_interval_seconds": 1800,
                 "interstitial_dwell_seconds": 120
             },
@@ -123,7 +123,7 @@
                 "start_time": "18:20",
                 "end_time": "21:00",
                 "dwell_seconds": 300,
-                "interstitial_pool": ["mood_card", "painting"],
+                "interstitial_pool": ["calendar", "clock", "weather", "wpotd", "year_progress", "kansai_events"],
                 "interstitial_interval_seconds": 1800,
                 "interstitial_dwell_seconds": 120
             },
@@ -141,7 +141,7 @@
                 "start_time": "21:10",
                 "end_time": "06:30",
                 "dwell_seconds": 600,
-                "interstitial_pool": ["mood_card", "painting"],
+                "interstitial_pool": ["calendar", "clock", "weather", "wpotd", "year_progress", "kansai_events"],
                 "interstitial_interval_seconds": 3600,
                 "interstitial_dwell_seconds": 120
             },
@@ -151,7 +151,7 @@
                 "start_time": "07:30",
                 "end_time": "12:00",
                 "dwell_seconds": 300,
-                "interstitial_pool": ["mood_card", "painting", "kansai_events"],
+                "interstitial_pool": ["calendar", "clock", "weather", "wpotd", "year_progress", "kansai_events"],
                 "interstitial_interval_seconds": 1200,
                 "interstitial_dwell_seconds": 120
             },
@@ -161,7 +161,7 @@
                 "start_time": "12:20",
                 "end_time": "18:00",
                 "dwell_seconds": 300,
-                "interstitial_pool": ["mood_card", "painting", "kansai_events"],
+                "interstitial_pool": ["calendar", "clock", "weather", "wpotd", "year_progress", "kansai_events"],
                 "interstitial_interval_seconds": 1200,
                 "interstitial_dwell_seconds": 120
             },
@@ -171,7 +171,7 @@
                 "start_time": "18:20",
                 "end_time": "21:00",
                 "dwell_seconds": 300,
-                "interstitial_pool": ["mood_card", "painting"],
+                "interstitial_pool": ["calendar", "clock", "weather", "wpotd", "year_progress", "kansai_events"],
                 "interstitial_interval_seconds": 1800,
                 "interstitial_dwell_seconds": 120
             },
@@ -181,7 +181,7 @@
                 "start_time": "21:10",
                 "end_time": "06:30",
                 "dwell_seconds": 600,
-                "interstitial_pool": ["mood_card", "painting"],
+                "interstitial_pool": ["calendar", "clock", "weather", "wpotd", "year_progress", "kansai_events"],
                 "interstitial_interval_seconds": 3600,
                 "interstitial_dwell_seconds": 120
             }
