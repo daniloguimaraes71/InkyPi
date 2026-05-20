@@ -30,6 +30,7 @@ from blueprints.settings import settings_bp
 from blueprints.plugin import plugin_bp
 from blueprints.playlist import playlist_bp
 from blueprints.apikeys import apikeys_bp
+from blueprints.user import user_bp
 from jinja2 import ChoiceLoader, FileSystemLoader
 from plugins.plugin_registry import load_plugins
 from waitress import serve
@@ -80,6 +81,7 @@ app.register_blueprint(settings_bp)
 app.register_blueprint(plugin_bp)
 app.register_blueprint(playlist_bp)
 app.register_blueprint(apikeys_bp)
+app.register_blueprint(user_bp)
 
 # Register opener for HEIF/HEIC images
 register_heif_opener()
@@ -89,12 +91,10 @@ if __name__ == '__main__':
     # start the background refresh task
     refresh_task.start()
 
-    # display default inkypi image on startup
-    if device_config.get_config("startup") is True:
-        logger.info("Startup flag is set, displaying startup image")
-        img = generate_startup_image(device_config.get_resolution())
-        display_manager.display_image(img)
-        device_config.update_value("startup", False, write=True)
+    # display splash screen so user sees something immediately at boot
+    logger.info("Displaying startup image")
+    img = generate_startup_image(device_config.get_resolution())
+    display_manager.display_image(img)
 
     try:
         # Run the Flask app

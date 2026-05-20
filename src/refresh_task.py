@@ -105,28 +105,46 @@ class RefreshTask:
                         refresh_action = self.manual_update_request
                         self.manual_update_request = ()
                     else:
-
-                        if self.device_config.get_config("log_system_stats"):
-                            self.log_system_stats()
-
-                        if self.scheduler.is_enabled():
-                            # Check for interrupts (calendar events, weather alerts)
-                            tz_str = self.device_config.get_config("timezone", default="UTC")
-                            tz = pytz.timezone(tz_str)
-                            self.scheduler.check_calendar_interrupts(current_dt, tz)
-                            self.scheduler.check_weather_alerts(current_dt, self.device_config)
-
-                            # Use scheduler engine
-                            logger.info(f"Scheduler check. | current_time: {current_dt.strftime('%Y-%m-%d %H:%M:%S')} | mode: {self.scheduler._current_mode}")
-                            action, next_sleep = self.scheduler.next_action(current_dt, playlist_manager, latest_refresh)
-                            self._scheduler_sleep_time = next_sleep
-                            refresh_action = action
+                        # Check persistent user display mode override
+                        user_mode = self.device_config.get_config("user_display_mode", default="scheduled")
+                        if user_mode == "clock_only":
+                            logger.info("User mode: clock_only")
+                            refresh_action = ManualRefresh("clock", {})
+                        elif user_mode == "photos_only":
+                            logger.info("User mode: photos_only")
+                            refresh_action = PhotoRefresh(user_photos_only=True)
+                            self._scheduler_sleep_time = 300
+                        elif user_mode in ("calendar_month", "calendar_week", "calendar_day"):
+                            logger.info("User mode: %s", user_mode)
+                            view_map = {
+                                "calendar_month": "dayGridMonth",
+                                "calendar_week": "timeGridWeek",
+                                "calendar_day": "timeGridDay",
+                            }
+                            refresh_action = ManualRefresh("calendar", {"viewMode": view_map[user_mode]})
+                            self._scheduler_sleep_time = 3600
                         else:
-                            # Legacy playlist-based refresh
-                            logger.info(f"Running interval refresh check. | current_time: {current_dt.strftime('%Y-%m-%d %H:%M:%S')}")
-                            playlist, plugin_instance = self._determine_next_plugin(playlist_manager, latest_refresh, current_dt)
-                            if plugin_instance:
-                                refresh_action = PlaylistRefresh(playlist, plugin_instance)
+                            if self.device_config.get_config("log_system_stats"):
+                                self.log_system_stats()
+
+                            if self.scheduler.is_enabled():
+                                # Check for interrupts (calendar events, weather alerts)
+                                tz_str = self.device_config.get_config("timezone", default="UTC")
+                                tz = pytz.timezone(tz_str)
+                                self.scheduler.check_calendar_interrupts(current_dt, tz)
+                                self.scheduler.check_weather_alerts(current_dt, self.device_config)
+
+                                # Use scheduler engine
+                                logger.info(f"Scheduler check. | current_time: {current_dt.strftime('%Y-%m-%d %H:%M:%S')} | mode: {self.scheduler._current_mode}")
+                                action, next_sleep = self.scheduler.next_action(current_dt, playlist_manager, latest_refresh)
+                                self._scheduler_sleep_time = next_sleep
+                                refresh_action = action
+                            else:
+                                # Legacy playlist-based refresh
+                                logger.info(f"Running interval refresh check. | current_time: {current_dt.strftime('%Y-%m-%d %H:%M:%S')}")
+                                playlist, plugin_instance = self._determine_next_plugin(playlist_manager, latest_refresh, current_dt)
+                                if plugin_instance:
+                                    refresh_action = PlaylistRefresh(playlist, plugin_instance)
 
                     if refresh_action:
                         if isinstance(refresh_action, PhotoRefresh):
@@ -317,9 +335,10 @@ class PlaylistRefresh(RefreshAction):
 
 
 class PhotoRefresh(RefreshAction):
-    """Refresh action that picks and displays a random photo from standard directories.
+    """Refresh action that picks and displays a random photo.
 
-    Falls back to clock display if no photos are found.
+    By default scans standard photo directories. When `user_photos_only=True`,
+    only picks from user-uploaded photos (no local folder fallback).
     """
 
     PHOTO_DIRS = [
@@ -330,14 +349,39 @@ class PhotoRefresh(RefreshAction):
         "/mnt",
     ]
 
-    def __init__(self):
+    @classmethod
+    def get_user_photo_dir(cls):
+        return os.path.join(os.path.dirname(__file__), "static", "images", "user_photos")
+
+    def __init__(self, user_photos_only=False):
         self.plugin_id = "photo"
+        self.user_photos_only = user_photos_only
+
+    @staticmethod
+    def find_user_photo():
+        """Pick a random photo from user_uploads only."""
+        exts = ('.jpg', '.jpeg', '.png', '.avif', '.webp', '.bmp', '.tiff', '.heif', '.heic')
+        user_dir = PhotoRefresh.get_user_photo_dir()
+        if not os.path.isdir(user_dir):
+            return None
+        candidates = []
+        for f in os.listdir(user_dir):
+            if f.lower().endswith(exts) and not f.startswith('.'):
+                candidates.append(os.path.join(user_dir, f))
+        return random.choice(candidates) if candidates else None
 
     @staticmethod
     def find_random_photo():
-        """Pick a random photo from common photo directories."""
+        """Pick a random photo from user_uploads; fall back to common directories if empty."""
         exts = ('.jpg', '.jpeg', '.png', '.avif', '.webp', '.bmp', '.tiff', '.heif', '.heic')
         candidates = []
+        user_dir = PhotoRefresh.get_user_photo_dir()
+        if os.path.isdir(user_dir):
+            for f in os.listdir(user_dir):
+                if f.lower().endswith(exts) and not f.startswith('.'):
+                    candidates.append(os.path.join(user_dir, f))
+        if candidates:
+            return random.choice(candidates)
         for d in PhotoRefresh.PHOTO_DIRS:
             if os.path.isdir(d):
                 for root, _, files in os.walk(d):
@@ -350,7 +394,10 @@ class PhotoRefresh(RefreshAction):
 
     def execute(self, plugin, device_config, current_dt):
         """Pick a random photo, resize for display, or fall back to clock."""
-        path = self.find_random_photo()
+        if self.user_photos_only:
+            path = self.find_user_photo()
+        else:
+            path = self.find_random_photo()
         if path:
             img = Image.open(path)
             target = device_config.get_resolution()

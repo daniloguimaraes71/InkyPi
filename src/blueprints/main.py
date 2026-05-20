@@ -15,7 +15,7 @@ main_bp = Blueprint("main", __name__)
 _demo_thread = None
 _demo_stop = threading.Event()
 
-@main_bp.route('/')
+@main_bp.route('/dashboard')
 def main_page():
     device_config = current_app.config['DEVICE_CONFIG']
     return render_template('inky.html', config=device_config.get_config(), plugins=device_config.get_plugins())

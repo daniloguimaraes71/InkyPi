@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/main.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/user.css') }}">
+</head>
+<body>
+    <div class="frame user-dashboard">
+        <div class="user-header">
+            <h1 class="user-title">Settings</h1>
+            <nav class="user-nav">
+                <a href="{{ url_for('user.user_dashboard') }}" class="nav-link">Dashboard</a>
+                <a href="{{ url_for('user.user_photos') }}" class="nav-link">Photos</a>
+                <a href="{{ url_for('user.user_mode_select') }}" class="nav-link">Mode</a>
+            </nav>
+        </div>
+
+        <div class="settings-section">
+            <h2 class="section-title">Design Style</h2>
+            <p class="section-desc">Choose the visual style for your display cards.</p>
+            <div class="style-grid">
+                {% for style in design_styles %}
+                <div class="style-card" data-style="{{ style.name }}" onclick="selectStyle('{{ style.name }}')">
+                    <div class="style-preview">
+                        <div class="sp-swatch sp-bg" style="background:{{ style.colors.bg }};border-color:{{ style.colors.border }}">
+                            <div class="sp-line" style="background:{{ style.colors.divider }}"></div>
+                            <div class="sp-rect sp-rect-accent" style="background:{{ style.colors.accent }}"></div>
+                            <div class="sp-rect sp-rect-alt" style="background:{{ style.colors.accent_alt }}"></div>
+                            <div class="sp-text" style="color:{{ style.colors.text_primary }}">Aa</div>
+                            <div class="sp-text sm" style="color:{{ style.colors.text_secondary }}">abc</div>
+                            <div class="sp-rect sp-rect-sage" style="background:{{ style.colors.accent_sage }}"></div>
+                        </div>
+                    </div>
+                    <div class="style-info">
+                        <span class="style-label">{{ style.label }}</span>
+                        <span class="style-desc">{{ style.description }}</span>
+                    </div>
+                    <span class="style-check">&#x2713;</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h2 class="section-title">Calendar</h2>
+            <p class="section-desc">Add your Google Calendar URL so cards can show upcoming events.</p>
+            <div class="form-group">
+                <input type="text" id="calendarURL" class="form-input calendar-input"
+                       placeholder="https://calendar.google.com/calendar/ical/..."
+                       value="{{ calendar_url }}">
+            </div>
+            <p class="form-hint">Find this in Google Calendar settings &rarr; Integrate calendar &rarr; Public iCal URL.</p>
+        </div>
+
+        <div class="settings-actions">
+            <button onclick="saveSettings()" class="action-button">Save</button>
+            <span id="saveStatus" class="save-status"></span>
+        </div>
+    </div>
+
+    <script>
+        let selectedStyle = '{{ current_style }}';
+
+        function highlightStyle(name) {
+            document.querySelectorAll('.style-card').forEach(el => {
+                el.classList.toggle('style-active', el.dataset.style === name);
+            });
+        }
+
+        function selectStyle(name) {
+            selectedStyle = name;
+            highlightStyle(name);
+        }
+
+        highlightStyle(selectedStyle);
+
+        async function saveSettings() {
+            const btn = document.querySelector('.action-button');
+            const status = document.getElementById('saveStatus');
+            btn.disabled = true;
+            status.textContent = 'Saving...';
+            status.className = 'save-status';
+
+            try {
+                const r = await fetch('{{ url_for("user.save_user_settings") }}', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        design_style: selectedStyle,
+                        calendarURL: document.getElementById('calendarURL').value
+                    })
+                });
+                const data = await r.json();
+                if (data.success) {
+                    status.textContent = 'Saved!';
+                    status.className = 'save-status save-ok';
+                } else {
+                    status.textContent = 'Error: ' + (data.error || 'Unknown');
+                    status.className = 'save-status save-err';
+                }
+            } catch (e) {
+                status.textContent = 'Failed to save';
+                status.className = 'save-status save-err';
+            }
+
+            btn.disabled = false;
+            setTimeout(() => { status.className = 'save-status'; }, 3000);
+        }
+    </script>
+</body>
+</html>

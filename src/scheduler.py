@@ -36,6 +36,7 @@ class SchedulerEngine:
         self._last_interrupt_check = None
         self._last_interstitial_time = None
         self._mode_switch_time = None
+        self._forced_mode_name = None
 
     def is_enabled(self):
         return self.enabled and len(self.modes) > 0
@@ -65,6 +66,19 @@ class SchedulerEngine:
     # Main entry point
     # ------------------------------------------------------------------
 
+    def force_mode(self, mode_name):
+        """Force the scheduler to show a specific mode for one cycle."""
+        for mode in self.modes:
+            if mode.get("name") == mode_name:
+                self._forced_mode_name = mode_name
+                self._forced_mode_until = None
+                self._current_mode = mode_name
+                self._last_interstitial_time = None
+                logger.info("Force mode: %s", mode_name)
+                return True
+        logger.warning("Force mode: mode '%s' not found", mode_name)
+        return False
+
     def next_action(self, current_dt, playlist_manager, latest_refresh_info):
         """Determine the next display action. Returns (action | None, sleep_seconds)."""
         if self._interrupt_queue:
@@ -72,6 +86,14 @@ class SchedulerEngine:
 
         if not self.is_enabled():
             return None, self._get_default_sleep()
+
+        # Check forced mode
+        if self._forced_mode_name:
+            for mode in self.modes:
+                if mode.get("name") == self._forced_mode_name:
+                    self._forced_mode_name = None
+                    return self._resolve_mode_action(mode, current_dt, playlist_manager, latest_refresh_info)
+            self._forced_mode_name = None
 
         active_mode = self.get_active_mode(current_dt)
         if not active_mode:
@@ -288,10 +310,21 @@ class SchedulerEngine:
     # Status (for web UI)
     # ------------------------------------------------------------------
 
+    def _resolve_mode_action(self, mode, current_dt, playlist_manager, latest_refresh_info):
+        """Resolve a mode dict into a refresh action without switching mode tracking."""
+        interstitial_pool = mode.get("interstitial_pool", [])
+        if interstitial_pool:
+            return self._handle_interstitial_mode(mode, current_dt, latest_refresh_info)
+        plugin_id = mode.get("plugin_id")
+        if plugin_id:
+            return self._handle_plugin_mode(mode, current_dt, latest_refresh_info)
+        return self._handle_playlist_mode(mode, current_dt, playlist_manager, latest_refresh_info)
+
     def get_status(self):
         return {
             "enabled": self.is_enabled(),
             "current_mode": self._current_mode,
+            "forced_mode": self._forced_mode_name,
             "modes_count": len(self.modes),
             "interrupts_queued": len(self._interrupt_queue),
         }

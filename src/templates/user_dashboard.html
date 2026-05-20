@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ config.name }}</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/main.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/user.css') }}">
+</head>
+<body>
+    <div class="frame user-dashboard">
+        <div class="user-header">
+            <h1 class="user-title">{{ config.name }}</h1>
+            <nav class="user-nav">
+                <a href="{{ url_for('user.user_photos') }}" class="nav-link">Photos</a>
+                <a href="{{ url_for('user.user_mode_select') }}" class="nav-link">Mode</a>
+                <a href="{{ url_for('user.user_settings') }}" class="nav-link">Settings</a>
+            </nav>
+        </div>
+
+        <div class="dashboard-main">
+            <div class="dashboard-left">
+                <div class="clock-display" id="liveClock">--:--</div>
+                <div class="current-status" id="currentStatus">
+                    <span class="status-label">Now Showing</span>
+                    <span class="status-value" id="statusValue">---</span>
+                </div>
+                <div class="user-mode-badge" id="modeBadge">Scheduled</div>
+                <div class="image-container">
+                    <img id="currentImage" src="" alt="Current display">
+                </div>
+            </div>
+
+            <div class="dashboard-right">
+                <h2 class="schedule-title">Today's Schedule</h2>
+                <div class="schedule-list" id="scheduleList">
+                    <div class="schedule-loading">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="user-footer">
+            <span class="footer-time" id="footerTime"></span>
+        </div>
+    </div>
+
+    <script>
+        let currentModeName = null;
+
+        function updateClock() {
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('liveClock').textContent = h + ':' + m + ':' + s;
+        }
+
+        function updateModeBadge(userMode) {
+            const badge = document.getElementById('modeBadge');
+            const labels = {
+                'scheduled': 'Scheduled',
+                'clock_only': 'Clock Only',
+                'photos_only': 'Photos Only'
+            };
+            badge.textContent = labels[userMode] || userMode;
+            badge.className = 'user-mode-badge mode-' + (userMode || 'scheduled');
+        }
+
+        async function fetchStatus() {
+            try {
+                const r = await fetch('{{ url_for("user.user_status") }}');
+                const data = await r.json();
+                const modeName = data.current_mode || '---';
+                const displayName = modeName.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                document.getElementById('statusValue').textContent = displayName;
+                document.getElementById('footerTime').textContent = data.current_time || '';
+                currentModeName = data.current_mode;
+                updateModeBadge(data.user_display_mode);
+                renderSchedule(data.modes);
+            } catch (e) {
+                console.error('Status fetch error:', e);
+            }
+        }
+
+        function renderSchedule(modes) {
+            const el = document.getElementById('scheduleList');
+            if (!modes || modes.length === 0) {
+                el.innerHTML = '<div class="schedule-empty">No schedule for today</div>';
+                return;
+            }
+            let html = '';
+            for (const m of modes) {
+                const active = m.is_active ? ' mode-active' : '';
+                const icon = m.is_photo_mode ? '&#x1F5BC;' : '&#x1F4CB;';
+                html += '<div class="schedule-item' + active + '">';
+                html += '<span class="mode-icon">' + icon + '</span>';
+                html += '<div class="mode-info">';
+                html += '<span class="mode-name">' + m.display_name + '</span>';
+                html += '<span class="mode-time">' + m.start_time + ' &ndash; ' + m.end_time + '</span>';
+                html += '</div>';
+                if (active) {
+                    html += '<span class="mode-badge">NOW</span>';
+                }
+                html += '</div>';
+            }
+            el.innerHTML = html;
+        }
+
+        function refreshImage() {
+            const img = document.getElementById('currentImage');
+            if (!img) return;
+            const ts = Date.now();
+            img.src = '{{ url_for("main.get_current_image") }}?t=' + ts;
+        }
+
+        updateClock();
+        setInterval(updateClock, 1000);
+        fetchStatus();
+        setInterval(fetchStatus, 10000);
+        refreshImage();
+        setInterval(refreshImage, 5000);
+    </script>
+</body>
+</html>

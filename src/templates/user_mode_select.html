@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Display Mode</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/main.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/user.css') }}">
+</head>
+<body>
+    <div class="frame user-dashboard">
+        <div class="user-header">
+            <h1 class="user-title">Display Mode</h1>
+            <nav class="user-nav">
+                <a href="{{ url_for('user.user_dashboard') }}" class="nav-link">Dashboard</a>
+                <a href="{{ url_for('user.user_photos') }}" class="nav-link">Photos</a>
+                <a href="{{ url_for('user.user_settings') }}" class="nav-link">Settings</a>
+            </nav>
+        </div>
+
+        <p class="mode-desc">Choose what the display shows:</p>
+
+        <div class="mode-cards">
+            <div class="mode-card" data-mode="scheduled" onclick="setMode('scheduled')">
+                <div class="mode-card-icon">&#x1F4CB;</div>
+                <div class="mode-card-label">Scheduled</div>
+                <div class="mode-card-desc">Follow the daily schedule &mdash; cards, photos, and time-based content</div>
+                <span class="mode-card-check">&#x2713;</span>
+            </div>
+
+            <div class="mode-card" data-mode="clock_only" onclick="setMode('clock_only')">
+                <div class="mode-card-icon">&#x1F553;</div>
+                <div class="mode-card-label">Clock Only</div>
+                <div class="mode-card-desc">Show only the clock display</div>
+                <span class="mode-card-check">&#x2713;</span>
+            </div>
+
+            <div class="mode-card" data-mode="photos_only" onclick="setMode('photos_only')">
+                <div class="mode-card-icon">&#x1F5BC;</div>
+                <div class="mode-card-label">Photos Only</div>
+                <div class="mode-card-desc">Show only your uploaded photos, rotating every 5 minutes</div>
+                <span class="mode-card-check">&#x2713;</span>
+            </div>
+
+            <div class="mode-card mode-card-calendar" data-mode-group="calendar">
+                <div class="mode-card-icon">&#x1F4C5;</div>
+                <div class="mode-card-label">Calendar</div>
+                <div class="mode-card-desc">Show your calendar in different views</div>
+                <div class="cal-sub-options" id="calSubOptions">
+                    <span class="cal-pill" data-sub="calendar_month" onclick="event.stopPropagation();setMode('calendar_month')">Month</span>
+                    <span class="cal-pill" data-sub="calendar_week" onclick="event.stopPropagation();setMode('calendar_week')">Week</span>
+                    <span class="cal-pill" data-sub="calendar_day" onclick="event.stopPropagation();setMode('calendar_day')">Day</span>
+                </div>
+                <span class="mode-card-check">&#x2713;</span>
+            </div>
+        </div>
+
+        <div id="modeStatus" class="mode-status"></div>
+    </div>
+
+    <script>
+        const calendarModes = ['calendar_month', 'calendar_week', 'calendar_day'];
+        let currentMode = '{{ current_mode }}';
+
+        function highlightMode(mode) {
+            document.querySelectorAll('.mode-card').forEach(el => {
+                const isCalGroup = el.dataset.modeGroup === 'calendar';
+                const isCalMode = isCalGroup && calendarModes.includes(mode);
+                el.classList.toggle('mode-card-active', el.dataset.mode === mode || isCalMode);
+            });
+            document.querySelectorAll('.cal-pill').forEach(pill => {
+                pill.classList.toggle('cal-pill-active', pill.dataset.sub === mode);
+            });
+        }
+
+        highlightMode(currentMode);
+
+        async function setMode(mode) {
+            try {
+                const r = await fetch('{{ url_for("user.set_display_mode") }}', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({mode: mode})
+                });
+                const data = await r.json();
+                if (data.success) {
+                    currentMode = mode;
+                    highlightMode(mode);
+                    const status = document.getElementById('modeStatus');
+                    const label = mode.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                    status.textContent = 'Switched to ' + label + ' mode';
+                    status.className = 'mode-status mode-success';
+                    setTimeout(() => status.className = 'mode-status', 3000);
+                } else {
+                    alert('Error: ' + (data.error || 'Unknown'));
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Failed to set mode');
+            }
+        }
+    </script>
+</body>
+</html>

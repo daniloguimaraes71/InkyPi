@@ -49,17 +49,17 @@
         "active_playlist": "Default"
     },
     "refresh_info": {
-        "refresh_time": "2026-05-18T14:36:42.518953+09:00",
-        "image_hash": "66dd0f4a66bfc97316a3404f8396cf04a6db43870d524e734acbd6c825695b1d",
-        "refresh_type": "Manual Update",
-        "plugin_id": "painting"
+        "refresh_time": "2026-05-18T17:29:07.137202+09:00",
+        "image_hash": "cef59b6b38813deb2897d454d41484c92f29e9e2529312e75b8b7d8bdcac43e1",
+        "refresh_type": "Photo",
+        "plugin_id": "photo"
     },
     "inverted_image": null,
     "log_system_stats": null,
     "timezone": "Japan",
     "time_format": "12h",
     "plugin_cycle_interval_seconds": 3600,
-    "design_style": "zen",
+    "design_style": "ima",
     "image_settings": {
         "saturation": 1.0,
         "brightness": 1.0,
@@ -435,5 +435,6 @@
             }
         }
     },
-    "calendarURL": "https://calendar.google.com/calendar/ical/daniloguimaraes71%40gmail.com/private-de8f46faecf5cc6ad107e2515c51dad7/basic.ics"
+    "calendarURL": "https://calendar.google.com/calendar/ical/daniloguimaraes71%40gmail.com/private-de8f46faecf5cc6ad107e2515c51dad7/basic.ics",
+    "user_display_mode": "scheduled"
 }

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photos</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/main.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/user.css') }}">
+</head>
+<body>
+    <div class="frame user-dashboard">
+        <div class="user-header">
+            <h1 class="user-title">Photos</h1>
+            <nav class="user-nav">
+                <a href="{{ url_for('user.user_dashboard') }}" class="nav-link">Dashboard</a>
+                <a href="{{ url_for('user.user_settings') }}" class="nav-link">Settings</a>
+            </nav>
+        </div>
+
+        <div class="photos-toolbar">
+            <label class="upload-btn">
+                + Upload Photos
+                <input type="file" id="photoUpload" accept="image/*" multiple class="hidden-input" onchange="uploadPhotos(this)">
+            </label>
+            <div id="uploadProgress" class="upload-progress hidden">Uploading...</div>
+        </div>
+
+        <div class="photo-grid" id="photoGrid">
+            <div class="photo-loading">Loading photos...</div>
+        </div>
+    </div>
+
+    <div class="modal" id="previewModal">
+        <div class="modal-overlay" onclick="closePreview()"></div>
+        <div class="modal-content preview-content">
+            <button class="modal-close" onclick="closePreview()">&times;</button>
+            <img id="previewImage" src="" alt="Preview">
+        </div>
+    </div>
+
+    <script>
+        async function loadPhotos() {
+            const grid = document.getElementById('photoGrid');
+            try {
+                const r = await fetch('{{ url_for("user.list_photos") }}');
+                const photos = await r.json();
+                if (photos.length === 0) {
+                    grid.innerHTML = '<div class="photo-empty">No photos yet. Upload some above!</div>';
+                    return;
+                }
+                let html = '';
+                for (const p of photos) {
+                    html += '<div class="photo-card">';
+                    html += '<img src="' + p.url + '" alt="' + p.filename + '" onclick="openPreview(\'' + p.url + '\')">';
+                    html += '<div class="photo-actions">';
+                    html += '<button class="photo-delete" onclick="deletePhoto(\'' + p.filename + '\')" title="Delete">&times;</button>';
+                    html += '</div>';
+                    html += '</div>';
+                }
+                grid.innerHTML = html;
+            } catch (e) {
+                grid.innerHTML = '<div class="photo-error">Failed to load photos</div>';
+                console.error(e);
+            }
+        }
+
+        async function uploadPhotos(input) {
+            const files = input.files;
+            if (!files || files.length === 0) return;
+
+            const progress = document.getElementById('uploadProgress');
+            progress.classList.remove('hidden');
+            progress.textContent = 'Uploading ' + files.length + ' photo(s)...';
+
+            const formData = new FormData();
+            for (const f of files) {
+                formData.append('photos', f);
+            }
+
+            try {
+                const r = await fetch('{{ url_for("user.upload_photos") }}', {
+                    method: 'POST',
+                    body: formData,
+                });
+                const data = await r.json();
+                progress.textContent = 'Uploaded ' + (data.uploaded || []).length + ' photo(s)';
+                setTimeout(() => progress.classList.add('hidden'), 2000);
+                loadPhotos();
+            } catch (e) {
+                progress.textContent = 'Upload failed';
+                console.error(e);
+            }
+
+            input.value = '';
+        }
+
+        async function deletePhoto(filename) {
+            if (!confirm('Delete ' + filename + '?')) return;
+            try {
+                const r = await fetch('{{ url_for("user.delete_photo", filename="__FILENAME__") }}'.replace('__FILENAME__', encodeURIComponent(filename)), {
+                    method: 'DELETE',
+                });
+                const data = await r.json();
+                if (data.success) {
+                    loadPhotos();
+                } else {
+                    alert('Error: ' + (data.error || 'Unknown'));
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Delete failed');
+            }
+        }
+
+        function openPreview(url) {
+            document.getElementById('previewImage').src = url;
+            document.getElementById('previewModal').style.display = 'flex';
+        }
+
+        function closePreview() {
+            document.getElementById('previewModal').style.display = 'none';
+        }
+
+        loadPhotos();
+    </script>
+</body>
+</html>
