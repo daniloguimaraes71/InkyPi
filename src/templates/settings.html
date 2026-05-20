@@ -220,6 +220,16 @@
                         </label>
                     </div>
                 </div>
+                <div class="form-group">
+                    <label for="photosInterval">Photo Refresh Interval:</label>
+                    <span title="How often to switch photos in photos-only or photo resting modes.">ⓘ</span>
+                    <span>Every</span>
+                    <input type="number" id="photosInterval" name="photosInterval" class="form-input" required min="1" value="{{ device_settings.get('photos_interval_seconds', 300) // 60 }}">
+                    <select id="photosIntervalUnit" name="photosIntervalUnit" class="form-input" required>
+                        <option value="minute" selected>Minute</option>
+                        <option value="hour">Hour</option>
+                    </select>
+                </div>
 
                 <div class="collapsible">
                     <button type="button" class="collapsible-header" onclick="toggleCollapsible(this)">

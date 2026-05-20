@@ -53,6 +53,11 @@ def save_settings():
         if plugin_cycle_interval_seconds > 86400 or plugin_cycle_interval_seconds <= 0:
             return jsonify({"error": "Plugin cycle interval must be less than 24 hours"}), 400
 
+        photos_interval_raw = form_data.get("photosInterval")
+        photos_interval_seconds = 300
+        if photos_interval_raw and photos_interval_raw.isnumeric():
+            photos_interval_seconds = calculate_seconds(int(photos_interval_raw), form_data.get("photosIntervalUnit", "minute"))
+
         settings = {
             "name": form_data.get("deviceName"),
             "orientation": form_data.get("orientation"),
@@ -61,6 +66,7 @@ def save_settings():
             "timezone": form_data.get("timezoneName"),
             "time_format": form_data.get("timeFormat"),
             "plugin_cycle_interval_seconds": plugin_cycle_interval_seconds,
+            "photos_interval_seconds": photos_interval_seconds,
             "design_style": form_data.get("designStyle", "wa"),
             "calendarURL": form_data.get("calendarURL", ""),
             "image_settings": {

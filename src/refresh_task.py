@@ -113,7 +113,7 @@ class RefreshTask:
                         elif user_mode == "photos_only":
                             logger.info("User mode: photos_only")
                             refresh_action = PhotoRefresh(user_photos_only=True)
-                            self._scheduler_sleep_time = 300
+                            self._scheduler_sleep_time = self.device_config.get_config("photos_interval_seconds", default=300)
                         elif user_mode in ("calendar_month", "calendar_week", "calendar_day"):
                             logger.info("User mode: %s", user_mode)
                             view_map = {
