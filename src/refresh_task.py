@@ -393,18 +393,45 @@ class PhotoRefresh(RefreshAction):
         return random.choice(candidates)
 
     def execute(self, plugin, device_config, current_dt):
-        """Pick a random photo, resize for display, or fall back to clock."""
+        """Pick a random photo, display with blur background, or fall back to clock."""
         if self.user_photos_only:
             path = self.find_user_photo()
         else:
             path = self.find_random_photo()
         if path:
-            img = Image.open(path)
-            target = device_config.get_resolution()
+            img = Image.open(path).convert("RGB")
+            target = list(device_config.get_resolution())
             if device_config.get_config("orientation") == "vertical":
                 target = target[::-1]
-            img = img.resize(target, Image.Resampling.LANCZOS)
-            return img.convert("RGB")
+
+            # Create blurred background
+            small = img.resize((64, 48), Image.Resampling.LANCZOS)
+            bg = small.resize(target, Image.Resampling.LANCZOS)
+
+            # Fit image preserving aspect ratio, centered on background
+            img_ratio = img.width / img.height
+            target_ratio = target[0] / target[1]
+            if img_ratio > target_ratio:
+                new_w = target[0]
+                new_h = int(new_w / img_ratio)
+            else:
+                new_h = target[1]
+                new_w = int(new_h * img_ratio)
+            resized = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+            x = (target[0] - new_w) // 2
+            y = (target[1] - new_h) // 2
+            bg.paste(resized, (x, y))
+            return bg
+
+        # Fallback: clock
+        from plugins.plugin_registry import get_plugin_instance
+        plugin_config = device_config.get_plugin("clock")
+        if plugin_config:
+            clock = get_plugin_instance(plugin_config)
+            return clock.generate_image({}, device_config)
+        # Ultimate fallback: blank
+        w, h = device_config.get_resolution()
+        return Image.new('RGB', (w, h), 'white')
         # Fallback: clock
         from plugins.plugin_registry import get_plugin_instance
         plugin_config = device_config.get_plugin("clock")

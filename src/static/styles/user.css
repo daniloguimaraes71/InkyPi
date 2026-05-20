@@ -297,12 +297,16 @@
     position: absolute;
     top: 4px;
     right: 4px;
-    opacity: 0;
     transition: opacity 0.2s;
 }
 
-.photo-card:hover .photo-actions {
-    opacity: 1;
+@media (hover: hover) {
+    .photo-actions {
+        opacity: 0;
+    }
+    .photo-card:hover .photo-actions {
+        opacity: 1;
+    }
 }
 
 .photo-delete {

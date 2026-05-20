@@ -8,7 +8,6 @@ import requests
 import json
 import random
 from datetime import datetime
-from bs4 import BeautifulSoup
 from utils.http_client import get_http_session
 
 logger = logging.getLogger(__name__)
