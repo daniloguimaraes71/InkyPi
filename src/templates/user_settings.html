@@ -45,6 +45,19 @@
         </div>
 
         <div class="settings-section">
+            <h2 class="section-title">Photos</h2>
+            <p class="section-desc">How often to switch photos in photos-only or photo resting modes.</p>
+            <div class="form-group">
+                <span>Every</span>
+                <input type="number" id="photosInterval" class="form-input" style="width:80px" min="1" value="{{ photos_interval // 60 }}">
+                <select id="photosIntervalUnit" class="form-input" style="width:auto">
+                    <option value="minute" selected>Minute</option>
+                    <option value="hour">Hour</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="settings-section">
             <h2 class="section-title">Calendar</h2>
             <p class="section-desc">Add your Google Calendar URL so cards can show upcoming events.</p>
             <div class="form-group">
@@ -85,12 +98,16 @@
             status.className = 'save-status';
 
             try {
+                const pi = document.getElementById('photosInterval');
+                const piu = document.getElementById('photosIntervalUnit');
+                const photosSeconds = parseInt(pi.value) * (piu.value === 'hour' ? 3600 : 60);
                 const r = await fetch('{{ url_for("user.save_user_settings") }}', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
                         design_style: selectedStyle,
-                        calendarURL: document.getElementById('calendarURL').value
+                        calendarURL: document.getElementById('calendarURL').value,
+                        photos_interval_seconds: photosSeconds
                     })
                 });
                 const data = await r.json();

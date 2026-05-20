@@ -48,6 +48,7 @@ def user_settings():
     device_config = current_app.config['DEVICE_CONFIG']
     current_style = device_config.get_config("design_style", default="wa")
     calendar_url = device_config.get_config("calendarURL", default="")
+    photos_interval = device_config.get_config("photos_interval_seconds", default=300)
     styles = []
     for v in VARIANTS.values():
         styles.append({
@@ -56,7 +57,7 @@ def user_settings():
             "description": v.description,
             "colors": v.colors,
         })
-    return render_template('user_settings.html', design_styles=styles, current_style=current_style, calendar_url=calendar_url)
+    return render_template('user_settings.html', design_styles=styles, current_style=current_style, calendar_url=calendar_url, photos_interval=photos_interval)
 
 
 @user_bp.route('/api/user/settings', methods=['POST'])
@@ -75,6 +76,13 @@ def save_user_settings():
 
     if "calendarURL" in data:
         device_config.update_value("calendarURL", data["calendarURL"], write=True)
+
+    if "photos_interval_seconds" in data:
+        device_config.update_value("photos_interval_seconds", data["photos_interval_seconds"], write=True)
+
+    refresh_task = current_app.config.get('REFRESH_TASK')
+    if refresh_task:
+        refresh_task.signal_config_change()
 
     return jsonify({"success": True})
 
