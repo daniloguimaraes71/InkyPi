@@ -120,23 +120,23 @@ class WaveshareDisplay(AbstractDisplay):
         if not image:
             raise ValueError(f"No image provided.")
 
-        # Assume device was in sleep mode.
+        try:
+            self._display_image(image)
+        except OSError:
+            logger.warning("SPI error on display, reinitializing and retrying...")
+            self.initialize_display()
+            self._display_image(image)
+
+    def _display_image(self, image):
         self.epd_display_init()
-
-        # Clear residual pixels before updating the image.
         self.epd_display.Clear()
-
-        # Display the image on the WS display.
         if not self.bi_color_display:
             self.epd_display.display(self.epd_display.getbuffer(image))
         else:
             black_layer, red_layer = split_image_for_bi_color_epd(image)
-
             self.epd_display.display(
                 self.epd_display.getbuffer(black_layer),
                 self.epd_display.getbuffer(red_layer),
             )
-
-        # Put device into low power mode (EPD displays maintain image when powered off)
         logger.info("Putting Waveshare display into sleep mode for power saving.")
         self.epd_display.sleep()
