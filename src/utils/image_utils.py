@@ -193,16 +193,16 @@ def _take_screenshot_cli(target, dimensions, timeout_ms=None):
         command = [
             browser,
             target,
-            "--headless=new",
+            "--headless",
             f"--screenshot={img_file_path}",
             f"--window-size={dimensions[0]},{dimensions[1]}",
             "--disable-dev-shm-usage",
             "--disable-gpu",
             "--no-sandbox",
+            "--single-process",
             "--disable-gpu-compositing",
             "--force-device-scale-factor=1",
             "--disable-features=PaintHolding,VizDisplayCompositor",
-            "--virtual-time-budget=5000"
         ]
         result = subprocess.run(command, capture_output=True, timeout=30)
 
