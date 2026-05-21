@@ -112,7 +112,7 @@ def take_screenshot_html(html_str, dimensions, timeout_ms=None):
 
 def _find_chromium_binary():
     """Find the first available Chromium-based binary in system PATH."""
-    candidates = ["chromium-headless-shell", "chromium", "google-chrome", "google-chrome-stable", "chrome"]
+    candidates = ["chromium-headless-shell", "chromium", "chromium-browser", "google-chrome", "google-chrome-stable", "chrome"]
     for candidate in candidates:
         path = shutil.which(candidate)
         if path:
@@ -200,11 +200,12 @@ def _take_screenshot_cli(target, dimensions, timeout_ms=None):
             "--disable-gpu",
             "--no-sandbox",
             "--single-process",
+            "--no-zygote",
             "--disable-gpu-compositing",
             "--force-device-scale-factor=1",
             "--disable-features=PaintHolding,VizDisplayCompositor",
         ]
-        result = subprocess.run(command, capture_output=True, timeout=30)
+        result = subprocess.run(command, capture_output=True, timeout=60)
 
         if result.returncode != 0 or not os.path.exists(img_file_path):
             logger.error(f"Failed to take screenshot (return code: {result.returncode})")

@@ -134,7 +134,13 @@ class Weather(BasePlugin):
             last_refresh_time = now.strftime("%Y-%m-%d %I:%M %p")
         template_params["last_refresh_time"] = last_refresh_time
 
-        image = self._render_pil(dimensions, template_params, device_config)
+        # Try Chrome rendering first
+        image = self.render_image(dimensions, "weather.html", "weather.css", template_params)
+
+        # Fall back to PIL if Chrome is not available (e.g., on Pi)
+        if not image:
+            logger.warning("Chrome screenshot failed, falling back to PIL rendering")
+            image = self._render_pil(dimensions, template_params, device_config)
         return image
 
     def _render_pil(self, dimensions, tp, device_config):
