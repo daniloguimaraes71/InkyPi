@@ -1,3 +1,4 @@
+from __future__ import annotations
 import requests
 from PIL import Image, ImageEnhance, ImageOps, ImageFilter
 from io import BytesIO
@@ -108,7 +109,7 @@ def take_screenshot_html(html_str, dimensions, timeout_ms=None):
 
 def _find_chromium_binary():
     """Find the first available Chromium-based binary in system PATH."""
-    candidates = ["chromium-headless-shell", "chromium", "chrome"]
+    candidates = ["chromium-headless-shell", "chromium", "google-chrome", "google-chrome-stable", "chrome"]
     for candidate in candidates:
         path = shutil.which(candidate)
         if path:
