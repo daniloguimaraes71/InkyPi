@@ -591,6 +591,63 @@
     min-width: 140px;
 }
 
+/* Collapsible Daily Schedule */
+.us-collapse-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--collapsible-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+    transition: background 0.2s;
+    text-align: left;
+}
+.us-collapse-header:hover {
+    background: var(--button-hover);
+}
+.us-collapse-arrow {
+    font-size: 0.8rem;
+    transition: transform 0.25s;
+}
+.us-collapse-arrow.open {
+    transform: rotate(0deg);
+}
+.us-collapse-arrow:not(.open) {
+    transform: rotate(-90deg);
+}
+.us-collapse-body {
+    overflow: hidden;
+    max-height: 2000px;
+    transition: max-height 0.3s ease;
+}
+.us-collapse-body.collapsed {
+    max-height: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+}
+.us-add-mode-btn {
+    margin-top: 8px;
+    padding: 6px 14px;
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--button-bg);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    transition: background 0.2s;
+}
+.us-add-mode-btn:hover {
+    background: var(--button-hover);
+}
+
 /* ============================================================
    User Settings
    ============================================================ */
@@ -754,7 +811,123 @@
 }
 
 /* Responsive */
-@media (max-aspect-ratio: 3/4) {
+@media (max-width: 700px) {
+    .frame {
+        padding: 12px;
+        width: 98%;
+    }
+    .section-title {
+        font-size: 1rem;
+    }
+    .section-desc {
+        font-size: 0.8rem;
+    }
+    .calendar-input {
+        font-size: 0.85rem;
+    }
+    .settings-section {
+        margin-bottom: 20px;
+    }
+    .settings-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .action-button {
+        font-size: 1rem;
+        padding: 12px;
+    }
+    .user-header {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+    .user-title {
+        text-align: center;
+    }
+    .user-nav {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    .nav-link {
+        font-size: 0.8rem;
+        padding: 5px 10px;
+    }
+    .dashboard-left {
+        width: 100%;
+    }
+    .dashboard-right {
+        width: 100%;
+    }
+    .user-dashboard .image-container {
+        width: 100%;
+    }
+    .user-dashboard .image-container img {
+        max-width: 100%;
+    }
+    .clock-display {
+        font-size: 2rem;
+    }
+    .style-grid {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    }
+    .us-mode-row {
+        padding: 8px;
+    }
+    .us-mode-header input {
+        width: auto;
+        flex: 1;
+    }
+    .us-mode-days {
+        gap: 1px 8px;
+    }
+    .us-mode-days label {
+        font-size: 11px;
+    }
+    .us-mode-times {
+        flex-direction: column;
+        gap: 4px;
+    }
+    .us-mode-times label {
+        width: 100%;
+    }
+    .us-mode-times input[type="time"],
+    .us-mode-times input[type="number"] {
+        flex: 1;
+    }
+    .us-mode-type {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .photos-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .photo-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    }
+    .mode-card {
+        padding: 14px;
+    }
+    .mode-card-icon {
+        font-size: 1.6rem;
+    }
+    .mode-card-label {
+        font-size: 1rem;
+    }
+    .mode-card-desc {
+        font-size: 0.8rem;
+    }
+    .cal-sub-options {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    .cal-pill {
+        font-size: 0.75rem;
+        padding: 4px 10px;
+    }
+}
+
+@media (max-aspect-ratio: 3/4) and (min-width: 701px) {
     .dashboard-main {
         flex-direction: column;
         align-items: center;
