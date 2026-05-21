@@ -8,6 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 pandoc "$SCRIPT_DIR/manual.md" -o "$SCRIPT_DIR/manual.pdf" \
   --pdf-engine=weasyprint \
   --css="$SCRIPT_DIR/print.css" \
+  --metadata title="InkyPi 取扱説明書" \
   -V mainfont='Noto Sans CJK JP' \
   -V fontsize=7.5pt
 
