@@ -86,6 +86,24 @@ def save_user_settings():
         scheduler_cfg["modes"] = data["scheduler_modes"]
         device_config.update_value("scheduler", scheduler_cfg, write=True)
 
+    # Interrupt toggles from user settings
+    if "calendar_interrupts_enabled" in data:
+        scheduler_cfg = device_config.get_config("scheduler", default={})
+        cal = scheduler_cfg.setdefault("interrupts", {}).setdefault("calendar", {})
+        cal["enabled"] = bool(data["calendar_interrupts_enabled"])
+        # Auto-populate URL from main calendarURL if empty
+        if not cal.get("urls"):
+            main_url = data.get("calendarURL") or device_config.get_config("calendarURL", default="")
+            if main_url:
+                cal["urls"] = [main_url]
+        device_config.update_value("scheduler", scheduler_cfg, write=True)
+
+    if "weather_alerts_enabled" in data:
+        scheduler_cfg = device_config.get_config("scheduler", default={})
+        wx = scheduler_cfg.setdefault("interrupts", {}).setdefault("weather_alerts", {})
+        wx["enabled"] = bool(data["weather_alerts_enabled"])
+        device_config.update_value("scheduler", scheduler_cfg, write=True)
+
     refresh_task = current_app.config.get('REFRESH_TASK')
     if refresh_task:
         refresh_task.signal_config_change()

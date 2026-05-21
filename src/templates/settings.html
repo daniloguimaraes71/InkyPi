@@ -528,15 +528,15 @@
                     <div class="form-group">
                         <label class="form-label">Calendar Interrupts:</label>
                         <select name="calendar_interrupts_enabled" class="form-input">
-                            <option value="false" {% if not device_settings.get('scheduler', {}).get('interrupts', {}).get('calendar', {}).get('enabled', false) %}selected{% endif %}>Disabled</option>
-                            <option value="true" {% if device_settings.get('scheduler', {}).get('interrupts', {}).get('calendar', {}).get('enabled', false) %}selected{% endif %}>Enabled</option>
+                            <option value="false" {% if device_settings.get('scheduler', {}).get('interrupts', {}).get('calendar', {}).get('enabled') == false %}selected{% endif %}>Disabled</option>
+                            <option value="true" {% if device_settings.get('scheduler', {}).get('interrupts', {}).get('calendar', {}).get('enabled') != false %}selected{% endif %}>Enabled</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Weather Alerts:</label>
                         <select name="weather_alerts_enabled" class="form-input">
-                            <option value="false" {% if not device_settings.get('scheduler', {}).get('interrupts', {}).get('weather_alerts', {}).get('enabled', false) %}selected{% endif %}>Disabled</option>
-                            <option value="true" {% if device_settings.get('scheduler', {}).get('interrupts', {}).get('weather_alerts', {}).get('enabled', false) %}selected{% endif %}>Enabled</option>
+                            <option value="false" {% if device_settings.get('scheduler', {}).get('interrupts', {}).get('weather_alerts', {}).get('enabled') == false %}selected{% endif %}>Disabled</option>
+                            <option value="true" {% if device_settings.get('scheduler', {}).get('interrupts', {}).get('weather_alerts', {}).get('enabled') != false %}selected{% endif %}>Enabled</option>
                         </select>
                     </div>
                     <div class="form-group">

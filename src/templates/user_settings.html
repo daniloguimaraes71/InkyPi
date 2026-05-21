@@ -76,6 +76,18 @@
             <p class="section-desc">Customize what shows on your display throughout the day. Each time slot can show a specific card or photos with occasional info cards.</p>
             <div id="user-scheduler-modes" class="us-collapse-body collapsed">
                 {% set scheduler_config = scheduler_config or {} %}
+                {% set cal_int_enabled = scheduler_config.get('interrupts', {}).get('calendar', {}).get('enabled') %}
+                {% set wx_int_enabled = scheduler_config.get('interrupts', {}).get('weather_alerts', {}).get('enabled') %}
+                <div class="us-int-row">
+                    <label class="us-int-label">
+                        <input type="checkbox" id="calInterrupts" {% if cal_int_enabled != false %}checked{% endif %}>
+                        Calendar event notifications
+                    </label>
+                    <label class="us-int-label">
+                        <input type="checkbox" id="wxInterrupts" {% if wx_int_enabled != false %}checked{% endif %}>
+                        Weather alert notifications
+                    </label>
+                </div>
                 {% for mode in scheduler_config.get('modes', []) %}
                 <div class="us-mode-row" data-index="{{ loop.index0 }}">
                     <div class="us-mode-header">
@@ -259,7 +271,9 @@
                         design_style: selectedStyle,
                         calendarURL: document.getElementById('calendarURL').value,
                         photos_interval_seconds: photosSeconds,
-                        scheduler_modes: modes
+                        scheduler_modes: modes,
+                        calendar_interrupts_enabled: document.getElementById('calInterrupts').checked,
+                        weather_alerts_enabled: document.getElementById('wxInterrupts').checked
                     })
                 });
                 const data = await r.json();

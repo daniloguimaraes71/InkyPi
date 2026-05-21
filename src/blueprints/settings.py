@@ -99,13 +99,20 @@ def save_settings():
         else:
             scheduler_modes = device_config.get_config("scheduler", {}).get("modes", [])
 
+        # Auto-populate calendar interrupt URLs from main calendarURL if empty
+        cal_urls = device_config.get_config("scheduler", {}).get("interrupts", {}).get("calendar", {}).get("urls", [])
+        if not cal_urls:
+            main_cal_url = settings.get("calendarURL", "")
+            if main_cal_url:
+                cal_urls = [main_cal_url]
+
         settings["scheduler"] = {
             "enabled": scheduler_enabled,
             "modes": scheduler_modes,
             "interrupts": {
                 "calendar": {
                     "enabled": calendar_interrupts,
-                    "urls": device_config.get_config("scheduler", {}).get("interrupts", {}).get("calendar", {}).get("urls", []),
+                    "urls": cal_urls,
                     "threshold_minutes": 15,
                     "check_interval_seconds": 300
                 },

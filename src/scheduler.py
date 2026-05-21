@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_PHOTO_DWELL = 300            # 5 minutes per photo
 DEFAULT_CARD_DWELL = 300             # 5 minutes per info card
 DEFAULT_INTERSTITIAL_INTERVAL = 1800  # 30 min between random cards
-DEFAULT_INTERSTITIAL_DWELL = 120      # 2 min showing random card
+DEFAULT_INTERSTITIAL_DWELL = 600      # 10 min showing random card
 DEFAULT_INTERRUPT_CHECK = 300         # Check interrupts every 5 min
 
 ALL_DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
@@ -229,7 +229,7 @@ class SchedulerEngine:
                 return
 
             resp = requests.get(
-                f"https://api.openweathermap.org/data/2.5/alerts?lat={lat}&lon={lon}&appid={api_key}",
+                f"https://api.openweathermap.org/data/2.5/onecall?lat={lat}&lon={lon}&appid={api_key}",
                 timeout=10,
             )
             if resp.status_code == 200:
