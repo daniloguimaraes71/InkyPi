@@ -149,16 +149,17 @@ class Weather(BasePlugin):
         img = Image.new("RGB", (W, H), C["bg"])
         d = ImageDraw.Draw(img)
 
-        f_title = get_font(v.heading_font, int(H * 0.055)) or ImageFont.load_default()
-        f_date = get_font(v.body_font, int(H * 0.028)) or ImageFont.load_default()
-        f_temp_val = get_font(v.heading_font, int(H * 0.10)) or ImageFont.load_default()
-        f_temp_unit = get_font(v.heading_font, int(H * 0.045)) or ImageFont.load_default()
-        f_feels = get_font(v.body_font, int(H * 0.024)) or ImageFont.load_default()
-        f_minmax = get_font(v.body_font, int(H * 0.026)) or ImageFont.load_default()
-        f_dp_val = get_font(v.body_font, int(H * 0.028)) or ImageFont.load_default()
-        f_dp_label = get_font(v.body_font, int(H * 0.020)) or ImageFont.load_default()
-        f_fday = get_font(v.body_font, int(H * 0.026)) or ImageFont.load_default()
-        f_ftemp = get_font(v.body_font, int(H * 0.022)) or ImageFont.load_default()
+        # ---- fonts ----
+        f_title = get_font(v.heading_font, int(H * 0.06)) or ImageFont.load_default()
+        f_date = get_font(v.body_font, int(H * 0.03)) or ImageFont.load_default()
+        f_temp_val = get_font(v.heading_font, int(H * 0.12)) or ImageFont.load_default()
+        f_temp_unit = get_font(v.heading_font, int(H * 0.05)) or ImageFont.load_default()
+        f_feels = get_font(v.body_font, int(H * 0.028)) or ImageFont.load_default()
+        f_minmax = get_font(v.body_font, int(H * 0.03)) or ImageFont.load_default()
+        f_dp_val = get_font(v.body_font, int(H * 0.032)) or ImageFont.load_default()
+        f_dp_label = get_font(v.body_font, int(H * 0.022)) or ImageFont.load_default()
+        f_fday = get_font(v.body_font, int(H * 0.028)) or ImageFont.load_default()
+        f_ftemp = get_font(v.body_font, int(H * 0.024)) or ImageFont.load_default()
 
         title = str(tp.get("title", "Weather"))
         date_str = str(tp.get("current_date", ""))
@@ -168,19 +169,20 @@ class Weather(BasePlugin):
         forecast = tp.get("forecast", [])
         dps = tp.get("data_points", [])
 
-        # ---- top bar ----
-        bar_h = int(H * 0.10)
-        d.rectangle([(0, 0), (W, bar_h)], fill=C["bg_alt"])
-        d.line([(0, bar_h), (W, bar_h)], fill=C["divider"], width=2)
+        # ---- header (y=0-60) ----
+        header_h = int(H * 0.12)
+        d.rectangle([(0, 0), (W, header_h)], fill=C["bg_alt"])
         tw = d.textlength(title, font=f_title)
-        d.text(((W - tw) // 2, int(H * 0.025)), title, font=f_title, fill=C["text_primary"])
+        d.text(((W - tw) // 2, int(H * 0.03)), title, font=f_title, fill=C["text_primary"])
         dw = d.textlength(date_str, font=f_date)
-        d.text(((W - dw) // 2, int(H * 0.065)), date_str, font=f_date, fill=C["text_secondary"])
+        d.text(((W - dw) // 2, int(H * 0.075)), date_str, font=f_date, fill=C["text_secondary"])
+        # subtle divider
+        d.line([(int(W * 0.1), header_h), (int(W * 0.9), header_h)], fill=C["divider"], width=1)
 
-        # ---- main area ----
-        main_y = int(H * 0.14)
-        left_x = int(W * 0.05)
-        right_x = int(W * 0.48)
+        # ---- main area (y=60-230) ----
+        main_y = int(H * 0.15)
+        left_x = int(W * 0.06)
+        right_x = int(W * 0.50)
 
         # ---- weather icon ----
         icon_path = tp.get("current_day_icon", "")
@@ -191,11 +193,11 @@ class Weather(BasePlugin):
             except Exception:
                 icon_img = None
 
-        i_size = int(H * 0.14)
+        i_size = int(H * 0.16)
         if icon_img:
             icon_resized = icon_img.resize((i_size, i_size), Image.Resampling.LANCZOS)
             img.paste(icon_resized, (left_x, main_y), icon_resized)
-            temp_x = left_x + i_size + int(W * 0.025)
+            temp_x = left_x + i_size + int(W * 0.03)
         else:
             temp_x = left_x
 
@@ -209,14 +211,14 @@ class Weather(BasePlugin):
         tw_val = d.textlength(temp, font=f_temp_val)
         d.text((temp_x, temp_y), temp, font=f_temp_val, fill=C["text_primary"])
         if unit_str:
-            ux = temp_x + tw_val + 4
-            d.text((ux, temp_y + int(H * 0.008)), unit_str, font=f_temp_unit, fill=C["text_primary"])
+            ux = temp_x + tw_val + 5
+            d.text((ux, temp_y + int(H * 0.01)), unit_str, font=f_temp_unit, fill=C["text_primary"])
 
         # ---- feels-like + minmax ----
         if icon_img:
-            detail_y = main_y + i_size + int(H * 0.015)
+            detail_y = main_y + i_size + int(H * 0.02)
         else:
-            detail_y = main_y + temp_h + int(H * 0.025)
+            detail_y = main_y + temp_h + int(H * 0.03)
         feels_str = f"Feels like {feels}{unit_str}"
         d.text((temp_x, detail_y), feels_str, font=f_feels, fill=C["text_secondary"])
         if forecast and len(forecast) > 0:
@@ -224,13 +226,13 @@ class Weather(BasePlugin):
             minmax = f"{f0.get('high', '')}{unit_str} / {f0.get('low', '')}{unit_str}"
             feels_bbox = f_feels.getbbox(feels_str)
             feels_h = feels_bbox[3] - feels_bbox[1] if feels_bbox else 0
-            d.text((temp_x, detail_y + feels_h + 3), str(minmax), font=f_minmax, fill=C["text_primary"])
+            d.text((temp_x, detail_y + feels_h + 4), str(minmax), font=f_minmax, fill=C["text_primary"])
 
         # ---- data-points 2x2 grid ----
         if dps:
             cell_w = int(W * 0.23)
-            cell_h = int(H * 0.065)
-            icon_s = int(H * 0.035)
+            cell_h = int(H * 0.07)
+            icon_s = int(H * 0.04)
             for i, dp in enumerate(dps[:4]):
                 col = i % 2
                 row = i // 2
@@ -246,20 +248,20 @@ class Weather(BasePlugin):
                     try:
                         dp_icon = Image.open(dp_icon_path).convert("RGBA")
                         dp_icon = dp_icon.resize((icon_s, icon_s), Image.Resampling.LANCZOS)
-                        img.paste(dp_icon, (lx, ly + int(H * 0.008)), dp_icon)
+                        img.paste(dp_icon, (lx, ly + int(H * 0.01)), dp_icon)
                     except Exception:
                         dp_icon = None
 
-                dx = lx + icon_s + int(W * 0.012)
+                dx = lx + icon_s + int(W * 0.015)
                 d.text((dx, ly), dp_val, font=f_dp_val, fill=C["text_primary"])
-                d.text((dx, ly + int(H * 0.035)), dp_label, font=f_dp_label, fill=C["text_secondary"])
+                d.text((dx, ly + int(H * 0.04)), dp_label, font=f_dp_label, fill=C["text_secondary"])
 
-        # ---- forecast row ----
+        # ---- forecast row (y=230-420) ----
         fc_y = int(H * 0.48)
         forecast_days = forecast[1:8] if len(forecast) > 1 else forecast
         n = len(forecast_days)
         card_w = int(W * 0.10)
-        gap = int(W * 0.020)
+        gap = int(W * 0.02)
         total_w = n * card_w + (n - 1) * gap
         start_x = (W - total_w) // 2
 
@@ -269,34 +271,38 @@ class Weather(BasePlugin):
             fhigh = str(day.get("high", ""))
             flow = str(day.get("low", ""))
 
-            d.rectangle([(fx, fc_y), (fx + card_w, fc_y + int(H * 0.16))], fill=C["bg"], outline=C["text_light"])
+            # card with subtle border
+            d.rectangle([(fx, fc_y), (fx + card_w, fc_y + int(H * 0.18))], fill=C["bg"], outline=C["divider"])
 
+            # day label
             dw = d.textlength(fday, font=f_fday)
-            d.text((fx + (card_w - dw) // 2, fc_y + int(H * 0.012)), fday, font=f_fday, fill=C["text_primary"])
+            d.text((fx + (card_w - dw) // 2, fc_y + int(H * 0.015)), fday, font=f_fday, fill=C["text_primary"])
 
+            # weather icon
             fc_icon_path = day.get("icon", "")
             if fc_icon_path and os.path.isfile(fc_icon_path):
                 try:
                     fc_icon = Image.open(fc_icon_path).convert("RGBA")
-                    icon_w = int(card_w * 0.45)
+                    icon_w = int(card_w * 0.5)
                     fc_icon = fc_icon.resize((icon_w, icon_w), Image.Resampling.LANCZOS)
                     ix = fx + (card_w - icon_w) // 2
-                    iy = fc_y + int(H * 0.045)
+                    iy = fc_y + int(H * 0.05)
                     img.paste(fc_icon, (ix, iy), fc_icon)
-                    ft_y = iy + icon_w + 3
+                    ft_y = iy + icon_w + 4
                 except Exception:
-                    ft_y = fc_y + int(H * 0.12)
+                    ft_y = fc_y + int(H * 0.13)
             else:
-                ft_y = fc_y + int(H * 0.12)
+                ft_y = fc_y + int(H * 0.13)
 
+            # temp high/low
             ft = f"{fhigh}/{flow}"
             fw = d.textlength(ft, font=f_ftemp)
             d.text((fx + (card_w - fw) // 2, ft_y), ft, font=f_ftemp, fill=C["text_secondary"])
 
-        # ---- bottom bar ----
-        bottom_y = int(H * 0.92)
-        d.rectangle([(0, bottom_y), (W, H)], fill=C["bg_alt"])
-        d.line([(0, bottom_y), (W, bottom_y)], fill=C["divider"], width=2)
+        # ---- footer (y=420-480) ----
+        footer_y = int(H * 0.88)
+        d.line([(int(W * 0.1), footer_y), (int(W * 0.9), footer_y)], fill=C["divider"], width=1)
+        d.rectangle([(0, footer_y), (W, H)], fill=C["bg_alt"])
 
         return img
 
