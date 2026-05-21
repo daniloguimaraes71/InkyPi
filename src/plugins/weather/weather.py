@@ -134,14 +134,10 @@ class Weather(BasePlugin):
             last_refresh_time = now.strftime("%Y-%m-%d %I:%M %p")
         template_params["last_refresh_time"] = last_refresh_time
 
-        image = self.render_image(dimensions, "weather.html", "weather.css", template_params)
-
-        if not image:
-            logger.warning("Chrome screenshot failed, falling back to PIL rendering")
-            image = self._render_pil_fallback(dimensions, template_params, device_config)
+        image = self._render_pil(dimensions, template_params, device_config)
         return image
 
-    def _render_pil_fallback(self, dimensions, tp, device_config):
+    def _render_pil(self, dimensions, tp, device_config):
         from PIL import Image, ImageDraw
         from utils.app_utils import get_font
         from utils.design_variants import get_variant
@@ -183,6 +179,7 @@ class Weather(BasePlugin):
 
         # ---- today-container: left=icon+temp, right=data-points ----
         top_y = int(H * 0.18)
+        left_col_x = int(W * 0.05)
 
         # ---- left: icon + temperature ----
         icon_path = tp.get("current_day_icon", "")
@@ -194,31 +191,39 @@ class Weather(BasePlugin):
                 icon_img = None
 
         i_size = int(H * 0.11)
-        temp_x = int(W * 0.05)
+        icon_top = top_y + int(H * 0.01)
+        temp_bbox = f_temp_val.getbbox(temp)
+        temp_h = temp_bbox[3] - temp_bbox[1] if temp_bbox else 0
         if icon_img:
             icon_resized = icon_img.resize((i_size, i_size), Image.Resampling.LANCZOS)
-            img.paste(icon_resized, (temp_x, top_y + int(H * 0.01)), icon_resized)
-            temp_label_x = temp_x + i_size + int(W * 0.03)
+            img.paste(icon_resized, (left_col_x, icon_top), icon_resized)
+            temp_label_x = left_col_x + i_size + int(W * 0.03)
+            temp_y = icon_top + (i_size - temp_h) // 2
+            feels_y = icon_top + i_size + int(H * 0.015)
         else:
-            temp_label_x = temp_x
+            temp_label_x = left_col_x
+            temp_y = top_y
+            feels_y = top_y + temp_h + int(H * 0.02)
 
         # temperature number
         tw_val = d.textlength(temp, font=f_temp_val)
-        d.text((temp_label_x, top_y), temp, font=f_temp_val, fill=C["text_primary"])
+        d.text((temp_label_x, temp_y), temp, font=f_temp_val, fill=C["text_primary"])
         # unit
         if unit_str:
             ux = temp_label_x + tw_val + 4
-            d.text((ux, top_y + int(H * 0.005)), unit_str, font=f_temp_unit, fill=C["text_primary"])
+            d.text((ux, temp_y + int(H * 0.005)), unit_str, font=f_temp_unit, fill=C["text_primary"])
 
-        # feels-like
+        # feels-like — below the icon bottom
         feels_str = f"Feels like {feels}{unit_str}"
-        d.text((temp_label_x, top_y + int(H * 0.07)), feels_str, font=f_feels, fill=C["text_secondary"])
+        d.text((temp_label_x, feels_y), feels_str, font=f_feels, fill=C["text_secondary"])
 
-        # min/max
+        # min/max — below feels-like
         if forecast and len(forecast) > 0:
             f0 = forecast[0]
             minmax = f"{f0.get('high', '')}{unit_str} / {f0.get('low', '')}{unit_str}"
-            d.text((temp_label_x, top_y + int(H * 0.095)), str(minmax), font=f_minmax, fill=C["text_primary"])
+            feels_bbox = f_feels.getbbox(feels_str)
+            feels_h = feels_bbox[3] - feels_bbox[1] if feels_bbox else 0
+            d.text((temp_label_x, feels_y + feels_h + 2), str(minmax), font=f_minmax, fill=C["text_primary"])
 
         # ---- right: data-points 2x2 grid ----
         if dps:
@@ -283,12 +288,15 @@ class Weather(BasePlugin):
                     ix = fx + (card_w - icon_w) // 2
                     iy = fc_y + int(H * 0.04)
                     img.paste(fc_icon, (ix, iy), fc_icon)
+                    ft_y = iy + icon_w + 2
                 except Exception:
-                    pass
+                    ft_y = fc_y + int(H * 0.10)
+            else:
+                ft_y = fc_y + int(H * 0.10)
 
             ft = f"{fhigh}/{flow}"
             fw = d.textlength(ft, font=f_ftemp)
-            d.text((fx + (card_w - fw) // 2, fc_y + int(H * 0.10)), ft, font=f_ftemp, fill=C["text_secondary"])
+            d.text((fx + (card_w - fw) // 2, ft_y), ft, font=f_ftemp, fill=C["text_secondary"])
 
         # ---- bottom accent ----
         d.rectangle([(0, int(H * 0.97)), (W, H)], fill=C["accent"])
