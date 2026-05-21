@@ -57,7 +57,8 @@ def user_settings():
             "description": v.description,
             "colors": v.colors,
         })
-    return render_template('user_settings.html', design_styles=styles, current_style=current_style, calendar_url=calendar_url, photos_interval=photos_interval)
+    scheduler_config = device_config.get_config("scheduler", default={})
+    return render_template('user_settings.html', design_styles=styles, current_style=current_style, calendar_url=calendar_url, photos_interval=photos_interval, scheduler_config=scheduler_config)
 
 
 @user_bp.route('/api/user/settings', methods=['POST'])
@@ -79,6 +80,11 @@ def save_user_settings():
 
     if "photos_interval_seconds" in data:
         device_config.update_value("photos_interval_seconds", data["photos_interval_seconds"], write=True)
+
+    if "scheduler_modes" in data and isinstance(data["scheduler_modes"], list):
+        scheduler_cfg = device_config.get_config("scheduler", default={})
+        scheduler_cfg["modes"] = data["scheduler_modes"]
+        device_config.update_value("scheduler", scheduler_cfg, write=True)
 
     refresh_task = current_app.config.get('REFRESH_TASK')
     if refresh_task:

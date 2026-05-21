@@ -68,10 +68,133 @@
             <p class="form-hint">Find this in Google Calendar settings &rarr; Integrate calendar &rarr; Public iCal URL.</p>
         </div>
 
+        <div class="settings-section">
+            <h2 class="section-title">Daily Schedule</h2>
+            <p class="section-desc">Customize what shows on your display throughout the day. Each time slot can show a specific card or photos with occasional info cards.</p>
+            <div id="user-scheduler-modes">
+                {% set scheduler_config = scheduler_config or {} %}
+                {% for mode in scheduler_config.get('modes', []) %}
+                <div class="us-mode-row" data-index="{{ loop.index0 }}">
+                    <div class="us-mode-header">
+                        <input type="text" class="us-mode-name" value="{{ mode.name }}" placeholder="Name">
+                        <button type="button" class="us-remove-mode" onclick="removeMode(this)" style="color:#E53935;background:none;border:none;cursor:pointer;font-size:16px;">✕</button>
+                    </div>
+                    <div class="us-mode-body">
+                        <div class="us-mode-days">
+                            {% for d in ['mon','tue','wed','thu','fri','sat','sun'] %}
+                            <label><input type="checkbox" class="us-mode-day" value="{{ d }}" {% if d in mode.get('days', []) %}checked{% endif %}> {{ d|capitalize }}</label>
+                            {% endfor %}
+                        </div>
+                        <div class="us-mode-times">
+                            <label>Start <input type="time" class="us-mode-start" value="{{ mode.get('start_time', '00:00') }}"></label>
+                            <label>End <input type="time" class="us-mode-end" value="{{ mode.get('end_time', '24:00') }}"></label>
+                            <label>Every <input type="number" class="us-mode-dwell" value="{{ mode.get('dwell_seconds', 300) }}" min="30" step="30" style="width:70px;"> sec</label>
+                        </div>
+                        <div class="us-mode-type">
+                            <label>Type:
+                                <select class="us-mode-type-select" onchange="toggleModeType(this)">
+                                    <option value="plugin" {% if mode.get('plugin_id') and not mode.get('interstitial_pool') %}selected{% endif %}>Card</option>
+                                    <option value="interstitial" {% if mode.get('interstitial_pool') %}selected{% endif %}>Photos</option>
+                                </select>
+                            </label>
+                            {% set is_interstitial = mode.get('interstitial_pool') %}
+                            <span class="us-mode-plugin-wrap" {% if is_interstitial %}style="display:none;"{% endif %}>
+                                <label>Card:
+                                    <select class="us-mode-plugin-id">
+                                        <option value="">Select...</option>
+                                        {% for pid in ['morning_briefing','weather','clock','calendar','evening_card','goodnight_card','mood_card','meal_vocab','painting','comic','newspaper','wpotd','apod','kansai_events','year_progress','todo_list','countdown','rss','unsplash','ai_text','ai_image'] %}
+                                        <option value="{{ pid }}" {% if mode.get('plugin_id') == pid %}selected{% endif %}>{{ pid }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </label>
+                            </span>
+                            <span class="us-mode-interstitial-wrap" {% if not is_interstitial %}style="display:none;"{% endif %}>
+                                <label>Also show:
+                                    <select class="us-mode-pool" multiple size="2">
+                                        {% for pid in ['calendar','clock','weather','wpotd','year_progress','kansai_events'] %}
+                                        <option value="{{ pid }}" {% if pid in mode.get('interstitial_pool', []) %}selected{% endif %}>{{ pid }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </label>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            <button type="button" onclick="addMode()" style="margin-top:8px;padding:4px 12px;cursor:pointer;">+ Add Time Slot</button>
+        </div>
+
         <div class="settings-actions">
             <button onclick="saveSettings()" class="action-button">Save</button>
             <span id="saveStatus" class="save-status"></span>
         </div>
+
+        <script>
+            function toggleModeType(select) {
+                const row = select.closest('.us-mode-row');
+                row.querySelector('.us-mode-plugin-wrap').style.display = select.value === 'plugin' ? '' : 'none';
+                row.querySelector('.us-mode-interstitial-wrap').style.display = select.value === 'interstitial' ? '' : 'none';
+            }
+            function removeMode(btn) {
+                btn.closest('.us-mode-row').remove();
+            }
+            function addMode() {
+                const container = document.getElementById('user-scheduler-modes');
+                const div = document.createElement('div');
+                div.className = 'us-mode-row';
+                div.innerHTML = `
+                    <div class="us-mode-header">
+                        <input type="text" class="us-mode-name" placeholder="Name">
+                        <button type="button" onclick="removeMode(this)" style="color:#E53935;background:none;border:none;cursor:pointer;font-size:16px;">✕</button>
+                    </div>
+                    <div class="us-mode-body">
+                        <div class="us-mode-days">
+                            <label><input type="checkbox" class="us-mode-day" value="mon" checked> Mon</label>
+                            <label><input type="checkbox" class="us-mode-day" value="tue" checked> Tue</label>
+                            <label><input type="checkbox" class="us-mode-day" value="wed" checked> Wed</label>
+                            <label><input type="checkbox" class="us-mode-day" value="thu" checked> Thu</label>
+                            <label><input type="checkbox" class="us-mode-day" value="fri" checked> Fri</label>
+                            <label><input type="checkbox" class="us-mode-day" value="sat"> Sat</label>
+                            <label><input type="checkbox" class="us-mode-day" value="sun"> Sun</label>
+                        </div>
+                        <div class="us-mode-times">
+                            <label>Start <input type="time" class="us-mode-start" value="09:00"></label>
+                            <label>End <input type="time" class="us-mode-end" value="10:00"></label>
+                            <label>Every <input type="number" class="us-mode-dwell" value="300" min="30" step="30" style="width:70px;"> sec</label>
+                        </div>
+                        <div class="us-mode-type">
+                            <label>Type:
+                                <select class="us-mode-type-select" onchange="toggleModeType(this)">
+                                    <option value="plugin">Card</option>
+                                    <option value="interstitial">Photos</option>
+                                </select>
+                            </label>
+                            <span class="us-mode-plugin-wrap">
+                                <label>Card:
+                                    <select class="us-mode-plugin-id">
+                                        <option value="">Select...</option>
+                                        {% for pid in ['morning_briefing','weather','clock','calendar','evening_card','goodnight_card','mood_card','meal_vocab','painting','comic','newspaper','wpotd','apod','kansai_events','year_progress','todo_list','countdown','rss','unsplash','ai_text','ai_image'] %}
+                                        <option value="{{ pid }}">{{ pid }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </label>
+                            </span>
+                            <span class="us-mode-interstitial-wrap" style="display:none;">
+                                <label>Also show:
+                                    <select class="us-mode-pool" multiple size="2">
+                                        {% for pid in ['calendar','clock','weather','wpotd','year_progress','kansai_events'] %}
+                                        <option value="{{ pid }}">{{ pid }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </label>
+                            </span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            }
+        </script>
     </div>
 
     <script>
@@ -101,13 +224,33 @@
                 const pi = document.getElementById('photosInterval');
                 const piu = document.getElementById('photosIntervalUnit');
                 const photosSeconds = parseInt(pi.value) * (piu.value === 'hour' ? 3600 : 60);
+                const modes = [];
+                document.querySelectorAll('.us-mode-row').forEach(row => {
+                    const name = row.querySelector('.us-mode-name').value.trim();
+                    if (!name) return;
+                    const days = Array.from(row.querySelectorAll('.us-mode-day:checked')).map(el => el.value);
+                    const start_time = row.querySelector('.us-mode-start').value || '00:00';
+                    const end_time = row.querySelector('.us-mode-end').value || '24:00';
+                    const dwell_seconds = parseInt(row.querySelector('.us-mode-dwell').value) || 300;
+                    const type = row.querySelector('.us-mode-type-select').value;
+                    const mode = { name, days, start_time, end_time, dwell_seconds };
+                    if (type === 'plugin') {
+                        const pid = row.querySelector('.us-mode-plugin-id').value;
+                        if (pid) mode.plugin_id = pid;
+                    } else {
+                        const pool = Array.from(row.querySelector('.us-mode-pool').selectedOptions).map(o => o.value);
+                        if (pool.length) mode.interstitial_pool = pool;
+                    }
+                    modes.push(mode);
+                });
                 const r = await fetch('{{ url_for("user.save_user_settings") }}', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
                         design_style: selectedStyle,
                         calendarURL: document.getElementById('calendarURL').value,
-                        photos_interval_seconds: photosSeconds
+                        photos_interval_seconds: photosSeconds,
+                        scheduler_modes: modes
                     })
                 });
                 const data = await r.json();

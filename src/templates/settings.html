@@ -565,7 +565,8 @@
                                             <option value="interstitial" {% if mode.get('interstitial_pool') %}selected{% endif %}>Photos + Interstitials</option>
                                         </select>
                                     </label>
-                                    <div class="mode-plugin-fields">
+                                    {% set is_mode_interstitial = mode.get('interstitial_pool') %}
+                                    <div class="mode-plugin-fields" {% if is_mode_interstitial %}style="display:none;"{% endif %}>
                                         <label>Plugin:
                                             <select class="mode-plugin-id">
                                                 <option value="">Select plugin...</option>
@@ -575,7 +576,7 @@
                                             </select>
                                         </label>
                                     </div>
-                                    <div class="mode-interstitial-fields" style="display:none;">
+                                    <div class="mode-interstitial-fields" {% if not is_mode_interstitial %}style="display:none;"{% endif %}>
                                         <label>Interstitial pool:
                                             <select class="mode-interstitial-pool" multiple size="3">
                                                 {% for pid in ['calendar','clock','weather','wpotd','year_progress','kansai_events'] %}

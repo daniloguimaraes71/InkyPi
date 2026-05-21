@@ -515,6 +515,82 @@
     color: #fff;
 }
 
+/* Scheduler mode editor */
+.us-mode-row {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    background: var(--bg-secondary);
+}
+.us-mode-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+.us-mode-header input {
+    font-weight: 600;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 4px 8px;
+    width: 200px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+.us-mode-body {
+    font-size: 13px;
+}
+.us-mode-days {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 12px;
+    margin-bottom: 6px;
+}
+.us-mode-days label {
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    cursor: pointer;
+}
+.us-mode-times {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    margin-bottom: 6px;
+}
+.us-mode-times label {
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.us-mode-times input {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 2px 6px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+.us-mode-type {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    align-items: center;
+}
+.us-mode-type select {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 2px 6px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+.us-mode-pool {
+    min-width: 140px;
+}
+
 /* ============================================================
    User Settings
    ============================================================ */
