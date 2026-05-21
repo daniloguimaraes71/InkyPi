@@ -150,64 +150,153 @@ class Weather(BasePlugin):
         v = get_variant(ps.get("designStyle"))
         C = v.colors
 
-        f_sm = get_font(v.body_font, int(W * 0.018)) or ImageFont.load_default()
-        f_body = get_font(v.body_font, int(W * 0.024)) or ImageFont.load_default()
-        f_head = get_font(v.heading_font, int(W * 0.036)) or ImageFont.load_default()
-        f_temp = get_font(v.heading_font, int(W * 0.065)) or ImageFont.load_default()
-
         img = Image.new("RGB", (W, H), C["bg"])
         d = ImageDraw.Draw(img)
 
-        title = tp.get("title", "Weather")
-        date_str = tp.get("current_date", "")
-        temp = tp.get("current_temperature", "--")
-        unit = tp.get("temperature_unit", "°")
-        feels = tp.get("feels_like", "--")
+        # ---- fonts (match HTML sizes proportionally) ----
+        f_title = get_font(v.heading_font, int(H * 0.055)) or ImageFont.load_default()
+        f_date = get_font(v.body_font, int(H * 0.028)) or ImageFont.load_default()
+        f_temp_val = get_font(v.heading_font, int(H * 0.095)) or ImageFont.load_default()
+        f_temp_unit = get_font(v.heading_font, int(H * 0.045)) or ImageFont.load_default()
+        f_feels = get_font(v.body_font, int(H * 0.024)) or ImageFont.load_default()
+        f_minmax = get_font(v.body_font, int(H * 0.028)) or ImageFont.load_default()
+        f_dp_label = get_font(v.body_font, int(H * 0.02)) or ImageFont.load_default()
+        f_dp_val = get_font(v.body_font, int(H * 0.026)) or ImageFont.load_default()
+        f_dp_unit = get_font(v.body_font, int(H * 0.016)) or ImageFont.load_default()
+        f_fday = get_font(v.body_font, int(H * 0.028)) or ImageFont.load_default()
+        f_ftemp = get_font(v.body_font, int(H * 0.022)) or ImageFont.load_default()
 
-        # Header
-        d.text((int(W * 0.06), int(H * 0.05)), title, font=f_head, fill=C["text_primary"])
-        d.text((int(W * 0.06), int(H * 0.13)), date_str, font=f_sm, fill=C["text_secondary"])
-
-        # Divider
-        dy = int(H * 0.18)
-        d.line([(int(W * 0.06), dy), (int(W * 0.94), dy)], fill=C["divider"], width=v.divider_width)
-
-        # Temperature
-        t_text = f"{temp}{unit}"
-        d.text((int(W * 0.06), int(H * 0.22)), t_text, font=f_temp, fill=C["text_primary"])
-
-        # Feels like
-        d.text((int(W * 0.06), int(H * 0.38)), f"Feels like {feels}{unit}", font=f_body, fill=C["text_secondary"])
-
-        # Data points
+        title = str(tp.get("title", "Weather"))
+        date_str = str(tp.get("current_date", ""))
+        temp = str(tp.get("current_temperature", "--"))
+        unit_str = str(tp.get("temperature_unit", ""))
+        feels = str(tp.get("feels_like", "--"))
+        forecast = tp.get("forecast", [])
         dps = tp.get("data_points", [])
-        dp_w = int(W * 0.44)
-        dp_x = int(W * 0.06)
-        dp_y = int(H * 0.46)
-        for i, dp in enumerate(dps[:4]):
-            label = str(dp.get("label", ""))
-            val = str(dp.get("measurement", ""))
-            d.text((dp_x, dp_y + i * int(H * 0.045)), label, font=f_sm, fill=C["text_light"])
-            d.text((dp_x + int(W * 0.16), dp_y + i * int(H * 0.045)), val, font=f_sm, fill=C["text_primary"])
 
-        # Divider for forecast
-        fy = int(H * 0.68)
-        d.line([(int(W * 0.06), fy), (int(W * 0.94), fy)], fill=C["divider"], width=v.divider_width)
-        d.text((int(W * 0.06), int(H * 0.71)), "7-Day Forecast", font=f_body, fill=C["text_primary"])
+        # ---- header ----
+        bbox = d.textbbox((0, 0), title, font=f_title)
+        d.text((W // 2 - (bbox[2] - bbox[0]) // 2, int(H * 0.04)), title, font=f_title, fill=C["text_primary"])
+        bbox = d.textbbox((0, 0), date_str, font=f_date)
+        d.text((W // 2 - (bbox[2] - bbox[0]) // 2, int(H * 0.12)), date_str, font=f_date, fill=C["text_secondary"])
 
-        forecast = tp.get("forecast", [])[1:8]
-        fw = int(W * 0.12)
-        fx = int(W * 0.06)
-        for day in forecast:
+        # ---- today-container (flex row: current-temp left, data-points right) ----
+        cx = int(W * 0.48)
+        left_w = int(W * 0.44)
+        right_w = int(W * 0.48)
+        top_y = int(H * 0.19)
+
+        # ---- left: current-temperature (icon + temp side by side) ----
+        icon_path = tp.get("current_day_icon", "")
+        icon_img = None
+        if icon_path and os.path.isfile(icon_path):
+            try:
+                icon_img = Image.open(icon_path).convert("RGBA")
+            except Exception:
+                icon_img = None
+
+        i_size = int(H * 0.13)
+        temp_x = int(W * 0.06)
+        if icon_img:
+            icon_resized = icon_img.resize((i_size, i_size), Image.Resampling.LANCZOS)
+            img.paste(icon_resized, (temp_x, top_y + int(H * 0.005)), icon_resized)
+            temp_label_x = temp_x + i_size + int(W * 0.02)
+        else:
+            temp_label_x = temp_x
+
+        # temperature (large number)
+        d.text((temp_label_x, top_y), temp, font=f_temp_val, fill=C["text_primary"])
+        # unit next to it
+        if unit_str:
+            ub = d.textbbox((0, 0), unit_str, font=f_temp_unit)
+            d.text((temp_label_x + d.textbbox((0, 0), temp, font=f_temp_val)[2] - d.textbbox((0, 0), temp, font=f_temp_val)[0] + 4, top_y + int(H * 0.005)), unit_str, font=f_temp_unit, fill=C["text_primary"])
+
+        # feels-like below temp
+        feels_str = f"Feels like {feels}{unit_str}"
+        d.text((temp_label_x, top_y + int(H * 0.07)), feels_str, font=f_feels, fill=C["text_secondary"])
+
+        # min/max below feels-like
+        if forecast and len(forecast) > 0:
+            f0 = forecast[0]
+            minmax = f"{f0.get('high', '')}{unit_str} / {f0.get('low', '')}{unit_str}"
+            d.text((temp_label_x, top_y + int(H * 0.095)), str(minmax), font=f_minmax, fill=C["text_primary"])
+
+        # ---- right: data-points in a 2x2 grid ----
+        if dps:
+            grid_x = int(W * 0.50)
+            grid_y = top_y
+            cell_w = int(W * 0.22)
+            cell_h = int(H * 0.075)
+            for i, dp in enumerate(dps[:4]):
+                col = i % 2
+                row = i // 2
+                lx = grid_x + col * cell_w
+                ly = grid_y + row * cell_h
+
+                dp_label = str(dp.get("label", ""))
+                dp_val = str(dp.get("measurement", ""))
+                dp_icon_path = dp.get("icon", "")
+
+                # data-point icon
+                dp_icon = None
+                if dp_icon_path and os.path.isfile(dp_icon_path):
+                    try:
+                        dp_icon = Image.open(dp_icon_path).convert("RGBA")
+                        dp_icon = dp_icon.resize((int(H * 0.035), int(H * 0.035)), Image.Resampling.LANCZOS)
+                        img.paste(dp_icon, (lx, ly + int(H * 0.005)), dp_icon)
+                    except Exception:
+                        dp_icon = None
+
+                icon_offset = int(H * 0.04) if dp_icon else 0
+                d.text((lx + icon_offset, ly), dp_val, font=f_dp_val, fill=C["text_primary"])
+                d.text((lx + icon_offset, ly + int(H * 0.032)), dp_label, font=f_dp_label, fill=C["text_light"])
+            data_top_y = grid_y + 2 * cell_h
+
+        # ---- divider ----
+        div_y = max(top_y + int(H * 0.13), int(H * 0.55))
+        d.line([(int(W * 0.04), div_y), (int(W * 0.96), div_y)], fill=C["divider"], width=v.divider_width)
+
+        # ---- 7-day forecast row ----
+        fc_y = div_y + int(H * 0.03)
+        forecast_days = forecast[1:8] if len(forecast) > 1 else forecast
+        n = len(forecast_days)
+        card_w = int(W * 0.11)
+        gap = int(W * 0.018)
+        total_w = n * card_w + (n - 1) * gap
+        start_x = (W - total_w) // 2
+
+        for j, day in enumerate(forecast_days):
+            fx = start_x + j * (card_w + gap)
             fday = str(day.get("day", ""))[:3]
             fhigh = str(day.get("high", ""))
             flow = str(day.get("low", ""))
-            d.text((fx, int(H * 0.78)), fday, font=f_sm, fill=C["text_primary"])
-            d.text((fx, int(H * 0.84)), fhigh, font=f_sm, fill=C["text_secondary"])
-            d.text((fx, int(H * 0.89)), flow, font=f_sm, fill=C["text_light"])
-            fx += fw
 
-        # Bottom accent
+            # card background with border (like the CSS)
+            d.rectangle([(fx, fc_y), (fx + card_w, fc_y + int(H * 0.16))], fill=C["bg"], outline=C["divider"])
+
+            # day name
+            bbox = d.textbbox((0, 0), fday, font=f_fday)
+            d.text((fx + (card_w - (bbox[2] - bbox[0])) // 2, fc_y + int(H * 0.01)), fday, font=f_fday, fill=C["text_primary"])
+
+            # forecast icon
+            fc_icon_path = day.get("icon", "")
+            fc_icon = None
+            if fc_icon_path and os.path.isfile(fc_icon_path):
+                try:
+                    fc_icon = Image.open(fc_icon_path).convert("RGBA")
+                    fc_icon = fc_icon.resize((int(card_w * 0.6), int(card_w * 0.6)), Image.Resampling.LANCZOS)
+                    ix = fx + (card_w - fc_icon.width) // 2
+                    iy = fc_y + int(H * 0.045)
+                    img.paste(fc_icon, (ix, iy), fc_icon)
+                except Exception:
+                    fc_icon = None
+
+            # high/low
+            ft = f"{fhigh}/{flow}"
+            bbox = d.textbbox((0, 0), ft, font=f_ftemp)
+            d.text((fx + (card_w - (bbox[2] - bbox[0])) // 2, fc_y + int(H * 0.11)), ft, font=f_ftemp, fill=C["text_secondary"])
+
+        # ---- bottom accent ----
         d.rectangle([(0, int(H * 0.97)), (W, H)], fill=C["accent"])
         return img
 
