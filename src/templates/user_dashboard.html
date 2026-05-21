@@ -104,6 +104,10 @@
                 html += '</div>';
             }
             el.innerHTML = html;
+            const active = el.querySelector('.mode-active');
+            if (active) {
+                active.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            }
         }
 
         function refreshImage() {

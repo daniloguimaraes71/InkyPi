@@ -71,10 +71,10 @@
         <div class="settings-section">
             <button type="button" class="us-collapse-header" onclick="toggleSchedule()">
                 <span>Daily Schedule</span>
-                <span class="us-collapse-arrow open" id="scheduleArrow">&#x25BC;</span>
+                <span class="us-collapse-arrow" id="scheduleArrow">&#x25BC;</span>
             </button>
             <p class="section-desc">Customize what shows on your display throughout the day. Each time slot can show a specific card or photos with occasional info cards.</p>
-            <div id="user-scheduler-modes" class="us-collapse-body">
+            <div id="user-scheduler-modes" class="us-collapse-body collapsed">
                 {% set scheduler_config = scheduler_config or {} %}
                 {% for mode in scheduler_config.get('modes', []) %}
                 <div class="us-mode-row" data-index="{{ loop.index0 }}">
