@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>manual</title>
+  <style type="text/css">
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
+  <link rel="stylesheet" href="/home/danilo/Documents/InkyPi/docs/print.css" />
+</head>
+<body>
+<h1 id="inkypi-取扱説明書">InkyPi 取扱説明書</h1>
+<h2 id="目次">目次</h2>
+<ol type="1">
+<li>はじめに</li>
+<li>同梱品</li>
+<li>各部の名称</li>
+<li>セットアップ</li>
+<li>Webアプリの使い方</li>
+<li>全機能紹介</li>
+<li>デザインテーマ</li>
+<li>写真の活用</li>
+<li>便利な機能</li>
+<li>困ったときは</li>
+<li>仕様</li>
+</ol>
+<hr />
+<h2 id="はじめに">1. はじめに</h2>
+<p>InkyPi は電子ペーパーディスプレイです。朝は天気と予定、日中是央には写真と情報カード、夕方には明日の予定を自動表示します。電子ペーパーは表示保持時に電力を消費せず、目に優しいのが特長です。</p>
+<p>同梱のスタンドで卓上に置くほか、マグネットプレートで壁掛けも可能です。</p>
+<hr />
+<h2 id="同梱品">2. 同梱品</h2>
+<table>
+<thead>
+<tr class="header">
+<th>品名</th>
+<th style="text-align: center;">数量</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>InkyPi 本体（電子ペーパー + Raspberry Pi）</td>
+<td style="text-align: center;">1</td>
+</tr>
+<tr class="even">
+<td>USB-C 電源アダプター（5V 3A）</td>
+<td style="text-align: center;">1</td>
+</tr>
+<tr class="odd">
+<td>USB-C ケーブル</td>
+<td style="text-align: center;">1</td>
+</tr>
+<tr class="even">
+<td>microSD カード（ソフトウェア済み）</td>
+<td style="text-align: center;">1</td>
+</tr>
+<tr class="odd">
+<td>スタンド</td>
+<td style="text-align: center;">1</td>
+</tr>
+<tr class="even">
+<td>壁掛けマグネットプレート</td>
+<td style="text-align: center;">1式</td>
+</tr>
+<tr class="odd">
+<td>本書</td>
+<td style="text-align: center;">1</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="各部の名称">3. 各部の名称</h2>
+<ol type="1">
+<li><strong>電子ペーパー画面</strong> – 表示部（800 x 480）</li>
+<li><strong>電源 LED</strong> – 緑点灯：ON / 消灯：OFF</li>
+<li><strong>電源ボタン</strong> – 短押しで起動/終了</li>
+<li><strong>USB-C 端子</strong> – 電源接続</li>
+<li><strong>microSD スロット</strong>（背面）</li>
+</ol>
+<hr />
+<h2 id="セットアップ">4. セットアップ</h2>
+<ol type="1">
+<li>平らな場所にスタンドを置き、Wi-Fi の届く範囲に設置</li>
+<li>USB-C ケーブルを本体と電源アダプターに接続、コンセントに差し込む</li>
+<li>電源ボタンを短押し</li>
+<li>約 30-60 秒で起動画面が表示され、以後自動でコンテンツが切り替わる</li>
+</ol>
+<p>初回起動時は設定に数分かかる場合があります。</p>
+<hr />
+<h2 id="webアプリの使い方">5. Webアプリの使い方</h2>
+<h3 id="アクセス方法">5-1. アクセス方法</h3>
+<p>スマートフォンまたはパソコンを同じ Wi-Fi に接続し、ブラウザで以下のアドレスを開きます。</p>
+<pre><code>http://inkypi.local/</code></pre>
+<p>IP アドレスが分かる場合は <code>http://192.168.xxx.xxx/</code> でもアクセスできます。iPhone/iPad の Safari では「ホーム画面に追加」するとアプリのように使えます。</p>
+<h3 id="ダッシュボード">5-2. ダッシュボード</h3>
+<p>アクセス直後に表示される画面です。現在のディスプレイ表示を確認でき、上部のナビゲーションから各機能ページに移動できます。画面は定期的に自動更新されます。</p>
+<h3 id="表示モードの切り替え">5-3. 表示モードの切り替え</h3>
+<p>「モード選択」ページでディスプレイの表示モードを切り替えられます。</p>
+<ul>
+<li><strong>スケジュール</strong>（標準）– 時間帯に応じて自動で内容切替</li>
+<li><strong>時計のみ</strong> – 大型時計表示</li>
+<li><strong>写真のみ</strong> – アップロードした写真をスライドショー</li>
+<li><strong>カレンダー</strong> – 月/週/日表示から選択</li>
+</ul>
+<h3 id="写真のアップロード">5-4. 写真のアップロード</h3>
+<p>「写真」ページから画像をアップロードできます。写真モードにするとアップロードした写真が自動で表示されます。スマートフォンから直接アップロード可能です。</p>
+<h3 id="設定">5-5. 設定</h3>
+<p>「設定」ページでは以下の項目を変更できます。</p>
+<ul>
+<li><strong>デザインテーマ</strong> – 4種類の配色から選択</li>
+<li><strong>写真の切替間隔</strong> – 写真モードでの表示時間</li>
+<li><strong>カレンダー URL</strong> – Google カレンダー等の iCal URL</li>
+<li><strong>スケジュール編集</strong> – 各時間帯の表示内容をカスタマイズ（折りたたみ式）</li>
+</ul>
+<h4 id="スケジュール編集">スケジュール編集</h4>
+<p>各時間帯（モード）ごとに以下を設定します。</p>
+<ul>
+<li>名称</li>
+<li>対象曜日</li>
+<li>開始時刻 / 終了時刻</li>
+<li>表示時間（秒）</li>
+<li>表示種別（固定カード または 写真＋インフォメーションカード）</li>
+</ul>
+<p>「写真＋インフォメーションカード」を選ぶと、写真の合間に天気やカレンダー等の情報カードが約10分間表示されます。不要なモードは削除、新しいモードは追加可能です。</p>
+<h4 id="割り込み通知">割り込み通知</h4>
+<ul>
+<li><strong>カレンダー通知</strong> – 予定の15分前に自動で通知カードを表示</li>
+<li><strong>天気警報通知</strong> – 気象警報発表時に自動表示</li>
+</ul>
+<p>どちらも初期状態で有効です。設定画面の「Daily Schedule」セクション内で無効化できます。</p>
+<h3 id="写真のみモードの動作">5-6. 写真のみモードの動作</h3>
+<p>「写真のみ」モードでは写真のみを表示し、情報カードは表示されません。情報カードも交えたい場合はスケジュールモードで「写真＋インフォメーションカード」の時間帯を設定してください。</p>
+<hr />
+<h2 id="全機能紹介">6. 全機能紹介</h2>
+<p>各機能はスケジュールに従って自動表示されます。</p>
+<ul>
+<li><strong>モーニングブリーフィング</strong> – 朝の挨拶、今日の天気と予定、季節の写真と時候の言葉</li>
+<li><strong>天気</strong> – 現在の気温、天気概況、湿度</li>
+<li><strong>時計</strong> – 4種のデザインから選択可能</li>
+<li><strong>カレンダー</strong> – 月/週/日表示。連携したカレンダー情報を表示</li>
+<li><strong>写真</strong> – アップロードした写真または Unsplash の写真を表示</li>
+<li><strong>ペインティング</strong> – 季節に合わせた名画を表示</li>
+<li><strong>イブニングカード</strong> – 明日の天気と予定、「お疲れさま」のメッセージ</li>
+<li><strong>グッドナイトカード</strong> – 月や星空の写真と静かなメッセージ</li>
+<li><strong>ミール＆ボキャブラリー</strong> – 日葡の食事単語と料理写真</li>
+<li><strong>ムードカード</strong> – 季節の花写真と日英バイリンガルメッセージ</li>
+<li><strong>Wikipedia 今日の一枚</strong> – Wikipedia の注目画像</li>
+<li><strong>今年の進捗</strong> – 年の経過を視覚表示</li>
+<li><strong>関西イベント情報</strong> – 季節のスポットや催し</li>
+<li><strong>TODO リスト</strong> – 登録したタスクを表示</li>
+<li><strong>カウントダウン</strong> – 記念日までの残り日数</li>
+<li><strong>RSS</strong> – 指定フィードの最新見出し</li>
+<li><strong>AI テキスト</strong>（OpenAI API 要）– キーワードから文章生成</li>
+<li><strong>AI 画像</strong>（OpenAI API 要）– キーワードから画像生成</li>
+<li><strong>天文写真</strong>（NASA API 要）– NASA の今日の天文写真</li>
+<li><strong>Unsplash</strong>（Access Key 要）– 高品質写真をランダム表示</li>
+</ul>
+<hr />
+<h2 id="デザインテーマ">7. デザインテーマ</h2>
+<p>設定ページから 4 種類のテーマを切り替えられます。各テーマには季節色が微調整として加わります。</p>
+<table>
+<thead>
+<tr class="header">
+<th>テーマ</th>
+<th>特徴</th>
+<th>背景色</th>
+<th>アクセント</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>和（Wa）</td>
+<td>伝統的和風</td>
+<td>ベージュ</td>
+<td>ゴールド</td>
+</tr>
+<tr class="even">
+<td>禅（Zen）</td>
+<td>シンプル・ミニマル</td>
+<td>白</td>
+<td>ライトグレー</td>
+</tr>
+<tr class="odd">
+<td>力（Ryoku）</td>
+<td>コントラスト強調</td>
+<td>クリーム</td>
+<td>レッド</td>
+</tr>
+<tr class="even">
+<td>今（Ima）</td>
+<td>モダン・都会的</td>
+<td>ブルーグレー</td>
+<td>ソフトグレー</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="写真の活用">8. 写真の活用</h2>
+<h3 id="アップロード方法">アップロード方法</h3>
+<ol type="1">
+<li>Web アプリの「写真」ページを開く</li>
+<li>アップロードボタンから画像を選択</li>
+<li>自動でアップロード完了</li>
+</ol>
+<p>写真はぼかし背景付きで自動レイアウトされて表示されます。</p>
+<h3 id="表示設定">表示設定</h3>
+<p>設定ページで以下を変更できます。</p>
+<ul>
+<li>写真の切り替え間隔（分または時間単位）</li>
+<li>画像の鮮やかさ、明るさ、シャープネス、コントラスト</li>
+</ul>
+<hr />
+<h2 id="便利な機能">9. 便利な機能</h2>
+<h3 id="google-カレンダー連携">Google カレンダー連携</h3>
+<ol type="1">
+<li>Google カレンダーの設定から「カレンダーの統合」の iCal URL をコピー</li>
+<li>設定ページの「カレンダーURL」に貼り付け</li>
+<li>保存</li>
+</ol>
+<p>朝のブリーフィングやイブニングカードに予定が表示されます。予定の15分前には通知カードが自動表示されます。</p>
+<h3 id="天気設定">天気設定</h3>
+<p>設定ページで緯度・経度を設定すると、その地域の天気が表示されます。気象警報が発表された場合は自動で通知カードが表示されます。</p>
+<h3 id="api-キー設定">API キー設定</h3>
+<table>
+<thead>
+<tr class="header">
+<th>機能</th>
+<th>必要なキー</th>
+<th>取得先</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>AI テキスト/画像生成</td>
+<td>OpenAI API Key</td>
+<td>platform.openai.com</td>
+</tr>
+<tr class="even">
+<td>Unsplash 写真</td>
+<td>Unsplash Access Key</td>
+<td>unsplash.com/developers</td>
+</tr>
+<tr class="odd">
+<td>NASA 天文写真</td>
+<td>NASA API Key</td>
+<td>api.nasa.gov</td>
+</tr>
+<tr class="even">
+<td>天気警報</td>
+<td>OpenWeatherMap API Key</td>
+<td>openweathermap.org</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="困ったときは">10. 困ったときは</h2>
+<h3 id="画面に何も表示されない">画面に何も表示されない</h3>
+<ol type="1">
+<li>電源ケーブルが本体とコンセントの両方に接続されているか確認</li>
+<li>電源 LED が消灯している場合は電源ボタンを押す</li>
+<li>10分以上変わらない場合は電源ボタンを5秒長押しして再起動</li>
+<li>それでも表示されない場合はケーブルを抜き30秒待って再接続</li>
+</ol>
+<h3 id="表示が更新されない">表示が更新されない</h3>
+<ol type="1">
+<li>本体が Wi-Fi に接続されているか確認</li>
+<li>ルーターを再起動</li>
+<li>Web アプリにアクセスできるか確認</li>
+</ol>
+<h3 id="web-アプリにアクセスできない">Web アプリにアクセスできない</h3>
+<ol type="1">
+<li>スマートフォン/パソコンが本体と同じ Wi-Fi に接続されているか確認</li>
+<li>URL が正しいか確認（<code>http://inkypi.local/</code>）</li>
+<li>ルーターの管理画面から本体の IP アドレスを確認し直接入力</li>
+</ol>
+<h3 id="時計や天気が正しくない">時計や天気が正しくない</h3>
+<ol type="1">
+<li>設定ページでタイムゾーンが「東京/日本」になっているか確認</li>
+<li>天気の緯度・経度が正しいか確認</li>
+</ol>
+<h3 id="カレンダーが反映されない">カレンダーが反映されない</h3>
+<ol type="1">
+<li>URL が正しいか確認（Google カレンダーの公開 iCal URL であること）</li>
+<li><code>webcal://</code> で始まる URL は自動変換されます</li>
+<li>設定後、最大5分程度かかることがあります</li>
+</ol>
+<h3 id="本体が熱くなる-動作が不安定">本体が熱くなる / 動作が不安定</h3>
+<ul>
+<li>風通しの良い場所に設置</li>
+<li>直射日光を避ける</li>
+<li>ほこりの多い場所を避ける</li>
+</ul>
+<hr />
+<h2 id="仕様">11. 仕様</h2>
+<table>
+<thead>
+<tr class="header">
+<th>項目</th>
+<th>仕様</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>画面</td>
+<td>電子ペーパー（E-Ink）</td>
+</tr>
+<tr class="even">
+<td>解像度</td>
+<td>800 x 480</td>
+</tr>
+<tr class="odd">
+<td>表示色</td>
+<td>7色（モデルによる）</td>
+</tr>
+<tr class="even">
+<td>コントローラー</td>
+<td>Raspberry Pi 4 / 3 / Zero 2 W</td>
+</tr>
+<tr class="odd">
+<td>通信</td>
+<td>Wi-Fi 2.4 / 5 GHz</td>
+</tr>
+<tr class="even">
+<td>電源</td>
+<td>USB-C 5V 3A</td>
+</tr>
+<tr class="odd">
+<td>消費電力</td>
+<td>更新時 約0.5W / 保持時 約0W</td>
+</tr>
+<tr class="even">
+<td>使用温度</td>
+<td>0 - 40 °C</td>
+</tr>
+</tbody>
+</table>
+<h3 id="対応ブラウザ">対応ブラウザ</h3>
+<ul>
+<li>iPhone / iPad: Safari</li>
+<li>Android: Chrome</li>
+<li>Windows / Mac: Chrome, Edge, Safari</li>
+</ul>
+<hr />
+<p>サポート連絡先：support@example.com</p>
+<p>InkyPi – 毎日を、ちょっと特別に。</p>
+<p>仕様は予告なく変更される場合があります。無断転載・複製を禁じます。</p>
+</body>
+</html>

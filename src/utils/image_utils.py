@@ -1,3 +1,4 @@
+from __future__ import annotations
 import requests
 from PIL import Image, ImageEnhance, ImageOps, ImageFilter
 from io import BytesIO

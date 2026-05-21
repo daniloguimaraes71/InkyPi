@@ -1,5 +1,5 @@
 from plugins.base_plugin.base_plugin import BasePlugin
-from PIL import Image
+from PIL import Image, ImageFont
 import os
 import requests
 import logging
@@ -72,16 +72,20 @@ class Weather(BasePlugin):
         return template_params
 
     def generate_image(self, settings, device_config):
-        lat = float(settings.get('latitude'))
-        long = float(settings.get('longitude'))
+        lat = settings.get('latitude') or device_config.get_config("latitude")
+        long = settings.get('longitude') or device_config.get_config("longitude")
+        if lat is not None:
+            lat = float(lat)
+        if long is not None:
+            long = float(long)
         if not lat or not long:
             raise RuntimeError("Latitude and Longitude are required.")
 
-        units = settings.get('units')
-        if not units or units not in ['metric', 'imperial', 'standard']:
+        units = settings.get('units') or device_config.get_config("weather_units", default="metric")
+        if units not in ['metric', 'imperial', 'standard']:
             raise RuntimeError("Units are required.")
 
-        weather_provider = settings.get('weatherProvider', 'OpenWeatherMap')
+        weather_provider = settings.get('weatherProvider') or device_config.get_config("weather_provider", default="OpenMeteo")
         title = settings.get('customTitle', '')
 
         timezone = device_config.get_config("timezone", default="America/New_York")
@@ -116,14 +120,13 @@ class Weather(BasePlugin):
         except Exception as e:
             logger.error(f"{weather_provider} request failed: {str(e)}")
             raise RuntimeError(f"{weather_provider} request failure, please check logs.")
-       
+
         dimensions = device_config.get_resolution()
         if device_config.get_config("orientation") == "vertical":
             dimensions = dimensions[::-1]
 
         template_params["plugin_settings"] = settings
 
-        # Add last refresh time
         now = datetime.now(tz)
         if time_format == "24h":
             last_refresh_time = now.strftime("%Y-%m-%d %H:%M")
@@ -134,8 +137,79 @@ class Weather(BasePlugin):
         image = self.render_image(dimensions, "weather.html", "weather.css", template_params)
 
         if not image:
-            raise RuntimeError("Failed to take screenshot, please check logs.")
+            logger.warning("Chrome screenshot failed, falling back to PIL rendering")
+            image = self._render_pil_fallback(dimensions, template_params, device_config)
         return image
+
+    def _render_pil_fallback(self, dimensions, tp, device_config):
+        from PIL import Image, ImageDraw
+        from utils.app_utils import get_font
+        from utils.design_variants import get_variant
+        W, H = dimensions
+        ps = tp.get("plugin_settings", {})
+        v = get_variant(ps.get("designStyle"))
+        C = v.colors
+
+        f_sm = get_font(v.body_font, int(W * 0.018)) or ImageFont.load_default()
+        f_body = get_font(v.body_font, int(W * 0.024)) or ImageFont.load_default()
+        f_head = get_font(v.heading_font, int(W * 0.036)) or ImageFont.load_default()
+        f_temp = get_font(v.heading_font, int(W * 0.065)) or ImageFont.load_default()
+
+        img = Image.new("RGB", (W, H), C["bg"])
+        d = ImageDraw.Draw(img)
+
+        title = tp.get("title", "Weather")
+        date_str = tp.get("current_date", "")
+        temp = tp.get("current_temperature", "--")
+        unit = tp.get("temperature_unit", "°")
+        feels = tp.get("feels_like", "--")
+
+        # Header
+        d.text((int(W * 0.06), int(H * 0.05)), title, font=f_head, fill=C["text_primary"])
+        d.text((int(W * 0.06), int(H * 0.13)), date_str, font=f_sm, fill=C["text_secondary"])
+
+        # Divider
+        dy = int(H * 0.18)
+        d.line([(int(W * 0.06), dy), (int(W * 0.94), dy)], fill=C["divider"], width=v.divider_width)
+
+        # Temperature
+        t_text = f"{temp}{unit}"
+        d.text((int(W * 0.06), int(H * 0.22)), t_text, font=f_temp, fill=C["text_primary"])
+
+        # Feels like
+        d.text((int(W * 0.06), int(H * 0.38)), f"Feels like {feels}{unit}", font=f_body, fill=C["text_secondary"])
+
+        # Data points
+        dps = tp.get("data_points", [])
+        dp_w = int(W * 0.44)
+        dp_x = int(W * 0.06)
+        dp_y = int(H * 0.46)
+        for i, dp in enumerate(dps[:4]):
+            label = str(dp.get("label", ""))
+            val = str(dp.get("measurement", ""))
+            d.text((dp_x, dp_y + i * int(H * 0.045)), label, font=f_sm, fill=C["text_light"])
+            d.text((dp_x + int(W * 0.16), dp_y + i * int(H * 0.045)), val, font=f_sm, fill=C["text_primary"])
+
+        # Divider for forecast
+        fy = int(H * 0.68)
+        d.line([(int(W * 0.06), fy), (int(W * 0.94), fy)], fill=C["divider"], width=v.divider_width)
+        d.text((int(W * 0.06), int(H * 0.71)), "7-Day Forecast", font=f_body, fill=C["text_primary"])
+
+        forecast = tp.get("forecast", [])[1:8]
+        fw = int(W * 0.12)
+        fx = int(W * 0.06)
+        for day in forecast:
+            fday = str(day.get("day", ""))[:3]
+            fhigh = str(day.get("high", ""))
+            flow = str(day.get("low", ""))
+            d.text((fx, int(H * 0.78)), fday, font=f_sm, fill=C["text_primary"])
+            d.text((fx, int(H * 0.84)), fhigh, font=f_sm, fill=C["text_secondary"])
+            d.text((fx, int(H * 0.89)), flow, font=f_sm, fill=C["text_light"])
+            fx += fw
+
+        # Bottom accent
+        d.rectangle([(0, int(H * 0.97)), (W, H)], fill=C["accent"])
+        return img
 
     def parse_weather_data(self, weather_data, aqi_data, tz, units, time_format, lat):
         current = weather_data.get("current")
