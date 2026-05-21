@@ -84,9 +84,24 @@ def save_settings():
         calendar_interrupts = form_data.get("calendar_interrupts_enabled") == "true"
         weather_alerts = form_data.get("weather_alerts_enabled") == "true"
 
+        # Parse scheduler modes from JSON if provided
+        scheduler_modes_json = form_data.get("scheduler_modes_json")
+        if scheduler_modes_json:
+            try:
+                import json
+                parsed_modes = json.loads(scheduler_modes_json)
+                if isinstance(parsed_modes, list):
+                    scheduler_modes = parsed_modes
+                else:
+                    scheduler_modes = device_config.get_config("scheduler", {}).get("modes", [])
+            except (json.JSONDecodeError, TypeError):
+                scheduler_modes = device_config.get_config("scheduler", {}).get("modes", [])
+        else:
+            scheduler_modes = device_config.get_config("scheduler", {}).get("modes", [])
+
         settings["scheduler"] = {
             "enabled": scheduler_enabled,
-            "modes": device_config.get_config("scheduler", {}).get("modes", []),
+            "modes": scheduler_modes,
             "interrupts": {
                 "calendar": {
                     "enabled": calendar_interrupts,

@@ -14,10 +14,194 @@
         })();
     </script>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='styles/main.css') }}">
+    <style>
+        .scheduler-mode-row {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 10px 12px;
+            margin-bottom: 10px;
+            background: var(--bg-card, #fafafa);
+        }
+        .mode-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        .mode-header input {
+            font-weight: 600;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 4px 8px;
+            width: 200px;
+        }
+        .mode-days {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px 12px;
+            margin-bottom: 6px;
+        }
+        .day-label {
+            font-size: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+        }
+        .mode-times {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 16px;
+            margin-bottom: 6px;
+        }
+        .mode-times label {
+            font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .mode-times input {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 2px 6px;
+        }
+        .mode-type {
+            font-size: 13px;
+        }
+        .mode-type > label {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-right: 12px;
+        }
+        .mode-plugin-fields, .mode-interstitial-fields {
+            display: inline-flex;
+            flex-wrap: wrap;
+            gap: 8px 16px;
+            margin-top: 4px;
+            align-items: center;
+        }
+        .mode-plugin-fields label, .mode-interstitial-fields label {
+            font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .mode-interstitial-pool {
+            min-width: 150px;
+        }
+    </style>
     <script src="{{ url_for('static', filename='scripts/dark_mode.js') }}"></script>
     <script src="{{ url_for('static', filename='scripts/response_modal.js') }}"></script>
     <script>
+        function collectSchedulerModes() {
+            const rows = document.querySelectorAll('.scheduler-mode-row');
+            const modes = [];
+            rows.forEach(row => {
+                const name = row.querySelector('.mode-name').value.trim();
+                if (!name) return;
+                const dayEls = row.querySelectorAll('.mode-day:checked');
+                const days = Array.from(dayEls).map(el => el.value);
+                const start_time = row.querySelector('.mode-start').value || '00:00';
+                const end_time = row.querySelector('.mode-end').value || '24:00';
+                const dwell_seconds = parseInt(row.querySelector('.mode-dwell').value) || 300;
+                const type = row.querySelector('.mode-type-select').value;
+                const mode = { name, days, start_time, end_time, dwell_seconds };
+                if (type === 'plugin') {
+                    const plugin_id = row.querySelector('.mode-plugin-id').value;
+                    if (plugin_id) mode.plugin_id = plugin_id;
+                } else {
+                    const poolEl = row.querySelector('.mode-interstitial-pool');
+                    const pool = Array.from(poolEl.selectedOptions).map(o => o.value);
+                    if (pool.length) mode.interstitial_pool = pool;
+                    mode.interstitial_interval_seconds = parseInt(row.querySelector('.mode-interstitial-interval').value) || 1800;
+                    mode.interstitial_dwell_seconds = parseInt(row.querySelector('.mode-interstitial-dwell').value) || 120;
+                }
+                modes.push(mode);
+            });
+            document.getElementById('scheduler_modes_json').value = JSON.stringify(modes);
+        }
+
+        function toggleModeType(select) {
+            const row = select.closest('.scheduler-mode-row');
+            const pluginFields = row.querySelector('.mode-plugin-fields');
+            const interstitialFields = row.querySelector('.mode-interstitial-fields');
+            if (select.value === 'plugin') {
+                pluginFields.style.display = '';
+                interstitialFields.style.display = 'none';
+            } else {
+                pluginFields.style.display = 'none';
+                interstitialFields.style.display = '';
+            }
+        }
+
+        function removeModeRow(btn) {
+            btn.closest('.scheduler-mode-row').remove();
+        }
+
+        function addModeRow() {
+            const container = document.getElementById('scheduler-modes-container');
+            const idx = container.children.length;
+            const template = document.createElement('div');
+            template.className = 'scheduler-mode-row';
+            template.dataset.index = idx;
+            template.innerHTML = `
+                <div class="mode-header">
+                    <input type="text" class="mode-name" placeholder="New mode">
+                    <button type="button" class="remove-mode-btn" onclick="removeModeRow(this)" style="color:#E53935;background:none;border:none;cursor:pointer;font-size:18px;">✕</button>
+                </div>
+                <div class="mode-days">
+                    <label class="day-label"><input type="checkbox" class="mode-day" value="mon" checked> Mon</label>
+                    <label class="day-label"><input type="checkbox" class="mode-day" value="tue" checked> Tue</label>
+                    <label class="day-label"><input type="checkbox" class="mode-day" value="wed" checked> Wed</label>
+                    <label class="day-label"><input type="checkbox" class="mode-day" value="thu" checked> Thu</label>
+                    <label class="day-label"><input type="checkbox" class="mode-day" value="fri" checked> Fri</label>
+                    <label class="day-label"><input type="checkbox" class="mode-day" value="sat" checked> Sat</label>
+                    <label class="day-label"><input type="checkbox" class="mode-day" value="sun" checked> Sun</label>
+                </div>
+                <div class="mode-times">
+                    <label>Start: <input type="time" class="mode-start" value="09:00"></label>
+                    <label>End: <input type="time" class="mode-end" value="10:00"></label>
+                    <label>Dwell (sec): <input type="number" class="mode-dwell" value="300" min="30" step="30" style="width:80px;"></label>
+                </div>
+                <div class="mode-type">
+                    <label>Type:
+                        <select class="mode-type-select" onchange="toggleModeType(this)">
+                            <option value="plugin">Fixed Plugin</option>
+                            <option value="interstitial">Photos + Interstitials</option>
+                        </select>
+                    </label>
+                    <div class="mode-plugin-fields">
+                        <label>Plugin:
+                            <select class="mode-plugin-id">
+                                <option value="">Select plugin...</option>
+                                {% for pid in ['ai_image','ai_text','apod','calendar','clock','comic','countdown','evening_card','github','goodnight_card','image_album','image_folder','image_upload','image_url','kansai_events','meal_vocab','mood_card','morning_briefing','newspaper','painting','rss','screenshot','todo_list','unsplash','weather','wpotd','year_progress'] %}
+                                <option value="{{ pid }}">{{ pid }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                    </div>
+                    <div class="mode-interstitial-fields" style="display:none;">
+                        <label>Interstitial pool:
+                            <select class="mode-interstitial-pool" multiple size="3">
+                                {% for pid in ['calendar','clock','weather','wpotd','year_progress','kansai_events'] %}
+                                <option value="{{ pid }}">{{ pid }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                        <label>Card interval (sec): <input type="number" class="mode-interstitial-interval" value="1800" min="60" step="60" style="width:100px;"></label>
+                        <label>Card dwell (sec): <input type="number" class="mode-interstitial-dwell" value="120" min="30" step="30" style="width:80px;"></label>
+                    </div>
+                </div>
+            `;
+            container.appendChild(template);
+            // Initialize toggle state
+            const typeSelect = template.querySelector('.mode-type-select');
+            toggleModeType(typeSelect);
+        }
+
         async function handleAction() {
+            collectSchedulerModes();
             const form = document.querySelector('.settings-form');
             const formData = new FormData(form);
 
@@ -354,6 +538,60 @@
                             <option value="false" {% if not device_settings.get('scheduler', {}).get('interrupts', {}).get('weather_alerts', {}).get('enabled', false) %}selected{% endif %}>Disabled</option>
                             <option value="true" {% if device_settings.get('scheduler', {}).get('interrupts', {}).get('weather_alerts', {}).get('enabled', false) %}selected{% endif %}>Enabled</option>
                         </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Time Slots:</label>
+                        <div id="scheduler-modes-container">
+                            {% for mode in device_settings.get('scheduler', {}).get('modes', []) %}
+                            <div class="scheduler-mode-row" data-index="{{ loop.index0 }}">
+                                <div class="mode-header">
+                                    <input type="text" class="mode-name" value="{{ mode.name }}" placeholder="Mode name">
+                                    <button type="button" class="remove-mode-btn" onclick="removeModeRow(this)" style="color:#E53935;background:none;border:none;cursor:pointer;font-size:18px;">✕</button>
+                                </div>
+                                <div class="mode-days">
+                                    {% for d in ['mon','tue','wed','thu','fri','sat','sun'] %}
+                                    <label class="day-label"><input type="checkbox" class="mode-day" value="{{ d }}" {% if d in mode.get('days', []) %}checked{% endif %}> {{ d|capitalize }}</label>
+                                    {% endfor %}
+                                </div>
+                                <div class="mode-times">
+                                    <label>Start: <input type="time" class="mode-start" value="{{ mode.get('start_time', '00:00') }}"></label>
+                                    <label>End: <input type="time" class="mode-end" value="{{ mode.get('end_time', '24:00') }}"></label>
+                                    <label>Dwell (sec): <input type="number" class="mode-dwell" value="{{ mode.get('dwell_seconds', 300) }}" min="30" step="30" style="width:80px;"></label>
+                                </div>
+                                <div class="mode-type">
+                                    <label>Type:
+                                        <select class="mode-type-select" onchange="toggleModeType(this)">
+                                            <option value="plugin" {% if mode.get('plugin_id') and not mode.get('interstitial_pool') %}selected{% endif %}>Fixed Plugin</option>
+                                            <option value="interstitial" {% if mode.get('interstitial_pool') %}selected{% endif %}>Photos + Interstitials</option>
+                                        </select>
+                                    </label>
+                                    <div class="mode-plugin-fields">
+                                        <label>Plugin:
+                                            <select class="mode-plugin-id">
+                                                <option value="">Select plugin...</option>
+                                                {% for pid in ['ai_image','ai_text','apod','calendar','clock','comic','countdown','evening_card','github','goodnight_card','image_album','image_folder','image_upload','image_url','kansai_events','meal_vocab','mood_card','morning_briefing','newspaper','painting','rss','screenshot','todo_list','unsplash','weather','wpotd','year_progress'] %}
+                                                <option value="{{ pid }}" {% if mode.get('plugin_id') == pid %}selected{% endif %}>{{ pid }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </label>
+                                    </div>
+                                    <div class="mode-interstitial-fields" style="display:none;">
+                                        <label>Interstitial pool:
+                                            <select class="mode-interstitial-pool" multiple size="3">
+                                                {% for pid in ['calendar','clock','weather','wpotd','year_progress','kansai_events'] %}
+                                                <option value="{{ pid }}" {% if pid in mode.get('interstitial_pool', []) %}selected{% endif %}>{{ pid }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </label>
+                                        <label>Card interval (sec): <input type="number" class="mode-interstitial-interval" value="{{ mode.get('interstitial_interval_seconds', 1800) }}" min="60" step="60" style="width:100px;"></label>
+                                        <label>Card dwell (sec): <input type="number" class="mode-interstitial-dwell" value="{{ mode.get('interstitial_dwell_seconds', 120) }}" min="30" step="30" style="width:80px;"></label>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <button type="button" onclick="addModeRow()" style="margin-top:8px;padding:4px 12px;cursor:pointer;">+ Add Time Slot</button>
+                        <input type="hidden" name="scheduler_modes_json" id="scheduler_modes_json" value="">
                     </div>
                 </div>
             </div>
