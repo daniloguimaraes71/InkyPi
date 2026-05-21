@@ -143,17 +143,28 @@ class MorningBriefing(BasePlugin):
 
         sx = right_col_x + int(w * 0.02)
         sy = py
+        schedule_right = w - px
         draw.text((sx, sy), "今日の予定", font=f_sched_h, fill=C['accent'])
 
         item_y = sy + int(h * 0.055 * sm)
         if events:
+            time_offset = int(w * 0.09)
+            title_max_w = schedule_right - (sx + time_offset)
             for ev in events[:4]:
                 draw.text((sx, item_y), ev['time'], font=f_sched_t, fill=C['text_light'])
-                draw.text((sx, item_y + int(h * 0.004)), ev['title'], font=f_sched_e, fill=C['text_primary'])
-                bbox = draw.textbbox((sx, item_y + int(h * 0.004)), ev['title'], font=f_sched_e)
+                title = ev['title']
+                while title:
+                    tb = draw.textbbox((0, 0), title + '…', font=f_sched_e)
+                    if tb[2] - tb[0] <= title_max_w:
+                        break
+                    title = title[:-1]
+                if title != ev['title']:
+                    title += '…'
+                draw.text((sx + time_offset, item_y), title, font=f_sched_e, fill=C['text_primary'])
+                bbox = draw.textbbox((sx + time_offset, item_y), title, font=f_sched_e)
                 tw = bbox[2] - bbox[0]
                 for dx in range(0, tw, 4):
-                    draw.line([(sx + dx, item_y + int(h * 0.03)), (sx + dx + 2, item_y + int(h * 0.03))], fill=C['divider'], width=v.divider_width)
+                    draw.line([(sx + time_offset + dx, item_y + int(h * 0.028 * sm)), (sx + time_offset + dx + 2, item_y + int(h * 0.028 * sm))], fill=C['divider'], width=v.divider_width)
                 item_y += int(h * 0.05 * sm)
         else:
             draw.text((sx, item_y), "本日の予定はありません", font=f_sched_t, fill=C['text_light'])
@@ -205,18 +216,22 @@ class MorningBriefing(BasePlugin):
             resp = requests.get(calendar_url, timeout=15)
             resp.raise_for_status()
             cal = icalendar.Calendar.from_ical(resp.text)
-            start = datetime(now.year, now.month, now.day)
+            start = tz.localize(datetime(now.year, now.month, now.day))
             end = start + timedelta(days=1)
             events = recurring_ical_events.of(cal).between(start, end)
             parsed = []
             for event in events:
-                dtstart = event.decoded("dtstart")
-                if isinstance(dtstart, datetime):
-                    dtstart = dtstart.astimezone(tz)
-                parsed.append({
-                    "title": str(event.get("summary", "")),
-                    "time": dtstart.strftime("%H:%M") if isinstance(dtstart, datetime) else "All day",
-                })
+                try:
+                    dtstart = event.decoded("dtstart")
+                    if isinstance(dtstart, datetime):
+                        if dtstart.tzinfo is not None:
+                            dtstart = dtstart.astimezone(tz)
+                    parsed.append({
+                        "title": str(event.get("summary", "")),
+                        "time": dtstart.strftime("%H:%M") if isinstance(dtstart, datetime) else "All day",
+                    })
+                except Exception:
+                    continue
             parsed.sort(key=lambda e: e["time"])
             return parsed[:8]
         except Exception as e:

@@ -115,6 +115,9 @@
     font-weight: 500;
     color: var(--text-primary, #2C2C2C);
     flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .image-frame {

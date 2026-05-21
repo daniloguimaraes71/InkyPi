@@ -75,6 +75,7 @@
 .schedule-box {
     padding-top: 16px;
     border-top: 3px solid var(--divider, #D4CFC4);
+    overflow: hidden;
 }
 
 .schedule-item {
@@ -100,6 +101,13 @@
     font-weight: 500;
     color: var(--text-primary, #2C2C2C);
     flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.schedule-box {
+    overflow: hidden;
 }
 
 .divider-v {

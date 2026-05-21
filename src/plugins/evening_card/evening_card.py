@@ -160,10 +160,19 @@ class EveningCard(BasePlugin):
             sy += int(h * 0.04 * sm)
             draw.text((px, sy), "明日の予定", font=f_label, fill=C['accent'])
             item_y = sy + int(h * 0.045 * sm)
+            title_max_w = left_max - (px + int(w * 0.09))
             for ev in events[:3]:
                 draw.text((px, item_y), ev['time'], font=f_sched_t, fill=C['text_light'])
-                draw.text((px + int(w * 0.09), item_y), ev['title'], font=f_sched_e, fill=C['text_primary'])
-                bbox = draw.textbbox((px + int(w * 0.09), item_y), ev['title'], font=f_sched_e)
+                title = ev['title']
+                while title:
+                    tb = draw.textbbox((0, 0), title + '…', font=f_sched_e)
+                    if tb[2] - tb[0] <= title_max_w:
+                        break
+                    title = title[:-1]
+                if title != ev['title']:
+                    title += '…'
+                draw.text((px + int(w * 0.09), item_y), title, font=f_sched_e, fill=C['text_primary'])
+                bbox = draw.textbbox((px + int(w * 0.09), item_y), title, font=f_sched_e)
                 tw = bbox[2] - bbox[0]
                 for dx in range(0, tw, 4):
                     draw.line([(px + int(w * 0.09) + dx, item_y + int(h * 0.028 * sm)), (px + int(w * 0.09) + dx + 2, item_y + int(h * 0.028 * sm))], fill=C['divider'], width=v.divider_width)
@@ -236,18 +245,22 @@ class EveningCard(BasePlugin):
             resp.raise_for_status()
             cal = icalendar.Calendar.from_ical(resp.text)
             tomorrow = now.date() + timedelta(days=1)
-            start = datetime(tomorrow.year, tomorrow.month, tomorrow.day)
+            start = tz.localize(datetime(tomorrow.year, tomorrow.month, tomorrow.day))
             end = start + timedelta(days=1)
             events = recurring_ical_events.of(cal).between(start, end)
             parsed = []
             for event in events:
-                dtstart = event.decoded("dtstart")
-                if isinstance(dtstart, datetime):
-                    dtstart = dtstart.astimezone(tz)
-                parsed.append({
-                    "title": str(event.get("summary", "")),
-                    "time": dtstart.strftime("%H:%M") if isinstance(dtstart, datetime) else "All day",
-                })
+                try:
+                    dtstart = event.decoded("dtstart")
+                    if isinstance(dtstart, datetime):
+                        if dtstart.tzinfo is not None:
+                            dtstart = dtstart.astimezone(tz)
+                    parsed.append({
+                        "title": str(event.get("summary", "")),
+                        "time": dtstart.strftime("%H:%M") if isinstance(dtstart, datetime) else "All day",
+                    })
+                except Exception:
+                    continue
             parsed.sort(key=lambda e: e["time"])
             return parsed[:6]
         except Exception as e:
