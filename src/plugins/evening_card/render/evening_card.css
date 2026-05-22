@@ -1,103 +1,109 @@
 .evening-container {
-    display: flex;
-    flex-direction: row;
-    height: 100%;
-    width: 100%;
-    gap: 40px;
-    padding: 32px;
+    display: flex !important;
+    flex-direction: row !important;
+    height: 100% !important;
+    width: 100% !important;
+    gap: 24px;
+    padding: 28px 32px;
     box-sizing: border-box;
+    margin: 0 !important;
+    justify-content: stretch !important;
+    align-items: stretch !important;
 }
 
 .content-side {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
+    flex: 0 0 52% !important;
+    display: flex !important;
+    flex-direction: column !important;
     justify-content: center;
+    gap: 6px;
+    min-width: 0 !important;
+    max-width: 52% !important;
 }
 
 .date-line {
     font-family: var(--font-sans, 'Noto Sans JP', sans-serif);
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 500;
     color: var(--text-light, #888888);
-    margin-bottom: 12px;
+    margin-bottom: 4px;
     letter-spacing: 0.08em;
 }
 
 .greeting {
     font-family: var(--font-serif, 'Noto Serif JP', serif);
-    font-size: 40px;
+    font-size: 30px;
     font-weight: 500;
-    margin: 0 0 8px 0;
-    line-height: 1.2;
+    margin: 0 0 4px 0;
+    line-height: 1.25;
 }
 
 .sub-msg {
     font-family: var(--font-sans, 'Noto Sans JP', sans-serif);
-    font-size: 18px;
+    font-size: 16px;
     color: var(--text-secondary, #555555);
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     line-height: 1.5;
 }
 
 .divider-h {
     width: 100%;
-    height: 3px;
+    height: 2px;
     background-color: var(--divider, #D4CFC4);
-    margin: 16px 0;
-    border-radius: 2px;
+    margin: 10px 0;
+    border-radius: 1px;
 }
 
 .section-label {
     font-family: var(--font-sans, 'Noto Sans JP', sans-serif);
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     color: var(--accent-gold, #8B7355);
     letter-spacing: 0.1em;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 
 .tomorrow-weather {
     font-family: var(--font-serif, 'Noto Serif JP', serif);
-    font-size: 28px;
+    font-size: 24px;
     font-weight: 500;
-    margin: 0 0 4px 0;
+    margin: 0 0 3px 0;
 }
 
 .tomorrow-note {
     font-family: var(--font-sans, 'Noto Sans JP', sans-serif);
-    font-size: 18px;
+    font-size: 16px;
     color: var(--text-secondary, #555555);
-    margin-bottom: 20px;
+    margin-bottom: 12px;
     font-weight: 500;
 }
 
 .schedule-box {
-    padding-top: 16px;
-    border-top: 3px solid var(--divider, #D4CFC4);
-    overflow: hidden;
+    padding-top: 10px;
+    border-top: 2px solid var(--divider, #D4CFC4);
+    margin-top: 4px;
 }
 
 .schedule-item {
     display: flex;
     align-items: baseline;
-    margin-bottom: 12px;
-    padding-bottom: 10px;
-    border-bottom: 2px dotted var(--divider, #D4CFC4);
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px dotted var(--divider, #D4CFC4);
 }
 
 .schedule-time {
     font-family: var(--font-sans, 'Noto Sans JP', sans-serif);
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 600;
     color: var(--text-light, #888888);
-    width: 70px;
+    width: 60px;
     flex-shrink: 0;
 }
 
 .schedule-event {
     font-family: var(--font-serif, 'Noto Serif JP', serif);
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 500;
     color: var(--text-primary, #2C2C2C);
     flex: 1;
@@ -106,34 +112,34 @@
     white-space: nowrap;
 }
 
-.schedule-box {
-    overflow: hidden;
-}
-
 .divider-v {
-    width: 3px;
+    width: 2px;
     background-color: var(--divider, #D4CFC4);
     align-self: stretch;
-    border-radius: 2px;
+    border-radius: 1px;
+    flex-shrink: 0;
 }
 
 .image-side {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding-left: 40px;
+    flex: 0 0 46% !important;
+    display: flex !important;
+    flex-direction: column !important;
     justify-content: center;
+    align-items: center;
+    padding-left: 0 !important;
+    min-width: 0 !important;
+    max-width: 46% !important;
 }
 
 .image-frame {
     width: 100%;
-    height: 100%;
-    max-height: 260px;
-    border: 3px solid var(--divider, #D4CFC4);
+    aspect-ratio: 4 / 3;
+    border: 2px solid var(--divider, #D4CFC4);
     border-radius: 4px;
-    padding: 6px;
+    padding: 4px;
     background: white;
     box-sizing: border-box;
+    overflow: hidden;
 }
 
 .image-frame img {
@@ -145,9 +151,9 @@
 }
 
 .image-label {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--text-light, #888888);
     text-align: center;
-    margin-top: 8px;
+    margin-top: 6px;
     font-weight: 500;
 }
