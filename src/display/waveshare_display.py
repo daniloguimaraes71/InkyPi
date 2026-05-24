@@ -106,27 +106,58 @@ class WaveshareDisplay(AbstractDisplay):
 
     def _patch_getbuffer_for_7color(self):
         """
-        Patch the EPD driver's getbuffer to use the correct 7-color palette
-        (including Orange) with Floyd-Steinberg dithering.
+        Patch the EPD driver's getbuffer to implement a full
+        epdoptimize-style pipeline for optimal e-ink color reproduction:
 
-        The Waveshare driver's default palette omits Orange (duplicates Black)
-        and uses nearest-color quantization without dithering, causing washed-out
-        colors and banding.
+          1. S-curve tone mapping — boosts midtones while gently compressing
+             shadows/highlights, keeping details across the narrow e-ink range.
+          2. Saturation boost — pushes image colors toward palette primaries
+             so they survive the reduction to only 7 palette entries.
+          3. Dither against calibrated (measured) palette colors — the
+             real pigment appearance is much more muted than pure sRGB, so
+             matching perceptually produces far richer results.
+
+        Palette values come from the E Ink Gallery / AcEP measured palette
+        (same 7-colour chemistry as Waveshare 7-colour displays).
         """
+        # Calibrated palette — measured display appearance, not sRGB.
+        # Dithering against these perceptually-accurate colours means the
+        # error-diffusion algorithm makes the right trade-offs.
+        CALIBRATED = [
+            (25, 30, 33),     # 0: Black   #191E21
+            (241, 241, 241),  # 1: White   #F1F1F1
+            (243, 207, 17),   # 2: Yellow  #F3CF11
+            (210, 14, 19),    # 3: Red     #D20E13
+            (184, 94, 28),    # 4: Orange  #B85E1C
+            (49, 49, 143),    # 5: Blue    #31318F
+            (83, 164, 40),    # 6: Green   #53A428
+        ]
+
         epd = self.epd_display
         width, height = epd.width, epd.height
 
-        # Correct 7-color palette: Black, White, Yellow, Red, Orange, Blue, Green
-        pal_image = Image.new('P', (1, 1))
-        pal_image.putpalette((
-            0, 0, 0,        # 0: Black
-            255, 255, 255,  # 1: White
-            255, 255, 0,    # 2: Yellow
-            255, 0, 0,      # 3: Red
-            255, 128, 0,    # 4: Orange
-            0, 0, 255,      # 5: Blue
-            0, 255, 0,      # 6: Green
-        ) + (0, 0, 0) * 249)
+        pal_img = Image.new('P', (1, 1))
+        pal_data = []
+        for c in CALIBRATED:
+            pal_data.extend(c)
+        pal_img.putpalette(pal_data + [0, 0, 0] * 249)
+
+        def _s_curve_lut(strength=0.9, shadow_boost=0.0,
+                         highlight_compress=1.5, midpoint=0.5):
+            lut = []
+            for i in range(256):
+                n = i / 255.0
+                if n <= midpoint:
+                    sv = n / midpoint if midpoint > 0 else 0
+                    result = (sv ** (1 - strength * shadow_boost)) * midpoint
+                else:
+                    hv = (n - midpoint) / (1 - midpoint) if midpoint < 1 else 0
+                    result = (midpoint +
+                              (hv ** (1 + strength * highlight_compress))
+                              * (1 - midpoint))
+                lut.append(max(0, min(255, int(result * 255 + 0.5))))
+            return lut
+        SCURVE_LUT = _s_curve_lut()
 
         def getbuffer_with_dithering(image):
             imwidth, imheight = image.size
@@ -141,21 +172,24 @@ class WaveshareDisplay(AbstractDisplay):
                 )
                 image_temp = image
 
-            # Boost saturation and contrast pre-quantization so colors better
-            # survive the reduction to only 7 palette entries.  E-ink pigments
-            # are inherently muted, so we push the input toward the palette
-            # primaries before dithering.
             image_temp = image_temp.convert('RGB')
-            image_temp = ImageEnhance.Color(image_temp).enhance(1.3)
-            image_temp = ImageEnhance.Contrast(image_temp).enhance(1.1)
 
-            # Quantize with Floyd-Steinberg dithering for smooth color transitions
+            # 1. S-curve tone mapping (per-channel) — preserves detail
+            #    across the e-ink panel's narrow dynamic range.
+            image_temp = image_temp.point(SCURVE_LUT)
+
+            # 2. Saturation boost — pushes colours toward palette primaries.
+            image_temp = ImageEnhance.Color(image_temp).enhance(1.3)
+
+            # 3. Quantize to calibrated palette with Floyd-Steinberg
+            #    dithering.  Because we matched against the actual muted
+            #    pigment appearance, the error diffusion produces
+            #    perceptually correct colour mixtures.
             image_7color = image_temp.quantize(
-                palette=pal_image, dither=Image.Dither.FLOYDSTEINBERG
+                palette=pal_img, dither=Image.Dither.FLOYDSTEINBERG
             )
             buf_7color = bytearray(image_7color.tobytes('raw'))
 
-            # Pack 4-bit pixels into bytes (2 pixels per byte)
             buf = bytearray(width * height // 2)
             for i in range(0, len(buf_7color), 2):
                 buf[i // 2] = (buf_7color[i] << 4) | buf_7color[i + 1]
@@ -163,7 +197,8 @@ class WaveshareDisplay(AbstractDisplay):
             return buf
 
         epd.getbuffer = getbuffer_with_dithering
-        logger.info("Patched getbuffer with correct 7-color palette + Floyd-Steinberg dithering")
+        logger.info("Patched getbuffer with calibrated 7-color palette + "
+                     "S-curve tone mapping + Floyd-Steinberg dithering")
 
     def display_image(self, image, image_settings=[]):
         
