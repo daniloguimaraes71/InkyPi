@@ -176,9 +176,7 @@ class WaveshareDisplay(AbstractDisplay):
 
             # 1. S-curve tone mapping (per-channel) — preserves detail
             #    across the e-ink panel's narrow dynamic range.
-            #    Repeat LUT for each band (3x256=768) for PIL versions that
-            #    require a separate LUT per channel for RGB images.
-            image_temp = image_temp.point(SCURVE_LUT * 3)
+            image_temp = image_temp.point(SCURVE_LUT)
 
             # 2. Saturation boost — pushes colours toward palette primaries.
             image_temp = ImageEnhance.Color(image_temp).enhance(1.3)
