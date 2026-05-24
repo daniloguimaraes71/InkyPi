@@ -90,6 +90,10 @@ class WaveshareDisplay(AbstractDisplay):
 
         self.bi_color_display = len(display_args_spec.args) > 2
 
+        # Patch getbuffer for 7-color displays to use correct palette + Floyd-Steinberg dithering
+        if not self.bi_color_display and hasattr(self.epd_display, 'YELLOW') and hasattr(self.epd_display, 'GREEN'):
+            self._patch_getbuffer_for_7color()
+
         # update the resolution directly from the loaded device context
         if not self.device_config.get_config("resolution"):
             w, h = int(self.epd_display.width), int(self.epd_display.height)
@@ -99,6 +103,59 @@ class WaveshareDisplay(AbstractDisplay):
                 resolution,
                 write=True)
 
+
+    def _patch_getbuffer_for_7color(self):
+        """
+        Patch the EPD driver's getbuffer to use the correct 7-color palette
+        (including Orange) with Floyd-Steinberg dithering.
+
+        The Waveshare driver's default palette omits Orange (duplicates Black)
+        and uses nearest-color quantization without dithering, causing washed-out
+        colors and banding.
+        """
+        epd = self.epd_display
+        width, height = epd.width, epd.height
+
+        # Correct 7-color palette: Black, White, Yellow, Red, Orange, Blue, Green
+        pal_image = Image.new('P', (1, 1))
+        pal_image.putpalette((
+            0, 0, 0,        # 0: Black
+            255, 255, 255,  # 1: White
+            255, 255, 0,    # 2: Yellow
+            255, 0, 0,      # 3: Red
+            255, 128, 0,    # 4: Orange
+            0, 0, 255,      # 5: Blue
+            0, 255, 0,      # 6: Green
+        ) + (0, 0, 0) * 249)
+
+        def getbuffer_with_dithering(image):
+            imwidth, imheight = image.size
+            if imwidth == width and imheight == height:
+                image_temp = image
+            elif imwidth == height and imheight == width:
+                image_temp = image.rotate(90, expand=True)
+            else:
+                logger.warning(
+                    "Invalid image dimensions: %d x %d, expected %d x %d",
+                    imwidth, imheight, width, height,
+                )
+                image_temp = image
+
+            # Quantize with Floyd-Steinberg dithering for smooth color transitions
+            image_7color = image_temp.convert('RGB').quantize(
+                palette=pal_image, dither=Image.Dither.FLOYDSTEINBERG
+            )
+            buf_7color = bytearray(image_7color.tobytes('raw'))
+
+            # Pack 4-bit pixels into bytes (2 pixels per byte)
+            buf = bytearray(width * height // 2)
+            for i in range(0, len(buf_7color), 2):
+                buf[i // 2] = (buf_7color[i] << 4) | buf_7color[i + 1]
+
+            return buf
+
+        epd.getbuffer = getbuffer_with_dithering
+        logger.info("Patched getbuffer with correct 7-color palette + Floyd-Steinberg dithering")
 
     def display_image(self, image, image_settings=[]):
         
@@ -129,7 +186,6 @@ class WaveshareDisplay(AbstractDisplay):
 
     def _display_image(self, image):
         self.epd_display_init()
-        self.epd_display.Clear()
         if not self.bi_color_display:
             self.epd_display.display(self.epd_display.getbuffer(image))
         else:
