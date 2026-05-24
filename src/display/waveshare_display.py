@@ -186,6 +186,12 @@ class WaveshareDisplay(AbstractDisplay):
 
     def _display_image(self, image):
         self.epd_display_init()
+        # Power off after init so display() writes data in powered-off state
+        # (required by some Waveshare display controllers to avoid frame buffer corruption)
+        # Skip Clear() to avoid an unnecessary full-refresh cycle
+        self.epd_display.send_command(0x02)
+        self.epd_display.send_data(0x00)
+        self.epd_display.ReadBusyH()
         if not self.bi_color_display:
             self.epd_display.display(self.epd_display.getbuffer(image))
         else:
