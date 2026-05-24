@@ -4,7 +4,7 @@ import logging
 import sys
 
 from display.abstract_display import AbstractDisplay
-from PIL import Image, ImageEnhance
+from PIL import Image
 from pathlib import Path
 from plugins.plugin_registry import get_plugin_instance
 
@@ -141,16 +141,8 @@ class WaveshareDisplay(AbstractDisplay):
                 )
                 image_temp = image
 
-            # Boost saturation and contrast pre-quantization so colors better
-            # survive the reduction to only 7 palette entries.  E-ink pigments
-            # are inherently muted, so we push the input toward the palette
-            # primaries before dithering.
-            image_temp = image_temp.convert('RGB')
-            image_temp = ImageEnhance.Color(image_temp).enhance(1.3)
-            image_temp = ImageEnhance.Contrast(image_temp).enhance(1.1)
-
             # Quantize with Floyd-Steinberg dithering for smooth color transitions
-            image_7color = image_temp.quantize(
+            image_7color = image_temp.convert('RGB').quantize(
                 palette=pal_image, dither=Image.Dither.FLOYDSTEINBERG
             )
             buf_7color = bytearray(image_7color.tobytes('raw'))
