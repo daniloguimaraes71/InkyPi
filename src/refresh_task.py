@@ -14,6 +14,31 @@ from PIL import Image
 
 logger = logging.getLogger(__name__)
 
+# Per-pool shuffled queues that cycle through every photo before repeating.
+# Keys: "user_photos" / "all_photos". Each value is a list to pop from.
+_photo_queues: dict[str, list[str]] = {}
+
+def _refill_photo_queue(pool_key: str, candidates: list[str]) -> None:
+    """Shuffle candidates into the queue for the given pool."""
+    q = list(candidates)
+    random.shuffle(q)
+    _photo_queues[pool_key] = q
+
+def _next_photo(candidates: list[str], pool_key: str = "all") -> str | None:
+    """Return the next photo from a shuffled queue, refilling when exhausted.
+
+    This guarantees every photo is shown once before any repeats.
+    """
+    if not candidates:
+        return None
+    q = _photo_queues.get(pool_key)
+    if not q:
+        _refill_photo_queue(pool_key, candidates)
+        q = _photo_queues[pool_key]
+    if not q:
+        return None
+    return q.pop()
+
 class RefreshTask:
     """Handles the logic for refreshing the display using a background thread."""
 
@@ -359,7 +384,7 @@ class PhotoRefresh(RefreshAction):
 
     @staticmethod
     def find_user_photo():
-        """Pick a random photo from user_uploads only."""
+        """Pick a random photo from user_uploads only (no repeats until all seen)."""
         exts = ('.jpg', '.jpeg', '.png', '.avif', '.webp', '.bmp', '.tiff', '.heif', '.heic')
         user_dir = PhotoRefresh.get_user_photo_dir()
         if not os.path.isdir(user_dir):
@@ -368,11 +393,11 @@ class PhotoRefresh(RefreshAction):
         for f in os.listdir(user_dir):
             if f.lower().endswith(exts) and not f.startswith('.'):
                 candidates.append(os.path.join(user_dir, f))
-        return random.choice(candidates) if candidates else None
+        return _next_photo(candidates, pool_key="user_photos")
 
     @staticmethod
     def find_random_photo():
-        """Pick a random photo from user_uploads; fall back to common directories if empty."""
+        """Pick a random photo (no repeats until all seen); fall back to system dirs if empty."""
         exts = ('.jpg', '.jpeg', '.png', '.avif', '.webp', '.bmp', '.tiff', '.heif', '.heic')
         candidates = []
         user_dir = PhotoRefresh.get_user_photo_dir()
@@ -381,7 +406,7 @@ class PhotoRefresh(RefreshAction):
                 if f.lower().endswith(exts) and not f.startswith('.'):
                     candidates.append(os.path.join(user_dir, f))
         if candidates:
-            return random.choice(candidates)
+            return _next_photo(candidates, pool_key="all_photos")
         for d in PhotoRefresh.PHOTO_DIRS:
             if os.path.isdir(d):
                 for root, _, files in os.walk(d):
@@ -390,7 +415,7 @@ class PhotoRefresh(RefreshAction):
                             candidates.append(os.path.join(root, f))
         if not candidates:
             return None
-        return random.choice(candidates)
+        return _next_photo(candidates, pool_key="all_photos")
 
     def execute(self, plugin, device_config, current_dt):
         """Pick a random photo, display with blur background, or fall back to clock."""
