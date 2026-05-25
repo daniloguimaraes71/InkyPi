@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+@page {
+  size: 105mm 148mm;
+  margin: 0;
+}
+body {
+  margin: 0;
+  padding: 0;
+  width: 105mm;
+  height: 148mm;
+  overflow: hidden;
+  font-family: "Noto Sans CJK JP", "Noto Sans JP", sans-serif;
+}
+.cover {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background: url(img/cover.jpg) center center / cover no-repeat;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+}
+.overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(to bottom, transparent 65%, rgba(0,0,0,0.5) 85%, rgba(0,0,0,0.8) 96%);
+}
+.content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  color: white;
+  padding: 0 14mm 4mm 14mm;
+}
+.brand {
+  font-family: "Jost", "Noto Sans CJK JP", sans-serif;
+  font-size: 26pt;
+  font-weight: 300;
+  letter-spacing: 0.12em;
+  margin-bottom: 1.5mm;
+  text-transform: uppercase;
+}
+.brand strong {
+  font-weight: 500;
+}
+.line {
+  width: 14mm;
+  height: 0.4pt;
+  background: rgba(255,255,255,0.4);
+  margin: 2mm auto;
+}
+.title {
+  font-size: 16pt;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  margin-bottom: 1mm;
+}
+.subtitle {
+  font-size: 8.5pt;
+  font-weight: 300;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 0;
+}
+.tagline {
+  font-size: 8pt;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  color: rgba(255,255,255,0.65);
+  margin-top: 0;
+}
+</style>
+</head>
+<body>
+<div class="cover">
+  <div class="overlay"></div>
+  <div class="content">
+    <div class="title">取扱説明書</div>
+    <div class="subtitle">電子ペーパーディスプレイ</div>
+    <div class="line"></div>
+    <div class="brand"><strong>Inky</strong>Pi</div>
+    <div class="tagline">毎日を、ちょっと特別に。</div>
+  </div>
+</div>
+</body>
+</html>

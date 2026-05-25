@@ -255,7 +255,7 @@ def main():
 
     # 3. Physical device placeholder images
     print("\nPhysical device images (replace with real photos):")
-    for name in ["hero", "contents", "parts", "setup"]:
+    for name in ["hero", "parts", "setup"]:
         _gen_placeholder(os.path.join(OUT, f"{name}.jpg"), name)
 
     print("\nDone.")
@@ -603,10 +603,14 @@ def _gen_weather_card(path):
 
 def _gen_placeholder(path, label):
     from PIL import Image, ImageDraw, ImageFont
-    img = Image.new("RGB", (800, 600), (225, 225, 225))
+    if label == "cover":
+        w, h = 800, 1000
+    else:
+        w, h = 800, 600
+    img = Image.new("RGB", (w, h), (225, 225, 225))
     d = ImageDraw.Draw(img)
     ft = ImageFont.load_default()
-    d.text((300, 280), f"[ {label} -- photograph needed ]", font=ft, fill=(140, 140, 140))
+    d.text((300, h // 2 - 10), f"[ {label} -- photograph needed ]", font=ft, fill=(140, 140, 140))
     img.save(path, quality=85)
     print(f"  Placeholder {label}.jpg")
 

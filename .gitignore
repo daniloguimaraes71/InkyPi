@@ -179,3 +179,8 @@ mock_display_output/
 /src/static/images/cache/
 /src/static/images/previews/
 /src/static/images/current_image.png
+
+# Generated manual artifacts
+docs/manual.pdf
+docs/img/*.jpg
+docs/img/*.png
