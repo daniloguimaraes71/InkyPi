@@ -399,7 +399,13 @@ class PhotoRefresh(RefreshAction):
         else:
             path = self.find_random_photo()
         if path:
-            img = Image.open(path).convert("RGB")
+            from utils.image_loader import AdaptiveImageLoader
+            loader = AdaptiveImageLoader()
+            img = loader.from_file(path, (0, 0), resize=False)
+            if img is None:
+                img = Image.open(path).convert("RGB")
+            if img.mode != 'RGB':
+                img = img.convert('RGB')
             target = list(device_config.get_resolution())
             if device_config.get_config("orientation") == "vertical":
                 target = target[::-1]
