@@ -76,7 +76,11 @@ class MoodCard(BasePlugin):
             season = "winter"
 
         seasonal_flowers = FLOWERS.get(season, FLOWERS["spring"])
-        flower = random.choice(seasonal_flowers)
+        candidates = [f for f in seasonal_flowers if f["ja"] != getattr(self, "_last_flower", None)]
+        if not candidates:
+            candidates = seasonal_flowers
+        flower = random.choice(candidates)
+        self._last_flower = flower["ja"]
         mood = random.choice(MOODS)
 
         flower_image = get_seasonal_flower_image(flower["ja"], (224, 304))
