@@ -211,16 +211,27 @@ class Painting(BasePlugin):
         font_info = get_font(v.body_font, int(w * 0.025))
 
         text_x = int(w * 0.05)
+        text_max_w = int(w * 0.9)
         text_y = overlay_y + int(overlay_height * 0.15)
 
-        draw.text((text_x, text_y), painting["title"], font=font_title, fill=primary)
+        title = painting["title"]
+        title_lines = self._wrap_text(title, font_title, text_max_w)
+        if len(title_lines) > 2:
+            font_title = get_font(v.heading_font, int(w * 0.028))
+            title_lines = self._wrap_text(title, font_title, text_max_w)
+        for i, line in enumerate(title_lines[:2]):
+            draw.text((text_x, text_y + i * int(w * 0.038)), line, font=font_title, fill=primary)
 
+        info_line_y = text_y + (min(len(title_lines), 2)) * int(w * 0.038) + int(w * 0.01)
         info = painting["artist"]
         if painting.get("date"):
             info += f" · {painting['date']}"
-        draw.text((text_x, text_y + int(w * 0.04)), info, font=font_info, fill=secondary)
+        info_bbox = draw.textbbox((0, 0), info, font=font_info)
+        if (info_bbox[2] - info_bbox[0]) > text_max_w:
+            info = painting["artist"]
+        draw.text((text_x, info_line_y), info, font=font_info, fill=secondary)
 
-        draw.text((text_x, text_y + int(w * 0.07)), painting["source"], font=font_info, fill=secondary + (180,))
+        draw.text((text_x, info_line_y + int(w * 0.03)), painting["source"], font=font_info, fill=secondary + (180,))
 
         if season_info:
             season_label = season_info["micro_season"]["kanji"]
@@ -229,3 +240,21 @@ class Painting(BasePlugin):
                       font=font_season, fill=(255, 255, 255, 180), anchor="rt")
 
         return img
+
+    @staticmethod
+    def _wrap_text(text, font, max_width):
+        words = text.split()
+        lines = []
+        current = ""
+        for word in words:
+            test = f"{current} {word}".strip()
+            bbox = font.getbbox(test)
+            if bbox and (bbox[2] - bbox[0]) > max_width:
+                if current:
+                    lines.append(current)
+                current = word
+            else:
+                current = test
+        if current:
+            lines.append(current)
+        return lines if lines else [text]
