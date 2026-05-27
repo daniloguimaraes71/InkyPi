@@ -75,12 +75,9 @@ class MoodCard(BasePlugin):
         else:
             season = "winter"
 
-        seed = now.year * 10000 + now.month * 100 + now.day
-        random.seed(seed)
         seasonal_flowers = FLOWERS.get(season, FLOWERS["spring"])
         flower = random.choice(seasonal_flowers)
         mood = random.choice(MOODS)
-        random.seed()
 
         flower_image = get_seasonal_flower_image(flower["ja"], (224, 304))
 

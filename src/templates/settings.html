@@ -104,9 +104,8 @@
                 const days = Array.from(dayEls).map(el => el.value);
                 const start_time = row.querySelector('.mode-start').value || '00:00';
                 const end_time = row.querySelector('.mode-end').value || '24:00';
-                const dwell_seconds = parseInt(row.querySelector('.mode-dwell').value) || 300;
                 const type = row.querySelector('.mode-type-select').value;
-                const mode = { name, days, start_time, end_time, dwell_seconds };
+                const mode = { name, days, start_time, end_time };
                 if (type === 'plugin') {
                     const plugin_id = row.querySelector('.mode-plugin-id').value;
                     if (plugin_id) mode.plugin_id = plugin_id;
@@ -162,7 +161,6 @@
                 <div class="mode-times">
                     <label>Start: <input type="time" class="mode-start" value="09:00"></label>
                     <label>End: <input type="time" class="mode-end" value="10:00"></label>
-                    <label>Dwell (sec): <input type="number" class="mode-dwell" value="300" min="30" step="30" style="width:80px;"></label>
                 </div>
                 <div class="mode-type">
                     <label>Type:
@@ -556,7 +554,6 @@
                                 <div class="mode-times">
                                     <label>Start: <input type="time" class="mode-start" value="{{ mode.get('start_time', '00:00') }}"></label>
                                     <label>End: <input type="time" class="mode-end" value="{{ mode.get('end_time', '24:00') }}"></label>
-                                    <label>Dwell (sec): <input type="number" class="mode-dwell" value="{{ mode.get('dwell_seconds', 300) }}" min="30" step="30" style="width:80px;"></label>
                                 </div>
                                 <div class="mode-type">
                                     <label>Type:

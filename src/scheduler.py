@@ -125,8 +125,13 @@ class SchedulerEngine:
         dwell = mode.get("dwell_seconds", DEFAULT_CARD_DWELL)
         plugin_id = mode.get("plugin_id")
 
+        # Cap dwell to remaining time in mode window so the next mode isn't delayed
+        remaining = self._seconds_until_mode_end(mode, current_dt)
+        if remaining is not None and remaining < dwell:
+            dwell = max(int(remaining), 60)
+
         from refresh_task import ManualRefresh
-        logger.info("Fixed plugin mode: showing %s", plugin_id)
+        logger.info("Fixed plugin mode: showing %s (dwell=%ds)", plugin_id, dwell)
         return ManualRefresh(plugin_id, {}), dwell
 
     def _handle_interstitial_mode(self, mode, current_dt, latest_refresh_info):
@@ -245,6 +250,19 @@ class SchedulerEngine:
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
+
+    @staticmethod
+    def _seconds_until_mode_end(mode, current_dt):
+        """Seconds remaining until this mode's end_time (or None if unparseable)."""
+        end_str = mode.get("end_time", "24:00")
+        try:
+            end_h, end_m = map(int, end_str.split(":"))
+        except (ValueError, AttributeError):
+            return None
+        end_today = current_dt.replace(hour=end_h, minute=end_m, second=0, microsecond=0)
+        if end_today <= current_dt:
+            end_today += timedelta(days=1)
+        return (end_today - current_dt).total_seconds()
 
     def _pick_from_playlists(self, playlist_names, mode, playlist_manager=None):
         for pl_name in playlist_names:
