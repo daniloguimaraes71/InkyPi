@@ -12,15 +12,6 @@
     </div>
 </div>
 
-<div class="form-group">
-    <label for="shrinkToFitWpotd" class="form-label">Shrink the image to fit the display</label>
-    <div class="toggle-container">
-        <input type="checkbox" id="shrinkToFitWpotd" name="shrinkToFitWpotd" class="toggle-checkbox" value="true"
-            onclick="this.value = this.checked ? 'true' : 'false';">
-        <label for="shrinkToFitWpotd" class="toggle-label"></label>
-    </div>
-</div>
-
 <script>
     function toggleDateField(toggle) {
         const $date = document.getElementById('customDate');
@@ -30,21 +21,16 @@
     document.addEventListener('DOMContentLoaded', () => {
         const $toggleRandom = document.getElementById('randomizeWpotd');
         const $date = document.getElementById('customDate');
-        const $toggleShrink = document.getElementById('shrinkToFitWpotd');
 
         if (loadPluginSettings) {
             $toggleRandom.checked = pluginSettings.randomizeWpotd === 'true';
             $toggleRandom.value = pluginSettings.randomizeWpotd;
             $date.value = pluginSettings.customDate || "";
             $date.disabled = $toggleRandom.checked;
-            $toggleShrink.checked = pluginSettings.shrinkToFitWpotd === 'true';
-            $toggleShrink.value = pluginSettings.shrinkToFitWpotd;
-
         } else {
             $toggleRandom.checked = false;
             $toggleRandom.value = "false";
             $date.value = "";
-            $toggleShrink.checked = true;
-            $toggleShrink.value = "true";}
+        }
     });
 </script>

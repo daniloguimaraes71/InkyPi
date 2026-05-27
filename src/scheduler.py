@@ -131,7 +131,9 @@ class SchedulerEngine:
 
     def _handle_interstitial_mode(self, mode, current_dt, latest_refresh_info):
         """Photos as resting state with occasional random interstitial cards."""
-        dwell = mode.get("dwell_seconds", DEFAULT_PHOTO_DWELL)
+        # Use global photos_interval_seconds if set, otherwise fall back to mode's dwell
+        global_photo_dwell = self.config.get_config("photos_interval_seconds")
+        dwell = global_photo_dwell if global_photo_dwell else mode.get("dwell_seconds", DEFAULT_PHOTO_DWELL)
         interstitial_interval = mode.get("interstitial_interval_seconds", DEFAULT_INTERSTITIAL_INTERVAL)
         interstitial_dwell = mode.get("interstitial_dwell_seconds", DEFAULT_INTERSTITIAL_DWELL)
         interstitial_pool = mode.get("interstitial_pool", [])

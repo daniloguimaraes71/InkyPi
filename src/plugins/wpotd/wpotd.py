@@ -1,9 +1,7 @@
 """
 Wpotd Plugin for InkyPi
 This plugin fetches the Wikipedia Picture of the Day (Wpotd) from Wikipedia's API
-and displays it on the InkyPi device.
-
-It supports optional manual date selection or random dates and can resize the image to fit the device's dimensions.
+and displays it on the InkyPi device with a blurred background, title, and description.
 
 Wikipedia API Documentation: https://www.mediawiki.org/wiki/API:Main_page
 Picture of the Day example: https://www.mediawiki.org/wiki/API:Picture_of_the_day_viewer
@@ -17,18 +15,21 @@ Flow:
 2. Make an API request to fetch the POTD data for that date. (_fetch_potd)
 3. Extract the image filename from the response. (_fetch_potd)
 4. Make another API request to get the image URL. (_fetch_image_src)
-5. Download the image from the URL. (_download_image)
-6. Optionally resize the image to fit the device dimensions. (_shrink_to_fit))
+5. Download the original image from the URL. (_download_image)
+6. Apply blurred background with centered image (no upscaling). (pad_image_blur)
+7. Overlay title and description at the bottom. (painting-of-the-day style layout)
 """
 
 from plugins.base_plugin.base_plugin import BasePlugin
-from PIL import Image, UnidentifiedImageError
+from PIL import Image, ImageDraw, UnidentifiedImageError
 from io import BytesIO
 from utils.http_client import get_http_session
+from utils.image_utils import pad_image_blur
+from utils.app_utils import get_font
+from utils.design_variants import get_variant
 import logging
 from random import randint
 from datetime import datetime, timedelta, date
-from functools import lru_cache
 from typing import Dict, Any
 
 logger = logging.getLogger(__name__)
@@ -47,41 +48,66 @@ class Wpotd(BasePlugin):
 
         datetofetch = self._determine_date(settings)
         logger.info(f"Fetching Wikipedia Picture of the Day for: {datetofetch}")
-        logger.debug(f"Settings: shrink_to_fit={settings.get('shrinkToFitWpotd', 'false')}, randomize={settings.get('randomizeWpotd', 'false')}")
 
         data = self._fetch_potd(datetofetch)
         picurl = data["image_src"]
+        title = data.get("title", "Picture of the Day")
+        description = data.get("description", "")
         logger.info(f"Image URL: {picurl}")
-        logger.debug(f"Image filename: {data.get('filename', 'Unknown')}")
 
         # Get dimensions
         max_width, max_height = device_config.get_resolution()
         if device_config.get_config("orientation") == "vertical":
             max_width, max_height = max_height, max_width
-            logger.debug(f"Vertical orientation detected, dimensions: {max_width}x{max_height}")
 
         dimensions = (max_width, max_height)
 
-        # Use adaptive loader if shrink-to-fit is enabled
-        shrink_to_fit = settings.get("shrinkToFitWpotd") == "true"
-        logger.debug(
-            f"Shrink-to-fit={'enabled' if shrink_to_fit else 'disabled'}; "
-            f"{'using adaptive loader' if shrink_to_fit else 'downloading original size'}"
-        )
-
-        image = self._download_image(
-            picurl,
-            dimensions=dimensions,
-            resize=shrink_to_fit,
-        )
+        # Download original image (no resize — pad_image_blur handles fitting)
+        image = self._download_image(picurl, dimensions=dimensions, resize=False)
         if image is None:
             logger.error("Failed to download WPOTD image")
             raise RuntimeError("Failed to download WPOTD image.")
-        if shrink_to_fit:
-            logger.info(f"Image resized to fit device dimensions: {max_width}x{max_height}")
+
+        # Apply blurred background with centered image (painting-of-the-day style)
+        img = pad_image_blur(image.convert("RGB"), dimensions)
+
+        v = get_variant(device_config.get_config("design_style"), None)
+
+        # Overlay title and description
+        overlay_height = int(max_height * 0.22)
+        overlay_y = max_height - overlay_height
+        overlay = Image.new("RGBA", (max_width, overlay_height), (0, 0, 0, 140))
+        img.paste(Image.alpha_composite(
+            Image.new("RGBA", (max_width, overlay_height), (0, 0, 0, 0)),
+            overlay
+        ), (0, overlay_y))
+
+        draw = ImageDraw.Draw(img)
+
+        primary = (255, 255, 255)
+        secondary = (200, 200, 200)
+
+        font_title = get_font(v.heading_font, int(max_width * 0.035))
+        font_desc = get_font(v.body_font, int(max_width * 0.025))
+
+        text_x = int(max_width * 0.05)
+        text_y = overlay_y + int(overlay_height * 0.15)
+
+        draw.text((text_x, text_y), title, font=font_title, fill=primary)
+
+        if description:
+            wrapped = self._wrap_text(description, font_desc, int(max_width * 0.9))
+            line_y = text_y + int(max_width * 0.04)
+            for line in wrapped[:3]:
+                draw.text((text_x, line_y), line, font=font_desc, fill=secondary)
+                line_y += int(max_width * 0.028)
+
+        # Attribution
+        draw.text((text_x, text_y + int(max_width * 0.10)),
+                  "Wikipedia Picture of the Day", font=font_desc, fill=secondary + (180,))
 
         logger.info("=== Wikipedia POTD Plugin: Image generation complete ===")
-        return image
+        return img
 
     def _determine_date(self, settings: Dict[str, Any]) -> date:
         if settings.get("randomizeWpotd") == "true":
@@ -125,13 +151,13 @@ class Wpotd(BasePlugin):
             raise RuntimeError("Failed to load WPOTD image.")
 
     def _fetch_potd(self, cur_date: date) -> Dict[str, Any]:
-        title = f"Template:POTD/{cur_date.isoformat()}"
+        potd_title = f"Template:POTD/{cur_date.isoformat()}"
         params = {
             "action": "query",
             "format": "json",
             "formatversion": "2",
             "prop": "images",
-            "titles": title
+            "titles": potd_title
         }
 
         data = self._make_request(params)
@@ -142,13 +168,61 @@ class Wpotd(BasePlugin):
             raise RuntimeError("Failed to retrieve POTD filename.")
 
         image_src = self._fetch_image_src(filename)
+        description = self._fetch_description(potd_title)
+
+        # Build title from filename, removing File: prefix and underscores
+        display_title = filename.replace("File:", "").replace("_", " ").strip()
 
         return {
             "filename": filename,
             "image_src": image_src,
-            "image_page_url": f"https://en.wikipedia.org/wiki/{title}",
-            "date": cur_date
+            "image_page_url": f"https://en.wikipedia.org/wiki/{potd_title}",
+            "date": cur_date,
+            "title": display_title,
+            "description": description
         }
+
+    def _fetch_description(self, page_title: str) -> str:
+        """Fetch the plain-text extract/description for a Wikipedia page."""
+        params = {
+            "action": "query",
+            "format": "json",
+            "formatversion": "2",
+            "prop": "extracts",
+            "titles": page_title,
+            "exintro": "1",
+            "explaintext": "1",
+            "exchars": "400",
+        }
+        try:
+            data = self._make_request(params)
+            pages = data.get("query", {}).get("pages", [])
+            if pages:
+                extract = pages[0].get("extract", "")
+                if extract:
+                    return extract.strip()
+        except Exception as e:
+            logger.warning(f"Failed to fetch description for {page_title}: {e}")
+        return ""
+
+    @staticmethod
+    def _wrap_text(text, font, max_width):
+        """Wrap text to fit within max_width pixels."""
+        words = text.split()
+        lines = []
+        current = ""
+        for word in words:
+            test = f"{current} {word}".strip()
+            bbox = font.getbbox(test)
+            if bbox and (bbox[2] - bbox[0]) > max_width:
+                if current:
+                    lines.append(current)
+                current = word
+            else:
+                current = test
+        if current:
+            lines.append(current)
+        return lines if lines else [text]
 
     def _fetch_image_src(self, filename: str) -> str:
         params = {
